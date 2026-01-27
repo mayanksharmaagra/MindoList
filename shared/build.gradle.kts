@@ -3,6 +3,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
+    kotlin("kapt")
+    id("dagger.hilt.android.plugin")
 }
 
 kotlin {
@@ -25,6 +27,21 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // put your Multiplatform dependencies here
+        }
+        androidMain.dependencies {
+            implementation(libs.hilt.android)
+            configurations.getByName("kapt").dependencies.add(
+                org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency(
+                    "com.google.dagger",
+                    "hilt-compiler",
+                    "2.59"
+                )
+            )
+            implementation(libs.androidx.hilt.navigation.compose)
+            implementation(libs.lottie.compose)
+            implementation(libs.accompanist.systemuicontroller)
+
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

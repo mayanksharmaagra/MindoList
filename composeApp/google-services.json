@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "826731003533",
+    "project_id": "mindolist-3a0bb",
+    "storage_bucket": "mindolist-3a0bb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:826731003533:android:87acdb31a2ee02d0932cc4",
+        "android_client_info": {
+          "package_name": "com.jrprofessor.mindolist"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9oquhWN2xKAkbjfeHoa2743ULGtJGQXw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

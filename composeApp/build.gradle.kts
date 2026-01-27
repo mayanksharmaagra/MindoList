@@ -1,3 +1,4 @@
+import org.gradle.kotlin.dsl.implementation
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -6,6 +7,10 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.google.gms.google.services)
+    kotlin("kapt")
+    id("com.google.firebase.crashlytics")
+    id("dagger.hilt.android.plugin")
 }
 
 kotlin {
@@ -14,11 +19,30 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
-    
+
     sourceSets {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            //firebase
+            implementation(libs.firebase.android.database)
+            implementation(project.dependencies.platform(libs.firebase.android.bom))
+            implementation(libs.firebase.android.auth.ktx)
+            implementation(libs.firebase.android.crashlytics)
+            //hilt
+            implementation(libs.hilt.android)
+            configurations.getByName("kapt").dependencies.add(
+                org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency(
+                    "com.google.dagger",
+                    "hilt-compiler",
+                    "2.59"
+                )
+            )
+            implementation(libs.androidx.hilt.navigation.compose)
+            implementation(libs.lottie.compose)
+            implementation(libs.accompanist.systemuicontroller)
+
+
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -30,10 +54,15 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(projects.shared)
+            implementation(libs.firebase.auth)
+            implementation(libs.firebase.common)
+            implementation(libs.firebase.database)
+            implementation(libs.firebase.crashlytics)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+
     }
 }
 
