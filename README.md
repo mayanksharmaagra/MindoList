@@ -1,6 +1,106 @@
 
 ### MindoList - Mind + To-do List
 
+
+your-kmp-project/
+│
+├── composeApp/                                    # Main shared module
+│   ├── src/
+│   │   │
+│   │   ├── commonMain/                           # ✅ SHARED CODE (Android + iOS)
+│   │   │   └── kotlin/com/jrprofessor/mindolist/
+│   │   │       │
+│   │   │       ├── domain/                       # Pure Kotlin - Business Logic
+│   │   │       │   │
+│   │   │       │   ├── model/                    -Implemented
+│   │   │       │   │   ├── User.kt
+│   │   │       │   │   ├── Result.kt
+│   │   │       │   │   └── OtpVerification.kt
+│   │   │       │   │
+│   │   │       │   ├── repository/
+│   │   │       │   │   └── AuthRepository.kt     # Interface only-Implemented
+│   │   │       │   │
+│   │   │       │   └── usecase/                    Implemented
+│   │   │       │       ├── SendOtpUseCase.kt
+│   │   │       │       ├── VerifyOtpUseCase.kt
+│   │   │       │       ├── CreateUserAccountUseCase.kt
+│   │   │       │       └── GetResendCooldownUseCase.kt
+│   │   │       │
+│   │   │       └── presentation/                 # MVI Contract (State/Events)-Implemented
+│   │   │           └── signup/
+│   │   │               ├── SignUpState.kt
+│   │   │               ├── SignUpIntent.kt
+│   │   │               └── SignUpEvent.kt
+│   │   │
+│   │   ├── androidMain/                          # ❌ ANDROID SPECIFIC
+│   │   │   └── kotlin/com/jrprofessor/mindolist/
+│   │   │       │
+│   │   │       ├── data/                         # Firebase Implementation   Implemented
+│   │   │       │   └── repository/
+│   │   │       │       └── FirebaseAuthRepositoryImpl.kt  
+│   │   │       │
+│   │   │       ├── di/                           # Hilt Modules-Implemented
+│   │   │       │   ├── AppModule.kt
+│   │   │       │   └── FirebaseModule.kt
+│   │   │       │
+│   │   │       └── presentation/                 # Android UI
+│   │   │           └── signup/
+│   │   │               ├── SignUpViewModel.kt
+│   │   │               └── SignUpScreen.kt       # Compose UI
+│   │   │
+│   │   ├── iosMain/                              # ❌ iOS SPECIFIC (Future)
+│   │   │   └── kotlin/com/yourapp/
+│   │   │       │
+│   │   │       ├── data/
+│   │   │       │   └── repository/
+│   │   │       │       └── IOSAuthRepositoryImpl.kt
+│   │   │       │
+│   │   │       └── di/
+│   │   │           └── IOSModule.kt
+│   │   │
+│   │   ├── androidUnitTest/                      # Android Tests
+│   │   │   └── kotlin/
+│   │   │
+│   │   └── commonTest/                           # Shared Tests
+│   │       └── kotlin/
+│   │
+│   └── build.gradle.kts                          # Shared module build
+│
+├── androidApp/                                    # Android Application
+│   ├── src/
+│   │   └── main/
+│   │       ├── kotlin/com/jrprofessor/mindolist/
+│   │       │   ├── MyApplication.kt              # Hilt Application
+│   │       │   └── MainActivity.kt               # Entry Point
+│   │       │
+│   │       ├── res/
+│   │       │   ├── values/
+│   │       │   │   ├── strings.xml
+│   │       │   │   ├── colors.xml
+│   │       │   │   └── themes.xml
+│   │       │   └── drawable/
+│   │       │
+│   │       └── AndroidManifest.xml
+│   │
+│   ├── google-services.json                      # Firebase Config
+│   └── build.gradle.kts                          # Android app build
+│
+├── iosApp/                                        # iOS Application (Future)
+│   ├── iosApp/
+│   │   ├── ContentView.swift                     # SwiftUI
+│   │   ├── SignUpView.swift                      # Sign up screen
+│   │   └── iOSApp.swift
+│   └── iosApp.xcodeproj/
+│
+├── gradle/
+│   └── wrapper/
+│
+├── build.gradle.kts                              # Project level
+├── settings.gradle.kts                           # Project settings
+├── gradle.properties                             # Gradle config
+└── README.md                                     # Documentation
+
+
 This is a Kotlin Multiplatform project targeting Android, iOS.
 
 * [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.

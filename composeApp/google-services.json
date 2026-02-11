@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "826731003533",
+    "firebase_url": "https://mindolist-3a0bb-default-rtdb.firebaseio.com",
     "project_id": "mindolist-3a0bb",
     "storage_bucket": "mindolist-3a0bb.firebasestorage.app"
   },
@@ -12,7 +13,20 @@
           "package_name": "com.jrprofessor.mindolist"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "826731003533-1dl9ovvej902vns4v393q80216n1p0on.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jrprofessor.mindolist",
+            "certificate_hash": "a7426f670e5b6fe9f88f3e27983d64bb5af61937"
+          }
+        },
+        {
+          "client_id": "826731003533-jvhrjm4q3mups96sjknu5ljgqjadirm6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC9oquhWN2xKAkbjfeHoa2743ULGtJGQXw"
@@ -20,7 +34,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "826731003533-jvhrjm4q3mups96sjknu5ljgqjadirm6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

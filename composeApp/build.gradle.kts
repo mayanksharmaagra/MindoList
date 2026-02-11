@@ -8,10 +8,13 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.google.gms.google.services)
-    kotlin("kapt")
+
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
+
     id("com.google.firebase.crashlytics")
-    id("dagger.hilt.android.plugin")
 }
+
 
 kotlin {
     androidTarget {
@@ -22,7 +25,7 @@ kotlin {
 
     sourceSets {
         androidMain.dependencies {
-            implementation(compose.preview)
+            implementation(libs.compose.ui.tooling.preview)
             implementation(libs.androidx.activity.compose)
             //firebase
             implementation(libs.firebase.android.database)
@@ -31,26 +34,31 @@ kotlin {
             implementation(libs.firebase.android.crashlytics)
             //hilt
             implementation(libs.hilt.android)
-            configurations.getByName("kapt").dependencies.add(
+            implementation(libs.androidx.hilt.navigation.compose)
+            /*configurations.getByName("kapt").dependencies.add(
                 org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency(
                     "com.google.dagger",
                     "hilt-compiler",
-                    "2.59"
+                    "2.51"
                 )
-            )
-            implementation(libs.androidx.hilt.navigation.compose)
+            )*/
+            //other
             implementation(libs.lottie.compose)
             implementation(libs.accompanist.systemuicontroller)
-
+            // JavaMail API for sending emails (Optional - prefer Cloud Functions in production)
+            implementation(libs.android.mail)
+            implementation(libs.android.activation)
+            implementation(libs.androidx.core.splashscreen)
 
         }
         commonMain.dependencies {
             implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material3)
-            implementation(compose.ui)
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.material3)
+            implementation(compose.materialIconsExtended)
+            implementation(libs.compose.ui)
             implementation(compose.components.resources)
-            implementation(compose.preview)
+            implementation(libs.compose.ui.tooling.preview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(projects.shared)
@@ -58,12 +66,19 @@ kotlin {
             implementation(libs.firebase.common)
             implementation(libs.firebase.database)
             implementation(libs.firebase.crashlytics)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.coroutines.android)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
 
     }
+}
+
+// Add KSP configuration for Android target
+dependencies {
+    add("kspAndroid", libs.hilt.compiler)
 }
 
 android {
@@ -79,7 +94,18 @@ android {
     }
     packaging {
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += setOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "META-INF/NOTICE.md",
+                "META-INF/LICENSE.md",
+                "META-INF/NOTICE",
+                "META-INF/LICENSE",
+                "META-INF/NOTICE.txt",
+                "META-INF/LICENSE.txt",
+                "META-INF/DEPENDENCIES",
+                "META-INF/ASL2.0",
+                "META-INF/*.kotlin_module"
+            )
         }
     }
     buildTypes {
@@ -96,4 +122,5 @@ android {
 dependencies {
     debugImplementation(compose.uiTooling)
 }
+
 
