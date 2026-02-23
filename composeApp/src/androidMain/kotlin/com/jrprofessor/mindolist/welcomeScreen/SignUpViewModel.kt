@@ -7,13 +7,11 @@ import com.jrprofessor.mindolist.domain.usecase.CreateUserAccountUseCase
 import com.jrprofessor.mindolist.domain.usecase.GetResendCooldownUseCase
 import com.jrprofessor.mindolist.domain.usecase.SendOtpUseCase
 import com.jrprofessor.mindolist.domain.usecase.VerifyOtpUseCase
-import com.jrprofessor.mindolist.presentation.EmailButtonState
+import com.jrprofessor.mindolist.presentation.SignUpButtonState
 import com.jrprofessor.mindolist.presentation.SignUpEvent
 import com.jrprofessor.mindolist.presentation.SignUpIntent
 import com.jrprofessor.mindolist.presentation.SignUpState
-import com.jrprofessor.mindolist.utils.validateEmail
-import com.jrprofessor.mindolist.utils.validateOtp
-import com.jrprofessor.mindolist.utils.validatePassword
+import com.jrprofessor.mindolist.utils.Validators
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -32,12 +30,13 @@ class SignUpViewModel @Inject constructor(
     private val sendOtpUseCase: SendOtpUseCase,
     private val verifyOtpUseCase: VerifyOtpUseCase,
     private val createUserAccountUseCase: CreateUserAccountUseCase,
-    private val getResendCooldownUseCase: GetResendCooldownUseCase
+    private val getResendCooldownUseCase: GetResendCooldownUseCase,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(SignUpState())
-    val state: StateFlow<SignUpState> = _state.asStateFlow()
-    private val _effect = MutableSharedFlow<SignUpEvent>()
-    val effect: SharedFlow<SignUpEvent> = _effect.asSharedFlow()
+    private val _signUpState = MutableStateFlow(SignUpState())
+    val signUpState: StateFlow<SignUpState> = _signUpState.asStateFlow()
+
+    private val _signUpEffect = MutableSharedFlow<SignUpEvent>()
+    val signUpEffect: SharedFlow<SignUpEvent> = _signUpEffect.asSharedFlow()
 
     private var countdownJob: Job? = null
 
@@ -46,6 +45,8 @@ class SignUpViewModel @Inject constructor(
             is SignUpIntent.EmailChanged -> onEmailChanged(intent.email)
             is SignUpIntent.OtpChanged -> onOtpChanged(intent.otp)
             is SignUpIntent.PasswordChanged -> onPasswordChanged(intent.password)
+            is SignUpIntent.NameChanged -> onNameChanged(intent.name)
+
 
             SignUpIntent.ContinueWithEmailClicked -> continueWithEmail()
             SignUpIntent.CreateAccountClicked -> onCreateAccount()
@@ -58,27 +59,28 @@ class SignUpViewModel @Inject constructor(
     }
 
     private fun onVerifyEmail() {
-        val currentEmail = _state.value.email
-        val currentOtp = _state.value.otp
-        if (!validateOtp(currentOtp)) {
-            _state.update { it.copy(otpError = "Please enter a valid 5-digit code") }
+        val currentEmail = _signUpState.value.email
+        val currentOtp = _signUpState.value.otp
+        if (!Validators.validateOtp(currentOtp)) {
+            _signUpState.update { it.copy(otpError = "Please enter a valid 5-digit code") }
             return
         }
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
+            _signUpState.update { it.copy(isLoading = true, error = null) }
             when (val result = verifyOtpUseCase(currentEmail, currentOtp)) {
                 is Result.Success -> {
-                    _state.update {
+                    _signUpState.update {
                         it.copy(
                             isLoading = false,
-                            currentStep = EmailButtonState.CREATE_PASSWORD
+                            currentStep = SignUpButtonState.CREATE_PASSWORD
                         )
                     }
                     stopResendCountdown()
                     sendEffect(SignUpEvent.ShowToast("Email verified successfully"))
                 }
+
                 is Result.Error -> {
-                    _state.update {
+                    _signUpState.update {
                         it.copy(
                             isLoading = false,
                             otpError = result.message ?: "Invalid verification code"
@@ -90,6 +92,7 @@ class SignUpViewModel @Inject constructor(
                         )
                     )
                 }
+
                 is Result.Loading -> {
                     // Already set loading state above
                 }
@@ -98,18 +101,18 @@ class SignUpViewModel @Inject constructor(
     }
 
     private fun onCreateAccount() {
-        val currentEmail = _state.value.email
-        if (!validateEmail(currentEmail)) {
-            _state.update { it.copy(emailError = "Please enter a valid email address") }
+        val currentEmail = _signUpState.value.email
+        if (!Validators.validateEmail(currentEmail)) {
+            _signUpState.update { it.copy(emailError = "Please enter a valid email address") }
             return
         }
 
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
+            _signUpState.update { it.copy(isLoading = true, error = null) }
 
             when (val result = sendOtpUseCase(currentEmail)) {
                 is Result.Error -> {
-                    _state.update {
+                    _signUpState.update {
                         it.copy(
                             isLoading = false,
                             error = result.message ?: "Failed to send verification code"
@@ -125,10 +128,10 @@ class SignUpViewModel @Inject constructor(
                 }
 
                 is Result.Success -> {
-                    _state.update {
+                    _signUpState.update {
                         it.copy(
                             isLoading = false,
-                            currentStep = EmailButtonState.VERIFY_EMAIL,
+                            currentStep = SignUpButtonState.VERIFY_EMAIL,
                             otpSentTimestamp = System.currentTimeMillis()
                         )
                     }
@@ -141,11 +144,12 @@ class SignUpViewModel @Inject constructor(
     }
 
     private fun onCreatePassword() {
-        val currentEmail = _state.value.email
-        val currentPassword = _state.value.password
+        val currentName = _signUpState.value.name
+        val currentEmail = _signUpState.value.email
+        val currentPassword = _signUpState.value.password
 
-        if (!validatePassword(currentPassword)) {
-            _state.update {
+        if (!Validators.validatePassword(currentPassword)) {
+            _signUpState.update {
                 it.copy(
                     passwordError = "Password must meet all requirements"
                 )
@@ -154,16 +158,17 @@ class SignUpViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
+            _signUpState.update { it.copy(isLoading = true, error = null) }
 
-            when (val result = createUserAccountUseCase(currentEmail, currentPassword)) {
+            when (val result = createUserAccountUseCase(currentName,currentEmail, currentPassword)) {
                 is Result.Success -> {
-                    _state.update { it.copy(isLoading = false) }
+                    _signUpState.update { it.copy(isLoading = false) }
                     sendEffect(SignUpEvent.ShowToast("Account created successfully!"))
                     sendEffect(SignUpEvent.NavigateToHome)
                 }
+
                 is Result.Error -> {
-                    _state.update {
+                    _signUpState.update {
                         it.copy(
                             isLoading = false,
                             error = result.message ?: "Failed to create account"
@@ -175,6 +180,7 @@ class SignUpViewModel @Inject constructor(
                         )
                     )
                 }
+
                 is Result.Loading -> {
                     // Already set loading state above
                 }
@@ -183,21 +189,21 @@ class SignUpViewModel @Inject constructor(
     }
 
     private fun onResendOtp() {
-        if (!_state.value.canResendOtp) {
+        if (!_signUpState.value.canResendOtp) {
             sendEffect(
                 SignUpEvent.ShowToast(
-                    "Please wait ${_state.value.resendCountdown} seconds before resending"
+                    "Please wait ${_signUpState.value.resendCountdown} seconds before resending"
                 )
             )
             return
         }
 
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            _signUpState.update { it.copy(isLoading = true) }
 
-            when (val result = sendOtpUseCase(_state.value.email)) {
+            when (val result = sendOtpUseCase(_signUpState.value.email)) {
                 is Result.Success -> {
-                    _state.update {
+                    _signUpState.update {
                         it.copy(
                             isLoading = false,
                             otp = "",
@@ -207,43 +213,48 @@ class SignUpViewModel @Inject constructor(
                     startResendCountdown()
                     sendEffect(SignUpEvent.ShowToast("New verification code sent"))
                 }
+
                 is Result.Error -> {
-                    _state.update { it.copy(isLoading = false) }
+                    _signUpState.update { it.copy(isLoading = false) }
                     sendEffect(
                         SignUpEvent.ShowError(
                             result.message ?: "Failed to resend code"
                         )
                     )
                 }
+
                 is Result.Loading -> {}
             }
         }
     }
 
     private fun onBackPressed() {
-        when (_state.value.currentStep) {
-            EmailButtonState.CONTINUE_WITH_EMAIL -> {
+        when (_signUpState.value.currentStep) {
+            SignUpButtonState.CONTINUE_WITH_EMAIL -> {
                 viewModelScope.launch {
                     sendEffect(SignUpEvent.NavigateBack)
                 }
             }
-            EmailButtonState.CREATE_ACCOUNT -> {
-                _state.update { it.copy(currentStep = EmailButtonState.CONTINUE_WITH_EMAIL) }
+
+            SignUpButtonState.CREATE_ACCOUNT -> {
+                _signUpState.update { it.copy(currentStep = SignUpButtonState.CONTINUE_WITH_EMAIL) }
             }
-            EmailButtonState.VERIFY_EMAIL -> {
+
+            SignUpButtonState.VERIFY_EMAIL -> {
                 stopResendCountdown()
-                _state.update {
+                _signUpState.update {
                     it.copy(
-                        currentStep = EmailButtonState.CREATE_ACCOUNT,
+                        currentStep = SignUpButtonState.CREATE_ACCOUNT,
                         otp = "",
                         otpError = null
                     )
                 }
             }
-            EmailButtonState.CREATE_PASSWORD -> {
-                _state.update {
+
+            SignUpButtonState.CREATE_PASSWORD -> {
+                _signUpState.update {
                     it.copy(
-                        currentStep = EmailButtonState.VERIFY_EMAIL,
+                        currentStep = SignUpButtonState.VERIFY_EMAIL,
                         password = "",
                         passwordError = null
                     )
@@ -254,7 +265,7 @@ class SignUpViewModel @Inject constructor(
     }
 
     private fun onErrorDismissed() {
-        _state.update {
+        _signUpState.update {
             it.copy(
                 error = null,
                 emailError = null,
@@ -269,11 +280,11 @@ class SignUpViewModel @Inject constructor(
 
         viewModelScope.launch {
             // Check current cooldown from server
-            when (val result = getResendCooldownUseCase(_state.value.email)) {
+            when (val result = getResendCooldownUseCase(_signUpState.value.email)) {
                 is Result.Success -> {
                     val initialCooldown = result.data
                     if (initialCooldown > 0) {
-                        _state.update {
+                        _signUpState.update {
                             it.copy(
                                 resendCountdown = initialCooldown,
                                 canResendOtp = false
@@ -281,9 +292,10 @@ class SignUpViewModel @Inject constructor(
                         }
                     }
                 }
+
                 else -> {
                     // Default to 60 seconds if we can't get server cooldown
-                    _state.update {
+                    _signUpState.update {
                         it.copy(
                             resendCountdown = 60,
                             canResendOtp = false
@@ -294,31 +306,31 @@ class SignUpViewModel @Inject constructor(
 
             // Start countdown
             countdownJob = viewModelScope.launch {
-                var countdown = _state.value.resendCountdown
+                var countdown = _signUpState.value.resendCountdown
 
                 while (countdown > 0) {
                     delay(1000)
                     countdown--
-                    _state.update {
+                    _signUpState.update {
                         it.copy(resendCountdown = countdown)
                     }
                 }
 
-                _state.update { it.copy(canResendOtp = true) }
+                _signUpState.update { it.copy(canResendOtp = true) }
             }
         }
     }
 
     private fun continueWithEmail() {
-        _state.update {
-            it.copy(currentStep = EmailButtonState.CREATE_ACCOUNT)//move to next screen on enter email field
+        _signUpState.update {
+            it.copy(currentStep = SignUpButtonState.CREATE_ACCOUNT)//move to next screen on enter email field
         }
     }
 
     private fun onPasswordChanged(password: String) {
         if (password.length <= 12) {
-            val isValid = validatePassword(password)
-            _state.update {
+            val isValid = Validators.validatePassword(password)
+            _signUpState.update {
                 it.copy(
                     password = password,
                     isPasswordValid = isValid,
@@ -329,8 +341,8 @@ class SignUpViewModel @Inject constructor(
     }
 
     private fun onEmailChanged(email: String) {
-        val isValid = validateEmail(email)
-        _state.update {
+        val isValid = Validators.validateEmail(email)
+        _signUpState.update {
             it.copy(
                 email = email,
                 isEmailValid = isValid,
@@ -338,11 +350,21 @@ class SignUpViewModel @Inject constructor(
             )
         }
     }
+    private fun onNameChanged(name: String) {
+        val isValid = Validators.validateName(name)
+        _signUpState.update {
+            it.copy(
+                name = name,
+                isNameValid = isValid,
+                error = if (name.isNotEmpty() && !isValid) "Enter your name" else null
+            )
+        }
+    }
 
     private fun onOtpChanged(otp: String) {
         if (otp.length == 5 && otp.all { it.isDigit() }) {
-            val valid = validateOtp(otp)
-            _state.update {
+            val valid = Validators.validateOtp(otp)
+            _signUpState.update {
                 it.copy(
                     otp = otp,
                     isOtpValid = valid,
@@ -355,7 +377,7 @@ class SignUpViewModel @Inject constructor(
 
     private fun sendEffect(effect: SignUpEvent) {
         viewModelScope.launch {
-            _effect.emit(effect)
+            _signUpEffect.emit(effect)
         }
     }
 
@@ -363,6 +385,7 @@ class SignUpViewModel @Inject constructor(
         countdownJob?.cancel()
         countdownJob = null
     }
+
     override fun onCleared() {
         super.onCleared()
         stopResendCountdown()

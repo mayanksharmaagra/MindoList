@@ -32,6 +32,7 @@ kotlin {
             implementation(project.dependencies.platform(libs.firebase.android.bom))
             implementation(libs.firebase.android.auth.ktx)
             implementation(libs.firebase.android.crashlytics)
+            implementation(libs.firebase.android.storage)
             //hilt
             implementation(libs.hilt.android)
             implementation(libs.androidx.hilt.navigation.compose)
@@ -49,7 +50,7 @@ kotlin {
             implementation(libs.android.mail)
             implementation(libs.android.activation)
             implementation(libs.androidx.core.splashscreen)
-
+            implementation(libs.coil.compose)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -66,8 +67,10 @@ kotlin {
             implementation(libs.firebase.common)
             implementation(libs.firebase.database)
             implementation(libs.firebase.crashlytics)
+            implementation(libs.firebase.storage)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.coroutines.android)
+            implementation(libs.coil.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

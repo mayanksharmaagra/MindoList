@@ -78,6 +78,7 @@ fun WelcomeScreen(
 
     // Feature rotation
     var currentFeature by remember { mutableStateOf(0) }
+
     val features = listOf(
         Feature(Icons.Default.CheckCircle, "Organize tasks effortlessly"),
         Feature(Icons.Default.Notifications, "Never miss important moments"),

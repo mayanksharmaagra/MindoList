@@ -1,6 +1,7 @@
 package com.jrprofessor.mindolist.presentation
 
 sealed class SignUpIntent {
+    data class NameChanged(val name: String) : SignUpIntent()
     data class EmailChanged(val email: String) : SignUpIntent()
     data class OtpChanged(val otp: String) : SignUpIntent()
     data class PasswordChanged(val password: String) : SignUpIntent()

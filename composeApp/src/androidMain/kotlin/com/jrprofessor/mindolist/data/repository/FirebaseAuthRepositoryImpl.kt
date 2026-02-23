@@ -8,6 +8,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.FirebaseStorage
 import com.jrprofessor.mindolist.domain.model.OtpVerification
 import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.domain.model.User
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.util.Properties
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import javax.mail.Message
@@ -29,7 +31,7 @@ import javax.mail.internet.MimeMessage
 @Singleton
 class FirebaseAuthRepositoryImpl @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
-    private val firebaseDatabase: FirebaseDatabase
+    private val firebaseDatabase: FirebaseDatabase,
 ) : FirebaseAuthRepository {
     private val userRef: DatabaseReference = firebaseDatabase.getReference("users")
     private val otpRef: DatabaseReference = firebaseDatabase.getReference("otpVerifications")
@@ -107,6 +109,7 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun createUserWithEmailAndPassword(
+        name: String,
         email: String,
         password: String
     ): Result<User> {
@@ -123,6 +126,7 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
                 authResult.user ?: return Result.Error(Exception("Failed to create user"))
             val user = User(
                 uid = firebaseUser.uid,
+                displayName = name,
                 email = firebaseUser.email ?: "",
                 emailVerified = firebaseUser.isEmailVerified,
                 createdAt = System.currentTimeMillis(),
@@ -187,6 +191,10 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun isLoggedIn(): Boolean {
+        return firebaseAuth.currentUser != null
+    }
+
     override suspend fun isOtpValid(email: String): Result<Boolean> {
         return try {
             val snapshot = otpRef.child(sanitizeEmail(email)).get().await()
@@ -216,6 +224,44 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
             Result.Error(e)
         }
     }
+
+    override suspend fun loginWithEmailAndPassword(
+        email: String,
+        password: String
+    ): Result<User> {
+
+        return try {
+
+            val authResult = firebaseAuth
+                .signInWithEmailAndPassword(email, password)
+                .await()
+            val firebaseUser = authResult.user
+
+            if (firebaseUser != null) {
+                val uid = authResult.user?.uid
+                    ?: return Result.Error(Exception("User ID not found"))
+                val user = User(
+                    uid = uid,
+                    email = firebaseUser.email ?: "",
+                    displayName = firebaseUser.displayName,
+                    photoUrl = firebaseUser.photoUrl?.toString(),
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis(),
+                    emailVerified = firebaseUser.isEmailVerified,
+                    isActive = true
+                )
+                Result.Success(user)
+            } else {
+                Log.e(TAG, "Error getting: "+ "Login failed")
+                Result.Error(Exception("Login failed"))
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting: "+ e.message)
+            Result.Error(e)
+        }
+    }
+
 
     private suspend fun getResendCooldownInternal(email: String): Int {
         val snapshot = otpRef.child(sanitizeEmail(email)).get().await()

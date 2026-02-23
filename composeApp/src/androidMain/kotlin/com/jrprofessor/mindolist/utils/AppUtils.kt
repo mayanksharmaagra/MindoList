@@ -34,16 +34,3 @@ private fun Context.findActivity(): Activity? = when (this) {
     is ContextWrapper -> baseContext.findActivity()
     else -> null
 }
-
-fun validateEmail(email: String): Boolean {
-    return Patterns.EMAIL_ADDRESS.matcher(email).matches()
-}
-
-fun validateOtp(code: String): Boolean = code.isNotBlank() && code.length == 5
-
-fun validatePassword(password: String): Boolean {
-    val hasMinLength = password.length >= 8
-    val hasNumber = password.any { it.isDigit() }
-    val hasSymbol = password.any { !it.isLetterOrDigit() }
-    return hasMinLength && hasNumber && hasSymbol
-}

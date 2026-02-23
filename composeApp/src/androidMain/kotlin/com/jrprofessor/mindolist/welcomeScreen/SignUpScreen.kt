@@ -47,7 +47,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -61,7 +60,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.jrprofessor.mindolist.R
 import com.jrprofessor.mindolist.customView.ActionButton
-import com.jrprofessor.mindolist.presentation.EmailButtonState
+import com.jrprofessor.mindolist.customView.ShowEmailView
+import com.jrprofessor.mindolist.customView.ShowNameView
+import com.jrprofessor.mindolist.customView.ShowPasswordView
+import com.jrprofessor.mindolist.customView.SignUpHeader
+import com.jrprofessor.mindolist.customView.WelcomeText
+import com.jrprofessor.mindolist.presentation.SignUpButtonState
 import com.jrprofessor.mindolist.presentation.SignUpEvent
 import com.jrprofessor.mindolist.presentation.SignUpIntent
 import com.jrprofessor.mindolist.presentation.SignUpState
@@ -71,7 +75,7 @@ import com.jrprofessor.mindolist.theme.stepColor
 import com.jrprofessor.mindolist.utils.StatusBarInDarkMode
 import kotlinx.coroutines.flow.collectLatest
 
-const val TAG="SignUpScreen"
+const val SIGN_UP_TAG="SignUpScreen"
 @Composable
 fun SignUpScreen(
     viewModel: SignUpViewModel = hiltViewModel(),
@@ -79,11 +83,11 @@ fun SignUpScreen(
     onNavigateBack: () -> Unit = {}
 ) {
 
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.signUpState.collectAsState()
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        viewModel.effect.collectLatest { effect ->
+        viewModel.signUpEffect.collectLatest { effect ->
             when (effect) {
                 SignUpEvent.NavigateBack -> onNavigateBack()
                 SignUpEvent.NavigateToHome -> onNavigateToHome()
@@ -112,30 +116,30 @@ fun SignUpContent(state: SignUpState, onEvent: (SignUpIntent) -> Unit) {
 
     // Derived states
     val stepIndicator = when (state.currentStep) {
-        EmailButtonState.CONTINUE_WITH_EMAIL, EmailButtonState.CREATE_ACCOUNT -> 1
-        EmailButtonState.VERIFY_EMAIL -> 2
-        EmailButtonState.CREATE_PASSWORD -> 3
+        SignUpButtonState.CONTINUE_WITH_EMAIL, SignUpButtonState.CREATE_ACCOUNT -> 1
+        SignUpButtonState.VERIFY_EMAIL -> 2
+        SignUpButtonState.CREATE_PASSWORD -> 3
     }
 
     val btnTitle = when (state.currentStep) {
-        EmailButtonState.CONTINUE_WITH_EMAIL -> "Continue with email"
-        EmailButtonState.CREATE_ACCOUNT -> "Create an account"
-        EmailButtonState.VERIFY_EMAIL -> "Verify email"
-        EmailButtonState.CREATE_PASSWORD -> "Continue"
+        SignUpButtonState.CONTINUE_WITH_EMAIL -> "Continue with email"
+        SignUpButtonState.CREATE_ACCOUNT -> "Create an account"
+        SignUpButtonState.VERIFY_EMAIL -> "Verify email"
+        SignUpButtonState.CREATE_PASSWORD -> "Continue"
     }
     val toolbarTitle = when (state.currentStep) {
-        EmailButtonState.CONTINUE_WITH_EMAIL -> "Create new account"
-        EmailButtonState.CREATE_ACCOUNT -> "Add your email 1/3"
-        EmailButtonState.VERIFY_EMAIL -> "Verify your email 2/3"
-        EmailButtonState.CREATE_PASSWORD -> "Create your password 3/3"
+        SignUpButtonState.CONTINUE_WITH_EMAIL -> "Create new account"
+        SignUpButtonState.CREATE_ACCOUNT -> "Add your email 1/3"
+        SignUpButtonState.VERIFY_EMAIL -> "Verify your email 2/3"
+        SignUpButtonState.CREATE_PASSWORD -> "Create your password 3/3"
     }
 
     // Button enable state based on current screen
     val isEnabled = when (state.currentStep) {
-        EmailButtonState.CONTINUE_WITH_EMAIL -> true
-        EmailButtonState.CREATE_ACCOUNT -> state.isEmailValid
-        EmailButtonState.VERIFY_EMAIL -> state.isOtpValid
-        EmailButtonState.CREATE_PASSWORD -> state.isPasswordValid
+        SignUpButtonState.CONTINUE_WITH_EMAIL -> true
+        SignUpButtonState.CREATE_ACCOUNT -> state.isEmailValid
+        SignUpButtonState.VERIFY_EMAIL -> state.isOtpValid
+        SignUpButtonState.CREATE_PASSWORD -> state.isPasswordValid
     }
 
     StatusBarInDarkMode()
@@ -157,8 +161,8 @@ fun SignUpContent(state: SignUpState, onEvent: (SignUpIntent) -> Unit) {
         Spacer(modifier = Modifier.height(30.dp))
 
         // Subtitle or Step Indicator
-        if (state.currentStep == EmailButtonState.CONTINUE_WITH_EMAIL) {
-            WelcomeText()
+        if (state.currentStep == SignUpButtonState.CONTINUE_WITH_EMAIL) {
+            WelcomeText("Begin with creating new free account. This helps you keep your learning way easier.")
         } else {
             StepIndicator(currentStep = stepIndicator)
         }
@@ -167,7 +171,15 @@ fun SignUpContent(state: SignUpState, onEvent: (SignUpIntent) -> Unit) {
 
         // Content based on state
         when (state.currentStep) {
-            EmailButtonState.CREATE_ACCOUNT -> {
+            SignUpButtonState.CREATE_ACCOUNT -> {
+                ShowNameView(
+                    name = state.name,
+                    nameError = state.nameError,
+                    onNameChange = {
+                        onEvent(SignUpIntent.NameChanged(it))
+                    }
+                )
+                Spacer(modifier = Modifier.height(15.dp))
                 ShowEmailView(
                     email = state.email,
                     emailError = state.emailError,
@@ -177,7 +189,7 @@ fun SignUpContent(state: SignUpState, onEvent: (SignUpIntent) -> Unit) {
                 )
             }
 
-            EmailButtonState.VERIFY_EMAIL -> {
+            SignUpButtonState.VERIFY_EMAIL -> {
                 ShowEmailOtpView(
                     email = state.email,
                     otp = state.otp,
@@ -189,7 +201,8 @@ fun SignUpContent(state: SignUpState, onEvent: (SignUpIntent) -> Unit) {
                 )
             }
 
-            EmailButtonState.CREATE_PASSWORD -> {
+            SignUpButtonState.CREATE_PASSWORD -> {
+
                 ShowPasswordView(
                     password = state.password,
                     passwordError = state.passwordError,
@@ -217,74 +230,22 @@ fun SignUpContent(state: SignUpState, onEvent: (SignUpIntent) -> Unit) {
             isLoading = state.isLoading
         ) {
             when (state.currentStep) {
-                EmailButtonState.CONTINUE_WITH_EMAIL ->
+                SignUpButtonState.CONTINUE_WITH_EMAIL ->
                     onEvent(SignUpIntent.ContinueWithEmailClicked)
 
-                EmailButtonState.CREATE_ACCOUNT ->
+                SignUpButtonState.CREATE_ACCOUNT ->
                     onEvent(SignUpIntent.CreateAccountClicked)
 
-                EmailButtonState.VERIFY_EMAIL ->
+                SignUpButtonState.VERIFY_EMAIL ->
                     onEvent(SignUpIntent.VerifyEmailClicked)
 
-                EmailButtonState.CREATE_PASSWORD ->
+                SignUpButtonState.CREATE_PASSWORD ->
                     onEvent(SignUpIntent.CreatePasswordClicked)
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
     }
-}
-
-// =====================================================
-// HEADER COMPONENTS
-// =====================================================
-@Composable
-fun SignUpHeader(toolbarTitle: String, onBackClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(
-            onClick = onBackClick,
-            modifier = Modifier.size(40.dp)
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.iv_back),
-                contentDescription = "Back",
-                modifier = Modifier.size(24.dp),
-                tint = Color.Black
-            )
-        }
-        Text(
-            text = toolbarTitle,
-            fontSize = 20.sp,
-            fontFamily = FontFamily(
-                Font(
-                    R.font.roboto_condensed_regular,
-                    FontWeight.SemiBold
-                )
-            ),
-            color = Color.Black,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.weight(1f)
-        )
-        // Balance space for centered title
-        Spacer(modifier = Modifier.size(40.dp))
-    }
-}
-
-@Composable
-private fun WelcomeText() {
-    Text(
-        text = "Begin with creating new free account. This helps you keep your learning way easier.",
-        fontSize = 16.sp,
-        fontFamily = FontFamily(
-            Font(R.font.roboto_condensed_regular, FontWeight.Normal)
-        ),
-        color = Color(0xFF64748B),
-        textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth()
-    )
 }
 
 // =====================================================
@@ -320,187 +281,6 @@ fun StepIndicator(
                 Spacer(modifier = Modifier.width(10.dp))
             }
         }
-    }
-}
-
-// =====================================================
-// EMAIL VIEW
-// =====================================================
-
-@Composable
-private fun ShowEmailView(email: String, emailError: String?, onEmailChange: (String) -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-
-        InputLabel(text = "Email")
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = onEmailChange,
-            placeholder = { Text("example@example.com", color = Color(0xFF9CA3AF)) },
-            singleLine = true,
-            shape = RoundedCornerShape(14.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF6366F1),
-                unfocusedBorderColor = Color(0xFFD1D5DB),
-                errorBorderColor = Color(0xFFDC2626),
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent
-            ),
-            textStyle = LocalTextStyle.current.copy(
-                color = Color.Black
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(2.dp),
-            keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = KeyboardType.Email
-            ),
-            isError = emailError != null
-        )
-        if (emailError != null) {
-            Text(
-                text = emailError,
-                color = Color(0xFFDC2626),
-                fontSize = 14.sp,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-        }
-    }
-}
-
-// =====================================================
-// PASSWORD VIEW
-// =====================================================
-
-@Composable
-private fun ShowPasswordView(
-    password: String,
-    passwordError: String?,
-    onPasswordChange: (String) -> Unit,
-) {
-    var isPasswordVisible by remember { mutableStateOf(false) }
-
-    // Password validation
-    val hasMinLength = password.length >= 8
-    val hasNumber = password.any { it.isDigit() }
-    val hasSymbol = password.any { !it.isLetterOrDigit() }
-    val satisfiedRulesCount = listOf(hasMinLength, hasNumber, hasSymbol).count { it }
-
-    // Progress animation
-    val targetProgress = satisfiedRulesCount / 3f
-    val animatedProgress by animateFloatAsState(
-        targetValue = targetProgress,
-        animationSpec = tween(
-            durationMillis = 450,
-            easing = FastOutSlowInEasing
-        ),
-        label = "PasswordStrengthProgress"
-    )
-    val progressColor = when (satisfiedRulesCount) {
-        0, 1 -> Color(0xFFDC2626) // red
-        2 -> Color(0xFFF59E0B)    // amber
-        else -> Color(0xFF22C55E) // green
-    }
-
-    Column(modifier = Modifier.fillMaxWidth()) {
-        InputLabel(text = "Password")
-        OutlinedTextField(
-            value = password,
-            onValueChange = onPasswordChange,
-            placeholder = { Text("********", color = Color.Gray) },
-            singleLine = true,
-            shape = RoundedCornerShape(14.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF6366F1),
-                unfocusedBorderColor = Color(0xFFD1D5DB),
-                errorBorderColor = Color(0xFFDC2626),
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent
-            ),
-
-            visualTransformation = if (isPasswordVisible)
-                VisualTransformation.None
-            else
-                PasswordVisualTransformation(),
-            trailingIcon = {
-                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                    Icon(
-                        imageVector = if (isPasswordVisible)
-                            Icons.Default.Visibility
-                        else
-                            Icons.Default.VisibilityOff,
-                        contentDescription = if (isPasswordVisible)
-                            "Hide password"
-                        else
-                            "Show password",
-                        tint = Color(0xFF6B7280)
-                    )
-                }
-            },
-            textStyle = LocalTextStyle.current.copy(color = Color.Black),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
-            isError = passwordError != null
-        )
-
-        if (passwordError != null) {
-            Text(
-                text = passwordError,
-                color = Color(0xFFDC2626),
-                fontSize = 14.sp,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        LinearProgressIndicator(
-            progress = {
-                animatedProgress
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(4.dp)
-                .clip(RoundedCornerShape(8.dp)),
-            color = progressColor,
-            trackColor = Color(0xFFE5E7EB)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        PasswordRule(text = "8 characters minimum", isValid = hasMinLength)
-        PasswordRule(text = "At least one number", isValid = hasNumber)
-        PasswordRule(text = "At least one symbol", isValid = hasSymbol)
-    }
-}
-
-@Composable
-private fun PasswordRule(
-    text: String,
-    isValid: Boolean
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 4.dp)
-    ) {
-        Icon(
-            imageVector = if (isValid)
-                Icons.Default.CheckCircle
-            else
-                Icons.Default.RadioButtonUnchecked,
-            contentDescription = null,
-            tint = if (isValid) Color(0xFF22C55E) else Color(0xFF9CA3AF),
-            modifier = Modifier.size(18.dp)
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Text(
-            text = text,
-            fontSize = 14.sp,
-            color = if (isValid) Color(0xFF22C55E) else Color(0xFF6B7280)
-        )
     }
 }
 
@@ -589,7 +369,7 @@ private fun OtpInputField(
 
     // ✅ Sync state when otp prop changes from parent
     LaunchedEffect(otp) {
-        Log.d(TAG, "OTP changed from parent: '$otp'")
+        Log.d(SIGN_UP_TAG, "OTP changed from parent: '$otp'")
         repeat(otpLength) { index ->
             otpState[index] = otp.getOrNull(index)?.toString() ?: ""
         }
@@ -617,7 +397,7 @@ private fun OtpInputField(
 
                         // ✅ Build and send complete OTP to parent
                         val newOtp = otpState.joinToString("")
-                        Log.e(TAG, "OtpInputField: $newOtp")
+                        Log.e(SIGN_UP_TAG, "OtpInputField: $newOtp")
                         onOtpComplete(newOtp)
 
                         // ✅ Move to next field if digit entered
@@ -659,7 +439,7 @@ private fun OtpInputField(
 // =====================================================
 
 @Composable
-fun InputLabel(text: String) {
+fun InputLabel(text: String,textColor: Color = Color.Black) {
     Text(
         text = text,
         fontSize = 16.sp,
@@ -669,7 +449,7 @@ fun InputLabel(text: String) {
                 FontWeight.SemiBold
             )
         ),
-        color = Color.Black,
+        color = textColor,
         modifier = Modifier.fillMaxWidth(),
         textAlign = TextAlign.Start
     )

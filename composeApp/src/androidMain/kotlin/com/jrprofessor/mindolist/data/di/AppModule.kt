@@ -3,6 +3,7 @@ package com.jrprofessor.mindolist.data.di
 import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepository
 import com.jrprofessor.mindolist.domain.usecase.CreateUserAccountUseCase
 import com.jrprofessor.mindolist.domain.usecase.GetResendCooldownUseCase
+import com.jrprofessor.mindolist.domain.usecase.LoginWithEmailUseCase
 import com.jrprofessor.mindolist.domain.usecase.SendOtpUseCase
 import com.jrprofessor.mindolist.domain.usecase.VerifyOtpUseCase
 import dagger.Module
@@ -36,6 +37,11 @@ object AppModule {
     @Singleton
     fun provideGetResendCooldownUseCase(repository: FirebaseAuthRepository): GetResendCooldownUseCase {
         return GetResendCooldownUseCase(repository)
+    }
+    @Provides
+    @Singleton
+    fun provideLoginWithEmailUseCase(repository: FirebaseAuthRepository): LoginWithEmailUseCase {
+        return LoginWithEmailUseCase(repository)
     }
 
 
