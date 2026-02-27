@@ -46,8 +46,6 @@ class SignUpViewModel @Inject constructor(
             is SignUpIntent.OtpChanged -> onOtpChanged(intent.otp)
             is SignUpIntent.PasswordChanged -> onPasswordChanged(intent.password)
             is SignUpIntent.NameChanged -> onNameChanged(intent.name)
-
-
             SignUpIntent.ContinueWithEmailClicked -> continueWithEmail()
             SignUpIntent.CreateAccountClicked -> onCreateAccount()
             SignUpIntent.BackPressed -> onBackPressed()

@@ -55,6 +55,7 @@ fun ActionButton(
     isLoading: Boolean = false,
     loadingText: String = "Loading...",
     elevation: Dp = 5.dp,
+    padding: PaddingValues = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
     onClick: () -> Unit
 ) {
     var isPressed by remember { mutableStateOf(false) }
@@ -110,7 +111,7 @@ fun ActionButton(
             containerColor = containerColor,
             disabledContainerColor = containerColor  // ← Same color for disabled
         ),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp)
+        contentPadding = padding
     ) {
         Row(
             horizontalArrangement = Arrangement.Center,

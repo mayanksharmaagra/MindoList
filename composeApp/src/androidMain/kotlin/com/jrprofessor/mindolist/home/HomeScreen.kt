@@ -43,7 +43,7 @@ fun HomeScreenView(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen( onTaskAdd:()->Unit = {}) {
     val navController = rememberNavController()
     val currentBackStack = navController.currentBackStackEntryAsState()
     val currentDestination = currentBackStack.value?.destination?.route
@@ -56,13 +56,14 @@ fun HomeScreen() {
             .background(backgroundColor)
     ) {
         BottomNavGraph(navController = navController)
-        BottomNavigationBarGlassUI(navController, modifier = Modifier.align(Alignment.BottomCenter))
+        BottomNavigationBarGlassUI(navController, onTaskAdd, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 
 @Composable
 fun BottomNavigationBarGlassUI(
     navController: NavHostController,
+    onTaskAdd:()->Unit,
     modifier: Modifier = Modifier
 ) {
     val listScreen = listOf(
@@ -166,7 +167,9 @@ fun BottomNavigationBarGlassUI(
 
             // FAB
             FloatingActionButton(
-                onClick = { /* navigate to add task */ },
+                onClick = {
+                    onTaskAdd()
+                },
                 containerColor = Color(0xFF3B82F6),
                 contentColor = Color.White,
                 shape = CircleShape,

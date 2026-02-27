@@ -8,9 +8,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import com.jrprofessor.mindolist.home.AddTaskScreen
 import com.jrprofessor.mindolist.home.HomeScreen
-import com.jrprofessor.mindolist.welcomeScreen.LoginViewModel
 import com.jrprofessor.mindolist.welcomeScreen.LoginScreen
+import com.jrprofessor.mindolist.welcomeScreen.LoginViewModel
 import com.jrprofessor.mindolist.welcomeScreen.SignUpScreen
 import com.jrprofessor.mindolist.welcomeScreen.WelcomeScreen
 
@@ -30,6 +31,7 @@ sealed class Screen(val route: String) {
     // Main Screens
 
     object Home : Screen("home")
+    object AddTask : Screen("AddTask")
     object Dashboard : Screen("dashboard")
     object Tasks : Screen("tasks")
     object Analytics : Screen("analytics")
@@ -97,7 +99,12 @@ fun AppNavigation() {
             }
         }
         composable(Screen.MainGraph.route) {
-            HomeScreen()
+            HomeScreen(onTaskAdd = {
+                navController.navigate(Screen.AddTask.route)
+            })
+        }
+        composable(Screen.AddTask.route) {
+            AddTaskScreen()
         }
     }
 }
