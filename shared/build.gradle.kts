@@ -1,8 +1,12 @@
+import org.gradle.kotlin.dsl.implementation
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
+//    id("dagger.hilt.android.plugin")
 }
 
 kotlin {
@@ -25,13 +29,42 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // put your Multiplatform dependencies here
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.coroutines.android)
+            implementation(libs.firebase.auth)
+            implementation(libs.firebase.common)
+            implementation(libs.firebase.database)
+            implementation(libs.firebase.crashlytics)
+            implementation(libs.firebase.storage)
+            implementation(libs.coil.compose)
+        }
+        androidMain.dependencies {
+            implementation(libs.hilt.android)
+            /*configurations.getByName("kapt").dependencies.add(
+                org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency(
+                    "com.google.dagger",
+                    "hilt-compiler",
+                    "2.51"
+                )
+            )*/
+            implementation(libs.androidx.hilt.navigation.compose)
+            implementation(libs.lottie.compose)
+            implementation(libs.accompanist.systemuicontroller)
+            implementation(libs.android.mail)
+            implementation(libs.android.activation)
+            implementation(libs.androidx.core.splashscreen)
+            implementation(libs.coil.compose)
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
     }
 }
-
+// Add KSP configuration for Android target
+dependencies {
+    add("kspAndroid", libs.hilt.compiler)
+}
 android {
     namespace = "com.jrprofessor.mindolist.shared"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -42,4 +75,22 @@ android {
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
     }
+
+    packaging {
+        resources {
+            excludes += setOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "META-INF/NOTICE.md",
+                "META-INF/LICENSE.md",
+                "META-INF/NOTICE",
+                "META-INF/LICENSE",
+                "META-INF/NOTICE.txt",
+                "META-INF/LICENSE.txt",
+                "META-INF/DEPENDENCIES",
+                "META-INF/ASL2.0",
+                "META-INF/*.kotlin_module"
+            )
+        }
+    }
 }
+

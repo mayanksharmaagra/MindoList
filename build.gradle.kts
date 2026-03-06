@@ -1,3 +1,4 @@
+
 plugins {
     // this is necessary to avoid the plugins to be loaded multiple times
     // in each subproject's classloader
@@ -6,4 +7,11 @@ plugins {
     alias(libs.plugins.composeMultiplatform) apply false
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
+    alias(libs.plugins.google.gms.google.services) apply false
+    alias(libs.plugins.hilt) apply false
+    alias(libs.plugins.ksp) apply false
+
+    alias(libs.plugins.kotlinAndroid).apply(false)
+
+    id("com.google.firebase.crashlytics") version "3.0.6" apply false
 }
