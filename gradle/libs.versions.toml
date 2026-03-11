@@ -5,18 +5,21 @@ agp = "8.9.1"
 android-compileSdk = "36"
 android-minSdk = "24"
 android-targetSdk = "36"
-androidMail = "1.6.8"
+android-mail = "1.6.8"
 androidx-activity = "1.12.2"
 androidx-appcompat = "1.7.1"
 androidx-core = "1.17.0"
 androidx-espresso = "3.7.0"
 androidx-lifecycle = "2.9.6"
 androidx-testExt = "1.3.0"
-coilCompose = "2.7.0"
+coilCompose = "3.0.4"
 coilComposeVersion = "2.5.0"
+componentsResources = "1.10.2"
 composeMultiplatform = "1.10.0"
 coreSplashscreen = "1.2.0"
 firebase = "2.4.0"
+foundation = "1.10.2"
+jetbrainsAnimation = "1.10.2"
 junit = "4.13.2"
 kotlin = "2.1.0"
 ksp = "2.1.0-1.0.29"
@@ -41,13 +44,25 @@ animation = "1.10.2"
 
 kotlinxCoroutinesCore = "1.10.2"
 kotlinxCoroutinesAndroid = "1.10.2"
+animationVersion = "1.10.4"
+compose-material-icons = "1.7.3"
+material3 = "1.9.0"
+runtime = "1.10.2"
+ui = "1.10.2"
+kotlinx-datetime = "0.7.1"
+kotlin-logging = "8.0.01"
+navigation = "2.9.2"
+koin = "4.1.1"
 
 [libraries]
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
-android-activation = { module = "com.sun.mail:android-activation", version.ref = "androidMail" }
-android-mail = { module = "com.sun.mail:android-mail", version.ref = "androidMail" }
+android-activation = { module = "com.sun.mail:android-activation", version.ref = "android-mail" }
+android-mail = { module = "com.sun.mail:android-mail", version.ref = "android-mail" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
-coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
+animation = { module = "org.jetbrains.compose.animation:animation", version.ref = "jetbrainsAnimation" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
+coil-network = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coilCompose" }
+
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { module = "junit:junit", version.ref = "junit" }
@@ -59,35 +74,53 @@ kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", v
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
+
 firebase-auth = { module = "dev.gitlive:firebase-auth", version.ref = "firebase" }
 firebase-common = { module = "dev.gitlive:firebase-common", version.ref = "firebase" }
 firebase-database = { module = "dev.gitlive:firebase-database", version.ref = "firebase" }
 firebase-crashlytics = { module = "dev.gitlive:firebase-crashlytics", version.ref = "firebase" }
 firebase-storage = { module = "dev.gitlive:firebase-storage", version.ref = "firebase" }
 
-firebase-android-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
-firebase-android-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx", version.ref = "firebaseAuthKtx" }
-firebase-android-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
-firebase-android-crashlytics = { module = "com.google.firebase:firebase-crashlytics-ktx", version.ref = "firebaseCrashlytics" }
-firebase-android-storage = { module = "com.google.firebase:firebase-storage-ktx", version.ref = "firebaseStorage" }
-
-
-androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
-hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
-hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
+#androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+#hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
+#hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
 google-services = { module = "com.google.gms:google-services", version.ref = "googleServices" }
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottieCompose" }
 
-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compose" }
-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "compose" }
-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "compose-material3" }
+#firebase-android-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
+#firebase-android-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx", version.ref = "firebaseAuthKtx" }
+#firebase-android-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+#firebase-android-crashlytics = { module = "com.google.firebase:firebase-crashlytics-ktx", version.ref = "firebaseCrashlytics" }
+#firebase-android-storage = { module = "com.google.firebase:firebase-storage-ktx", version.ref = "firebaseStorage" }
+
+compose-android-ui = { module = "androidx.compose.ui:ui", version.ref = "compose" }
+compose-android-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
+compose-android-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
+compose-android-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "compose" }
+compose-android-material3 = { module = "androidx.compose.material3:material3", version.ref = "compose-material3" }
+compose-android-runtime = { module = "androidx.compose.runtime:runtime", version.ref = "compose" }
 androidx-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
+
+foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "foundation" }
+material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
+runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "runtime" }
+components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "componentsResources" }
+compose-icons = { module = "org.jetbrains.compose.material:material-icons-core", version = "1.7.3" }
+ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "ui" }
+ui-tooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "ui" }
+ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "ui" }
 
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
 
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
+
+navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigation" }
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
+koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
+koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

@@ -1,0 +1,350 @@
+package com.jrprofessor.mindolist.customView
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+
+// ── Date Picker Full Screen Dialog ────────────────────────────────────────────
+
+@Composable
+fun DatePickerDialog(
+    onDateSelected: (LocalDate) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false,
+        )
+    ) {
+        DatePickerScreen(
+            onDateSelected = {
+                onDateSelected(it)
+                onDismiss()
+            },
+            onBack = onDismiss,
+        )
+    }
+}
+
+// ── Date Picker Screen ────────────────────────────────────────────────────────
+
+@Composable
+fun DatePickerScreen(
+    onDateSelected: (LocalDate) -> Unit,
+    onBack: () -> Unit,
+) {
+    val today = LocalDate.now()
+    var selectedDate by remember { mutableStateOf(today) }
+    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
+
+    val quickPicks = listOf(
+        "Today" to today,
+        "Tomorrow" to today.plusDays(1),
+        "Next Week" to today.plusWeeks(1),
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8F9FE))
+    ) {
+        // ── Top Bar ───────────────────────────────────────────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 20.dp)
+        ) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.align(Alignment.CenterStart)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color(0xFF1E293B),
+                )
+            }
+            Text(
+                text = "Pick a Date",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1E293B),
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+
+        // ── Quick Pick ────────────────────────────────────────────────────────
+        Text(
+            text = "QUICK PICK",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFF94A3B8),
+            letterSpacing = 1.sp,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+        )
+
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            quickPicks.forEach { (label, date) ->
+                val isSelected = selectedDate == date
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50.dp))
+                        .background(
+                            if (isSelected) Color(0xFF7C3AED) else Color.White
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = if (isSelected) Color.Transparent else Color(0xFFE2E8F0),
+                            shape = RoundedCornerShape(50.dp)
+                        )
+                        .clickable {
+                            selectedDate = date
+                            currentMonth = YearMonth.from(date)
+                        }
+                        .padding(horizontal = 18.dp, vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = label,
+                        fontSize = 14.sp,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (isSelected) Color.White else Color(0xFF64748B),
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // ── Calendar Card ─────────────────────────────────────────────────────
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Month navigation
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
+                        Icon(
+                            imageVector = Icons.Default.ChevronLeft,
+                            contentDescription = "Prev",
+                            tint = Color(0xFF64748B),
+                        )
+                    }
+                    Text(
+                        text = currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1E293B),
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                    )
+                    IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = "Next",
+                            tint = Color(0xFF64748B),
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Day headers
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    listOf("S", "M", "T", "W", "T", "F", "S").forEach { day ->
+                        Text(
+                            text = day,
+                            modifier = Modifier.weight(1f),
+                            textAlign = TextAlign.Center,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF94A3B8),
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Calendar days
+                val firstDayOfMonth = currentMonth.atDay(1)
+                val firstDayOffset = firstDayOfMonth.dayOfWeek.value % 7 // Sunday = 0
+                val daysInMonth = currentMonth.lengthOfMonth()
+                val totalCells = firstDayOffset + daysInMonth
+                val rows = (totalCells + 6) / 7
+
+                repeat(rows) { row ->
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        repeat(7) { col ->
+                            val dayIndex = row * 7 + col - firstDayOffset + 1
+                            val date = if (dayIndex in 1..daysInMonth)
+                                currentMonth.atDay(dayIndex) else null
+
+                            val isSelected = date == selectedDate
+                            val isToday = date == today
+                            val isPast = date != null && date.isBefore(today)
+
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .aspectRatio(1f)
+                                    .padding(2.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        when {
+                                            isSelected -> Color(0xFF7C3AED)
+                                            else -> Color.Transparent
+                                        }
+                                    )
+                                    .then(
+                                        if (date != null && !isPast)
+                                            Modifier.clickable {
+                                                selectedDate = date
+                                            } else Modifier
+                                    ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (date != null) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = dayIndex.toString(),
+                                            fontSize = 14.sp,
+                                            fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
+                                            color = when {
+                                                isSelected -> Color.White
+                                                isPast -> Color(0xFFCBD5E1)
+                                                isToday -> Color(0xFF7C3AED)
+                                                else -> Color(0xFF1E293B)
+                                            },
+                                        )
+                                        // Today dot
+                                        if (isToday && !isSelected) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(4.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0xFF7C3AED))
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // ── Selected Date Display ─────────────────────────────────────────────
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFFEDE9FE))
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Default.CalendarMonth,
+                contentDescription = null,
+                tint = Color(0xFF7C3AED),
+                modifier = Modifier.size(22.dp),
+            )
+            Column {
+                Text(
+                    text = "SELECTED DATE",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF94A3B8),
+                    letterSpacing = 1.sp,
+                )
+                Text(
+                    text = selectedDate.format(
+                        DateTimeFormatter.ofPattern("EEEE, MMMM d'${getDaySuffix(selectedDate.dayOfMonth)}'")
+                    ),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1E293B),
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // ── Save Button ───────────────────────────────────────────────────────
+        Button(
+            onClick = { onDateSelected(selectedDate) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 20.dp)
+                .height(56.dp),
+            shape = RoundedCornerShape(50.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED)),
+        ) {
+            Text(
+                text = "Save Selection",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White,
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                imageVector = Icons.Default.CheckCircle,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+}
+
+// ── Day suffix helper ─────────────────────────────────────────────────────────
+
+private fun getDaySuffix(day: Int): String = when {
+    day in 11..13 -> "th"
+    day % 10 == 1 -> "st"
+    day % 10 == 2 -> "nd"
+    day % 10 == 3 -> "rd"
+    else -> "th"
+}

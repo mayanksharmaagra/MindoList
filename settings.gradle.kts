@@ -17,14 +17,17 @@ pluginManagement {
 
 dependencyResolutionManagement {
     repositories {
-        google {
+        google()
+        /* {
             mavenContent {
                 includeGroupAndSubgroups("androidx")
                 includeGroupAndSubgroups("com.android")
                 includeGroupAndSubgroups("com.google")
+                includeGroupAndSubgroups("dev.gitlive")
             }
-        }
+        }*/
         mavenCentral()
+        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     }
 }
 
