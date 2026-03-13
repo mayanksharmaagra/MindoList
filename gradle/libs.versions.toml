@@ -21,7 +21,7 @@ firebase = "2.4.0"
 foundation = "1.10.2"
 jetbrainsAnimation = "1.10.2"
 junit = "4.13.2"
-kotlin = "2.1.0"
+kotlin = "2.3.10"
 ksp = "2.1.0-1.0.29"
 kotlinGradlePlugin = "1.9.10"
 googleServices = "4.4.4"
@@ -53,6 +53,7 @@ kotlinx-datetime = "0.7.1"
 kotlin-logging = "8.0.01"
 navigation = "2.9.2"
 koin = "4.1.1"
+kotlinx-serialization = "1.10.0"
 
 [libraries]
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
@@ -121,6 +122,7 @@ koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
+kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

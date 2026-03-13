@@ -19,7 +19,7 @@ plugins {
 kotlin {
     androidTarget {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 
@@ -55,12 +55,6 @@ kotlin {
             implementation(libs.components.resources)
             implementation(libs.compose.icons)
             implementation(projects.shared)
-
-            implementation(libs.firebase.auth)
-            implementation(libs.firebase.common)
-            implementation(libs.firebase.database)
-            implementation(libs.firebase.crashlytics)
-            implementation(libs.firebase.storage)
 
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.coil.compose)
@@ -113,13 +107,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
 dependencies {
     debugImplementation(compose.uiTooling)
 }
-
-

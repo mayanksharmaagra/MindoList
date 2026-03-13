@@ -1,37 +1,47 @@
 package com.jrprofessor.mindolist.navGraph
 
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.jrprofessor.mindolist.icons.AnalyticsSelectedIcon
+import com.jrprofessor.mindolist.icons.AnalyticsUnSelectedIcon
+import com.jrprofessor.mindolist.icons.DashboardSelected
+import com.jrprofessor.mindolist.icons.DashboardUnselected
+import com.jrprofessor.mindolist.icons.SettingsSelected
+import com.jrprofessor.mindolist.icons.SettingsUnselected
+import com.jrprofessor.mindolist.icons.TasksSelected
+import com.jrprofessor.mindolist.icons.TasksUnselected
+
 
 sealed class BottomNavItem(
     val route: String,
     val label: String,
-    val selectedIcon: Int,
-    val unSelectedIcon: Int
+    val selectedIcon: ImageVector,
+    val unSelectedIcon: ImageVector
 ) {
     object Dashboard : BottomNavItem(
         route = Screen.Dashboard.route,
         label = "Dashboard",
-        selectedIcon = Res.drawable.dashboard_selected,
-        unSelectedIcon = Res.drawable.dashboard_unselected
+        selectedIcon = DashboardSelected,
+        unSelectedIcon = DashboardUnselected
     )
 
     object Tasks : BottomNavItem(
         route = Screen.Tasks.route,
         label = "Tasks",
-        selectedIcon = Res.drawable.tasks_selected,
-        unSelectedIcon = Res.drawable.tasks_unselected
+        selectedIcon = TasksSelected,
+        unSelectedIcon = TasksUnselected
     )
 
     object Analytics : BottomNavItem(
         route = Screen.Analytics.route,
         label = "Analytics",
-        selectedIcon = Res.drawable.analytics_selected,
-        unSelectedIcon = Res.drawable.analytics_unselected
+        selectedIcon = AnalyticsSelectedIcon,
+        unSelectedIcon = AnalyticsUnSelectedIcon
     )
 
     object Settings : BottomNavItem(
         route = Screen.Settings.route,
         label = "Settings",
-        selectedIcon = Res.drawable.settings_selected,
-        unSelectedIcon = Res.drawable.settings_unselected
+        selectedIcon = SettingsSelected,
+        unSelectedIcon = SettingsUnselected
     )
 }

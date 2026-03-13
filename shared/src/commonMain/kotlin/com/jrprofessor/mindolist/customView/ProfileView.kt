@@ -33,6 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.painterResource
 import coil3.compose.AsyncImage
+import com.jrprofessor.mindolist.icons.IcCamera
+import com.jrprofessor.mindolist.icons.IcUser
+import mindolist.shared.generated.resources.Res
 
 
 /*@Composable
@@ -74,7 +77,7 @@ fun ProfilePictureWithEdit(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_user),
+                            painter = painterResource(id = Res.drawable.ic_user),
                             contentDescription = "Default Avatar",
                             tint = Color(0xFF8B4513),
                             modifier = Modifier.size(60.dp)
@@ -95,7 +98,7 @@ fun ProfilePictureWithEdit(
                 shape = CircleShape
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_camera),
+                    painter = painterResource(id = Res.drawable.ic_camera),
                     contentDescription = "Edit Picture",
                     modifier = Modifier.size(18.dp)
                 )
@@ -173,7 +176,7 @@ fun ProfilePictureWithEdit(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = painterResource(Res.drawable.ic_user), // ← Res use karo
+                            imageVector = IcUser,
                             contentDescription = "Default Avatar",
                             tint = Color(0xFF8B4513),
                             modifier = Modifier.size(60.dp)
@@ -193,7 +196,7 @@ fun ProfilePictureWithEdit(
                 shape = CircleShape
             ) {
                 Icon(
-                    painter = painterResource(Res.drawable.ic_camera), // ← Res use karo
+                    imageVector = IcCamera,
                     contentDescription = "Edit Picture",
                     modifier = Modifier.size(18.dp)
                 )

@@ -11,13 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jrprofessor.mindolist.icons.IvBack
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.vectorResource
 
 // =====================================================
 // HEADER COMPONENTS
@@ -33,7 +32,7 @@ fun SignUpHeader(toolbarTitle: String, onBackClick: () -> Unit) {
             modifier = Modifier.size(40.dp)
         ) {
             Icon(
-                painter = painterResource(R.drawable.iv_back),
+                imageVector = IvBack,
                 contentDescription = "Back",
                 modifier = Modifier.size(24.dp),
                 tint = Color.Black
@@ -42,12 +41,12 @@ fun SignUpHeader(toolbarTitle: String, onBackClick: () -> Unit) {
         Text(
             text = toolbarTitle,
             fontSize = 20.sp,
-            fontFamily = FontFamily(
+            /*fontFamily = FontFamily(
                 Font(
                     Res.font.roboto_condensed_regular,
                     FontWeight.SemiBold
                 )
-            ),
+            ),*/
             color = Color.Black,
             textAlign = TextAlign.Center,
             modifier = Modifier.weight(1f)
@@ -62,9 +61,9 @@ fun WelcomeText(title: String) {
     Text(
         text = title,
         fontSize = 16.sp,
-        fontFamily = FontFamily(
+        /*fontFamily = FontFamily(
             Font(Res.font.roboto_condensed_regular, FontWeight.Normal)
-        ),
+        ),*/
         color = Color(0xFF64748B),
         textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth()

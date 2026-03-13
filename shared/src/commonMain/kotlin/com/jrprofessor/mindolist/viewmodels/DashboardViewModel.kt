@@ -2,12 +2,20 @@ package com.jrprofessor.mindolist.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepository
+import com.jrprofessor.mindolist.domain.repository.TaskRepository
+import com.jrprofessor.mindolist.domain.usecase.GetTasksUseCase
+import com.jrprofessor.mindolist.model.TaskModel
+import com.jrprofessor.mindolist.presentation.DashboardAction
+import com.jrprofessor.mindolist.presentation.DashboardEvent
 import com.jrprofessor.mindolist.presentation.DashboardState
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
@@ -16,13 +24,61 @@ import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class DashboardViewModel(
-    val firebaseAuthRepository: FirebaseAuthRepository
+    val getTaskUseCase: GetTasksUseCase,
+    val firebaseAuthRepository: FirebaseAuthRepository,
+    val taskRepository: TaskRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(DashboardState())
     val state: StateFlow<DashboardState> = _state.asStateFlow()
+
+    private val _event = Channel<DashboardEvent>(Channel.BUFFERED)
+    val event = _event.receiveAsFlow()
+    private val _allTasks = MutableStateFlow<List<TaskModel>>(emptyList())
     init {
-        loadUserData()
-        updateDateTime()
+        dispatch(DashboardAction.LoadUserData)
+        dispatch(DashboardAction.UpdateDateTime)
+        dispatch(DashboardAction.LoadTasks)
+    }
+    fun dispatch(action: DashboardAction) {
+        when (action) {
+            is DashboardAction.LoadTasks -> loadTasks()
+            is DashboardAction.LoadUserData -> loadUserData()
+            is DashboardAction.UpdateDateTime -> updateDateTime()
+            is DashboardAction.FilterByCategory -> {
+
+            }
+            is DashboardAction.MarkComplete -> {
+
+            }
+            is DashboardAction.DeleteTask -> {
+
+            }
+        }
+    }
+
+    private fun loadTasks() {
+        viewModelScope.launch {
+            getTaskUseCase().collect {result ->
+                when(result){
+                    is Result.Error -> {
+                        _state.update { it.copy(isLoading = false) }
+                        _event.send(DashboardEvent.Error(result.message?:"Something went wrong"))
+                    }
+                    Result.Loading -> Unit
+                    is Result.Success<*> -> {
+                        _allTasks.value = result.data as List<TaskModel>
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                tasks = _allTasks.value,
+                                error = null,
+                            )
+                        }
+                    }
+                }
+
+            }
+        }
     }
 
     private fun loadUserData() {

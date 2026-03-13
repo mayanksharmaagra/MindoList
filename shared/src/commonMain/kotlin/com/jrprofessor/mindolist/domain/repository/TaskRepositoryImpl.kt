@@ -1,0 +1,110 @@
+package com.jrprofessor.mindolist.domain.repository
+
+import com.jrprofessor.mindolist.domain.model.Result
+import com.jrprofessor.mindolist.model.TaskModel
+import dev.gitlive.firebase.auth.FirebaseAuth
+import dev.gitlive.firebase.database.DatabaseReference
+import dev.gitlive.firebase.database.FirebaseDatabase
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.launch
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+
+
+private val logger = KotlinLogging.logger {
+
+}
+
+@OptIn(ExperimentalTime::class)
+private fun currentTimeMillis(): Long = Clock.System.now().toEpochMilliseconds()
+
+open class TaskRepositoryImpl(
+    private val firebaseAuth: FirebaseAuth,
+    private val firebaseDatabase: FirebaseDatabase,
+) : TaskRepository {
+
+    private val userRef: DatabaseReference = firebaseDatabase.reference("users")
+    private val uid get() = firebaseAuth.currentUser?.uid ?: error("User not logged in")
+
+    // tasks/{uid}/{taskId}
+    private fun tasksRef() = firebaseDatabase.reference("tasks").child(uid)
+
+    override fun getTasks(): Flow<Result<List<TaskModel>>> = callbackFlow {
+        trySend(Result.Loading)
+
+        val listener = tasksRef().valueEvents
+
+        val job = launch {
+            listener.collect { snapshot ->
+                val tasks = snapshot.children.mapNotNull { child ->
+                    runCatching { child.value<TaskModel>() }.getOrNull()
+                }.sortedByDescending { it.createdAt }
+
+                trySend(Result.Success(tasks))
+            }
+        }
+
+        awaitClose { job.cancel() }
+    }.catch { e ->
+        emit(Result.Error(e as Exception, e.message ?: "Failed to fetch tasks"))
+    }
+
+    override suspend fun addTask(task: TaskModel): Result<Unit> {
+        return try {
+            val ref = tasksRef().push()
+            val taskId = ref.key ?: return Result.Error(
+                Exception("Failed to generate task ID"),
+                "Failed to generate task ID",
+            )
+            val now = currentTimeMillis()
+            val taskWithId = task.copy(
+                id = taskId,
+                userId = uid,
+                createdAt = now,
+                updatedAt = now,
+            )
+            ref.setValue(taskWithId.toMap())
+            logger.debug { "Task saved successfully: ${taskWithId.id}" }
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            logger.error(e) { "Error saving task to database" }
+            Result.Error(e, "Failed to save task")
+        }
+    }
+
+    private fun TaskModel.toMap(): Map<String, Any?> = mapOf(
+        "id" to id,
+        "userId" to userId,
+        "title" to title,
+        "description" to description,
+        "dueDate" to dueDate,
+        "priority" to priority,
+        "category" to category,
+        "reminderEnabled" to reminderEnabled,
+        "reminderValue" to reminderValue,
+        "isCompleted" to isCompleted,
+        "createdAt" to createdAt,
+        "updatedAt" to updatedAt,
+    )
+
+    override suspend fun updateTask(task: TaskModel): Result<Unit> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun markComplete(
+        taskId: String,
+        isCompleted: Boolean
+    ): Result<Unit> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun deleteTask(taskId: String): Result<Unit> {
+        TODO("Not yet implemented")
+    }
+
+
+}

@@ -19,10 +19,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -30,18 +28,13 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.jrprofessor.mindolist.R
+import com.jrprofessor.mindolist.icons.IcAdd
 import com.jrprofessor.mindolist.navGraph.BottomNavGraph
 import com.jrprofessor.mindolist.navGraph.BottomNavItem
-import com.jrprofessor.mindolist.screen.NavItem
 import com.jrprofessor.mindolist.theme.backgroundColor
-import com.jrprofessor.mindolist.utils.StatusBarInDarkMode
-
-@Preview
-@Composable
-fun HomeScreenView(modifier: Modifier = Modifier) {
-    HomeScreen()
-}
+import com.jrprofessor.mindolist.utils.StatusBarDarkMode
+import mindolist.shared.generated.resources.Res
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun HomeScreen( onTaskAdd:()->Unit = {}) {
@@ -49,7 +42,7 @@ fun HomeScreen( onTaskAdd:()->Unit = {}) {
     val currentBackStack = navController.currentBackStackEntryAsState()
     val currentDestination = currentBackStack.value?.destination?.route
 
-    StatusBarInDarkMode()
+    StatusBarDarkMode()
 
     Box(
         modifier = Modifier
@@ -188,7 +181,7 @@ fun BottomNavigationBarGlassUI(
                     )
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_add),
+                    imageVector = IcAdd,
                     contentDescription = "Add Task",
                     modifier = Modifier.size(24.dp)
                 )
@@ -255,10 +248,10 @@ private fun RowScope.NavItem(
             }
 
             Icon(
-                painter = if (isSelected) {
-                    painterResource(screen.selectedIcon)
+                imageVector = if (isSelected) {
+                    screen.selectedIcon
                 } else {
-                    painterResource(screen.unSelectedIcon)
+                    screen.unSelectedIcon
                 },
                 contentDescription = screen.label,
                 tint = if (isSelected) {
@@ -406,10 +399,10 @@ fun BottomNavigationBarSolidBG(navController: NavHostController, modifier: Modif
                     verticalArrangement = Arrangement.Center  // ✅ Perfect vertical center
                 ) {
                     Icon(
-                        painter = if (isSelected) {
-                            painterResource(screen.selectedIcon)
+                        imageVector = if (isSelected) {
+                            screen.selectedIcon
                         } else {
-                            painterResource(screen.unSelectedIcon)
+                            screen.unSelectedIcon
                         },
                         contentDescription = screen.label,
                         tint = if (isSelected) Color(0xFF3B82F6) else Color(0xFF94A3B8),
@@ -440,7 +433,7 @@ fun BottomNavigationBarSolidBG(navController: NavHostController, modifier: Modif
                 .offset(y = (-30).dp)
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_add),
+                imageVector = IcAdd,
                 contentDescription = "Add Task",
                 modifier = Modifier.size(32.dp)
             )

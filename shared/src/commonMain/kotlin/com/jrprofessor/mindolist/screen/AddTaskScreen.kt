@@ -35,9 +35,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -47,6 +49,8 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,24 +60,35 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jrprofessor.mindolist.customView.ActionButton
 import com.jrprofessor.mindolist.customView.DatePickerDialog
 import com.jrprofessor.mindolist.customView.TimePickerDialog
-import com.jrprofessor.mindolist.domain.repository.logger
+import com.jrprofessor.mindolist.icons.IcBell
+import com.jrprofessor.mindolist.icons.IcCalendar
+import com.jrprofessor.mindolist.icons.IcCategory
+import com.jrprofessor.mindolist.icons.IcClock
+import com.jrprofessor.mindolist.icons.IcClose
+import com.jrprofessor.mindolist.icons.IcContainer
+import com.jrprofessor.mindolist.icons.IcDay
+import com.jrprofessor.mindolist.icons.IcInfo
+import com.jrprofessor.mindolist.model.Category
+import com.jrprofessor.mindolist.model.Priority
+import com.jrprofessor.mindolist.presentation.AddTaskAction
+import com.jrprofessor.mindolist.presentation.AddTaskEvent
+import com.jrprofessor.mindolist.presentation.AddTaskUiState
 import com.jrprofessor.mindolist.theme.backgroundColor
 import com.jrprofessor.mindolist.theme.btnColor
+import com.jrprofessor.mindolist.utils.showToast
+import com.jrprofessor.mindolist.viewmodels.AddTaskViewModel
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.util.logging.Logger
-import org.jetbrains.compose.resources.painterResource
+import kotlinx.coroutines.flow.collectLatest
+import org.koin.compose.viewmodel.koinViewModel
 
-val TAG = "AddTaskScreen"
 private val logger = KotlinLogging.logger {
 
 }
@@ -91,8 +106,6 @@ private val UnselectedTextColor = Color(0xFF64748B)
 private val CategoryUnselectedTextColor = Color(0xFF475569)
 private val RemindViewBG = Color(0xFFF8FAFC)
 
-enum class Importance { Low, Medium, High }
-
 enum class ReminderOption(val label: String) {
     FIVE_MINUTES("5 minutes before"),
     TEN_MINUTES("10 minutes before"),
@@ -103,58 +116,74 @@ enum class ReminderOption(val label: String) {
     ONE_DAY("1 day before"),
 }
 
+private val PrimaryBlue = Color(0xFF3B82F6)
 
 @Composable
-fun AddTaskScreen() {
-    var isEnabled by remember { mutableStateOf(true) }
-    var selectedReminder by remember { mutableStateOf(ReminderOption.FIFTEEN_MINUTES) }
+fun AddTaskScreen(
+    viewModel: AddTaskViewModel = koinViewModel(),
+    onNavigateBack: () -> Unit = {}
+) {
+
+
+    val state by viewModel.state.collectAsState()
+    // Loading → State se handle karo
+    LaunchedEffect(Unit) {
+        viewModel.addTaskEffect.collectLatest { effect ->
+            when (effect) {
+                is AddTaskEvent.Error -> {
+                    showToast(effect.error)
+                }
+
+                is AddTaskEvent.Success -> {
+                    showToast(effect.message)
+                    onNavigateBack()
+                }
+            }
+        }
+    }
     var showTimePicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
-    var selectedTime by remember { mutableStateOf("11:30 PM") }
-    var selectedDate by remember { mutableStateOf("11:30 PM") }
-    Column(
+
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState()) // ← add this
             .background(backgroundColor)
-            .padding(16.dp)
     ) {
-        Spacer(modifier = Modifier.height(15.dp))
-        CustomToolBar()
-        Spacer(modifier = Modifier.height(15.dp))
-        IdentityView()
-        Spacer(modifier = Modifier.height(15.dp))
-        ScheduleView(onDateSelection = {
-
-        }, onTimeSelection = {
-            showTimePicker = true
-        })
-        Spacer(modifier = Modifier.height(15.dp))
-        ImportanceView()
-        Spacer(modifier = Modifier.height(15.dp))
-        CategoryView({
-
-        })
-        Spacer(modifier = Modifier.height(15.dp))
-        AlertsSection(
-            isEnabled = isEnabled,
-            selectedReminder = selectedReminder,
-            onToggle = { isEnabled = it },
-            onReminderSelected = { selectedReminder = it })
+        if (state.isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+                color = PrimaryBlue
+            )
+        } else {
+            AddTaskContent(
+                state = state,
+                viewModel,
+                onDateSelection = {
+                    showDatePicker = it
+                }, onTimeSelection = {
+                    showTimePicker = it
+                }
+            )
+        }
     }
+
     if (showTimePicker) {
         TimePickerDialog(
-            initialHour = 11,
-            initialMinute = 30,
+            initialHour = state.selectedTime.split(":")[0].toInt(),
+            initialMinute = state.selectedTime.split(":")[1].toInt(),
             onTimeSelected = { hour, minute ->
-                val period = if (hour >= 12) "PM" else "AM"
-                val displayHour = if (hour > 12) hour - 12 else if (hour == 0) 12 else hour
-                selectedTime = "${displayHour.toString().padStart(2, '0')}:${
+                val displayHour = if (hour == 0) 12 else hour
+                viewModel.dispatch(
+                    AddTaskAction.TimeSelected(
+                        "${displayHour.toString().padStart(2, '0')}:${
                     minute.toString().padStart(2, '0')
-                } $period"
+                        }"
+                    )
+                )
                 showTimePicker = false
                 logger.debug {
-                    "AddTaskScreen: $selectedTime"
+                    "AddTaskScreen: ${state.selectedTime}"
                 }
             },
             onDismiss = { showTimePicker = false }
@@ -163,12 +192,57 @@ fun AddTaskScreen() {
     if (showDatePicker) {
         DatePickerDialog(
             onDateSelected = { date ->
-                selectedDate=date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                logger.debug { "AddTaskScreen: $selectedDate" }
+                viewModel.dispatch(
+                    AddTaskAction.DateSelected(date.monthYearDayFormatted())
+                )
+                logger.debug { "AddTaskScreen: ${state.selectedDate}" }
                 showDatePicker = false
             },
-            onDismiss = { showDatePicker = false }
+            onDismiss = {
+                showDatePicker = false
+            }
         )
+    }
+}
+
+@Composable
+fun AddTaskContent(
+    state: AddTaskUiState,
+    viewModel: AddTaskViewModel,
+    onDateSelection: (Boolean) -> Unit,
+    onTimeSelection: (Boolean) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()) // ← add this
+            .background(backgroundColor)
+            .padding(16.dp)
+    ) {
+        Spacer(modifier = Modifier.height(15.dp))
+        CustomToolBar(viewModel)
+        Spacer(modifier = Modifier.height(15.dp))
+        IdentityView(state, viewModel)
+        Spacer(modifier = Modifier.height(15.dp))
+        ScheduleView(
+            state,
+            viewModel = viewModel,
+            onDateSelection = onDateSelection,
+            onTimeSelection = onTimeSelection
+        )
+        Spacer(modifier = Modifier.height(15.dp))
+        ImportanceView(viewModel, state)
+        Spacer(modifier = Modifier.height(15.dp))
+        CategoryView(state = state) { category ->
+            viewModel.dispatch(AddTaskAction.CategoryChanged(category))
+        }
+        Spacer(modifier = Modifier.height(15.dp))
+        AlertsSection(
+            viewModel = viewModel,
+            isEnabled = state.reminderEnabled,
+            selectedReminder = state.reminderOption,
+            onToggle = { viewModel.dispatch(AddTaskAction.ReminderToggled(it)) },
+            onReminderSelected = { viewModel.dispatch(AddTaskAction.ReminderValue(it)) })
     }
 }
 
@@ -179,6 +253,7 @@ fun AlertsSection(
     onToggle: (Boolean) -> Unit,
     onReminderSelected: (ReminderOption) -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: AddTaskViewModel,
 ) {
     var showDropdown by remember { mutableStateOf(false) }
 
@@ -201,7 +276,7 @@ fun AlertsSection(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    painter = painterResource(id = Res.drawable.ic_bell), // replace with your bell icon
+                    imageVector = IcBell, // replace with your bell icon
                     contentDescription = "Alert",
                     tint = Color(0xFF7C3AED),
                     modifier = Modifier.size(20.dp),
@@ -293,7 +368,7 @@ fun AlertsSection(
                             }, trailingIcon = {
                                 if (option == selectedReminder) {
                                     Icon(
-                                        painter = painterResource(id = android.R.drawable.checkbox_on_background),
+                                        imageVector = Icons.Default.CheckBoxOutlineBlank,
                                         contentDescription = null,
                                         tint = Color(0xFF7C3AED),
                                         modifier = Modifier.size(16.dp),
@@ -309,10 +384,8 @@ fun AlertsSection(
 }
 
 @Composable
-fun CategoryView(onCategorySelected: (Category) -> Unit) {
+fun CategoryView(state: AddTaskUiState, onCategorySelected: (Category) -> Unit) {
     // ← State ko Card ke bahar, Column ke bahar rakho
-    var selectedCategory by remember { mutableStateOf<Category?>(null) }
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -327,7 +400,7 @@ fun CategoryView(onCategorySelected: (Category) -> Unit) {
                 .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 24.dp)
         ) {
             HeaderWithIcon(
-                icon = painterResource(R.drawable.ic_category),
+                icon = IcCategory,
                 title = "Classification"
             )
             Spacer(modifier = Modifier.height(20.dp))
@@ -342,9 +415,8 @@ fun CategoryView(onCategorySelected: (Category) -> Unit) {
                 ) { category ->
                     CategoryItem(
                         category = category,
-                        isSelected = selectedCategory == category,
+                        isSelected = state.category == category,
                         onClick = {
-                            selectedCategory = category
                             onCategorySelected(category)
                         }
                     )
@@ -379,7 +451,7 @@ fun CategoryItem(category: Category, isSelected: Boolean, onClick: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Icon(
-                painter = painterResource(category.iconRes),
+                imageVector = category.iconRes,
                 contentDescription = "Icon",
                 modifier = Modifier.size(20.dp),
                 tint = if (isSelected) Color.White else CategoryUnselectedTextColor
@@ -394,7 +466,7 @@ fun CategoryItem(category: Category, isSelected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun ImportanceView() {
+fun ImportanceView(viewModel: AddTaskViewModel, state: AddTaskUiState) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -403,22 +475,21 @@ fun ImportanceView() {
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        var selected by remember { mutableStateOf(Importance.Medium) }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 24.dp)
         ) {
             // Header: icon + label
-            HeaderWithIcon(icon = painterResource(R.drawable.ic_info), title = "Importance")
+            HeaderWithIcon(icon = IcInfo, title = "Importance")
 
             Spacer(modifier = Modifier.height(20.dp))
 
             // Segmented control with sliding pill
             SegmentedControl(
-                options = Importance.entries,
-                selected = selected,
-                onSelect = { selected = it },
+                options = Priority.entries,
+                selected = state.priority,
+                onSelect = { viewModel.dispatch(AddTaskAction.PriorityChanged(it)) },
                 label = { it.name })
         }
     }
@@ -491,7 +562,12 @@ fun <T> SegmentedControl(
 
 
 @Composable
-fun ScheduleView(onDateSelection: () -> Unit, onTimeSelection: () -> Unit) {
+fun ScheduleView(
+    state: AddTaskUiState,
+    viewModel: AddTaskViewModel,
+    onDateSelection: (Boolean) -> Unit,
+    onTimeSelection: (Boolean) -> Unit,
+) {
 
     Card(
         modifier = Modifier
@@ -507,22 +583,32 @@ fun ScheduleView(onDateSelection: () -> Unit, onTimeSelection: () -> Unit) {
                 .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 24.dp)
         ) {
             // Header: icon + label
-            HeaderWithIcon(icon = painterResource(R.drawable.ic_calendar), title = "Schedule")
+            HeaderWithIcon(icon = IcCalendar, title = "Schedule")
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            CommonDayTime(painterResource(R.drawable.ic_day), title = "Today", onDateSelection)
+            CommonDayTime(viewModel, IcDay, title = state.selectedDate, onDateSelection)
             Spacer(modifier = Modifier.height(15.dp))
 
-            CommonDayTime(painterResource(R.drawable.ic_clock), title = "10:00 AM", onTimeSelection)
+            CommonDayTime(
+                viewModel,
+                IcClock,
+                title = state.selectedTime,
+                onTimeSelection
+            )
         }
     }
 }
 
 @Composable
-fun CommonDayTime(icon: Painter, title: String, onClick: () -> Unit) {
+fun CommonDayTime(
+    viewModel: AddTaskViewModel,
+    icon: ImageVector,
+    title: String,
+    onClick: (Boolean) -> Unit
+) {
     Surface(
-        onClick = onClick,
+        onClick = { onClick(true) },
         shape = RoundedCornerShape(50.dp),
         color = Color(0x0D7F13EC),
         border = BorderStroke(1.dp, Color(0x1A7F13EC)),
@@ -533,7 +619,7 @@ fun CommonDayTime(icon: Painter, title: String, onClick: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Image(
-                painter = icon, contentDescription = "Icon", modifier = Modifier.size(20.dp)
+                imageVector = icon, contentDescription = "Icon", modifier = Modifier.size(20.dp)
             )
             Text(
                 text = title, color = TitleColor, fontSize = 14.sp, fontWeight = FontWeight.Bold
@@ -543,9 +629,7 @@ fun CommonDayTime(icon: Painter, title: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun IdentityView() {
-    var title by remember { mutableStateOf("") }
-    var details by remember { mutableStateOf("") }
+fun IdentityView(state: AddTaskUiState, viewModel: AddTaskViewModel) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -560,14 +644,14 @@ fun IdentityView() {
                 .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 32.dp)
         ) {
             // Header: icon + label
-            HeaderWithIcon(icon = painterResource(R.drawable.ic_container), title = "Identity")
+            HeaderWithIcon(icon = IcContainer, title = "Identity")
 
             Spacer(modifier = Modifier.height(10.dp))
 
             // Title TextField
             BasicTextField(
-                value = title,
-                onValueChange = { title = it },
+                value = state.title,
+                onValueChange = { viewModel.dispatch(AddTaskAction.TitleChanged(it)) },
                 textStyle = TextStyle(
                     color = TitleColor, fontSize = 22.sp, fontWeight = FontWeight.Bold
                 ),
@@ -576,7 +660,7 @@ fun IdentityView() {
                 singleLine = false,
                 maxLines = 3,
                 decorationBox = { innerTextField ->
-                    if (title.isEmpty()) {
+                    if (state.title.isEmpty()) {
                         Text(
                             text = "What needs to be done?",
                             color = TitleColor.copy(alpha = 0.45f),
@@ -590,8 +674,8 @@ fun IdentityView() {
             Spacer(modifier = Modifier.height(10.dp))
             // Details TextField
             BasicTextField(
-                value = details,
-                onValueChange = { details = it },
+                value = state.description,
+                onValueChange = { viewModel.dispatch(AddTaskAction.DescriptionChanged(it)) },
                 textStyle = TextStyle(
                     color = TitleColor, fontSize = 15.sp
                 ),
@@ -601,7 +685,7 @@ fun IdentityView() {
                 singleLine = false,
                 maxLines = 5,
                 decorationBox = { innerTextField ->
-                    if (details.isEmpty()) {
+                    if (state.description.isEmpty()) {
                         Text(
                             text = "Add more details...",
                             color = PlaceholderColor,
@@ -616,10 +700,10 @@ fun IdentityView() {
 }
 
 @Composable
-fun HeaderWithIcon(icon: Painter, title: String) {
+fun HeaderWithIcon(icon: ImageVector, title: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Image(
-            painter = icon, contentDescription = "Icon", modifier = Modifier.size(20.dp)
+            imageVector = icon, contentDescription = "Icon", modifier = Modifier.size(20.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
@@ -629,23 +713,23 @@ fun HeaderWithIcon(icon: Painter, title: String) {
 }
 
 @Composable
-fun CustomToolBar() {
+fun CustomToolBar(viewModel: AddTaskViewModel) {
     Row(
         modifier = Modifier
             .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(painter = painterResource(R.drawable.ic_close), contentDescription = "Close")
+        Image(imageVector = IcClose, contentDescription = "Close")
         Spacer(modifier = Modifier.weight(1f))
         Text(
             text = "New Task",
             style = MaterialTheme.typography.titleMedium,
-            fontFamily = FontFamily(
-                Font(
-                    R.font.roboto_condensed_bold,
-                    FontWeight.Normal
-                )
-            ),
+//            fontFamily = FontFamily(
+//                Font(
+//                    Res.font.roboto_condensed_bold,
+//                    FontWeight.Normal
+//                )
+//            ),
             fontSize = 20.sp,
             color = Color(0xFF000000)
         )
@@ -662,69 +746,12 @@ fun CustomToolBar() {
             isIconVisible = false,
             padding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
         ) {
-
+            viewModel.dispatch(AddTaskAction.SaveClicked)
         }
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun AddTaskPreview() {
     AddTaskScreen()
-}
-
-enum class Category(
-    val label: String,
-    val dbKey: String,           // saved in Firebase Realtime DB
-    val iconRes: Int,            // R.drawable.ic_*  — replace with your actual drawable names
-) {
-    WORK(
-        label = "Work",
-        dbKey = "work",
-        iconRes = R.drawable.ic_work,
-    ),
-    PERSONAL(
-        label = "Personal",
-        dbKey = "personal",
-        iconRes = R.drawable.ic_personal,
-    ),
-    SHOPPING(
-        label = "Shopping",
-        dbKey = "shopping",
-        iconRes = R.drawable.ic_shopping,
-    ),
-    HEALTH(
-        label = "Health",
-        dbKey = "health",
-        iconRes = R.drawable.ic_health,
-    ),
-    EDUCATION(
-        label = "Education",
-        dbKey = "education",
-        iconRes = R.drawable.ic_education,
-    ),
-    FINANCE(
-        label = "Finance",
-        dbKey = "finance",
-        iconRes = R.drawable.ic_finance,
-    ),
-    SOCIAL(
-        label = "Social",
-        dbKey = "social",
-        iconRes = R.drawable.ic_social,
-    ),
-    HOME(
-        label = "Home",
-        dbKey = "home",
-        iconRes = R.drawable.ic_home,
-    ),
-    CREATIVE(
-        label = "Creative",
-        dbKey = "creative",
-        iconRes = R.drawable.ic_creative,
-    );
-
-    companion object {
-        fun fromDbKey(key: String): Category = entries.firstOrNull { it.dbKey == key } ?: PERSONAL
-    }
 }

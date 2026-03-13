@@ -1,7 +1,5 @@
 package com.jrprofessor.mindolist.screen
 
-import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,17 +30,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.jrprofessor.mindolist.R
 import com.jrprofessor.mindolist.customView.ActionButton
 import com.jrprofessor.mindolist.customView.ShowEmailView
 import com.jrprofessor.mindolist.customView.ShowNameView
@@ -56,37 +50,35 @@ import com.jrprofessor.mindolist.presentation.SignUpState
 import com.jrprofessor.mindolist.theme.backgroundColor
 import com.jrprofessor.mindolist.theme.btnColor
 import com.jrprofessor.mindolist.theme.stepColor
-import com.jrprofessor.mindolist.utils.StatusBarInDarkMode
+import com.jrprofessor.mindolist.utils.StatusBarDarkMode
+import com.jrprofessor.mindolist.utils.showToast
 import com.jrprofessor.mindolist.viewmodels.SignUpViewModel
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.collectLatest
+import mindolist.shared.generated.resources.Res
+import org.jetbrains.compose.resources.Font
+import org.koin.compose.viewmodel.koinViewModel
 
 const val SIGN_UP_TAG="SignUpScreen"
 @Composable
 fun SignUpScreen(
-    viewModel: SignUpViewModel = hiltViewModel(),
+    viewModel: SignUpViewModel = koinViewModel(),
     onNavigateToHome: () -> Unit,
     onNavigateBack: () -> Unit = {}
 ) {
 
     val state by viewModel.signUpState.collectAsState()
-    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.signUpEffect.collectLatest { effect ->
             when (effect) {
                 SignUpEvent.NavigateBack -> onNavigateBack()
                 SignUpEvent.NavigateToHome -> onNavigateToHome()
-                is SignUpEvent.ShowError -> Toast.makeText(
-                    context,
-                    effect.error,
-                    Toast.LENGTH_SHORT
-                ).show()
+                is SignUpEvent.ShowError -> showToast(
+                    effect.error
+                )
 
-                is SignUpEvent.ShowToast -> Toast.makeText(
-                    context,
-                    effect.message,
-                    Toast.LENGTH_LONG
-                ).show()
+                is SignUpEvent.ShowToast -> showToast(effect.message)
             }
         }
     }
@@ -127,7 +119,7 @@ fun SignUpContent(state: SignUpState, onEvent: (SignUpIntent) -> Unit) {
         SignUpButtonState.CREATE_PASSWORD -> state.isPasswordValid
     }
 
-    StatusBarInDarkMode()
+    StatusBarDarkMode()
 
     Column(
         modifier = Modifier
@@ -343,6 +335,9 @@ private fun OtpInputField(
     otpLength: Int = 5,
     onOtpComplete: (String) -> Unit
 ) {
+    val logger= KotlinLogging.logger {
+
+    }
     val focusRequesters = remember { List(otpLength) { FocusRequester() } }
 
     // ✅ CRITICAL FIX: Use individual state for each field
@@ -354,7 +349,7 @@ private fun OtpInputField(
 
     // ✅ Sync state when otp prop changes from parent
     LaunchedEffect(otp) {
-        Log.d(SIGN_UP_TAG, "OTP changed from parent: '$otp'")
+        logger.debug { "OTP changed from parent: '$otp'"}
         repeat(otpLength) { index ->
             otpState[index] = otp.getOrNull(index)?.toString() ?: ""
         }
@@ -382,7 +377,7 @@ private fun OtpInputField(
 
                         // ✅ Build and send complete OTP to parent
                         val newOtp = otpState.joinToString("")
-                        Log.e(SIGN_UP_TAG, "OtpInputField: $newOtp")
+                        logger.debug { "OtpInputField: $newOtp"}
                         onOtpComplete(newOtp)
 
                         // ✅ Move to next field if digit entered
@@ -428,20 +423,14 @@ fun InputLabel(text: String,textColor: Color = Color.Black) {
     Text(
         text = text,
         fontSize = 16.sp,
-        fontFamily = FontFamily(
-            Font(
-                R.font.roboto_condensed_regular,
-                FontWeight.SemiBold
-            )
-        ),
+//        fontFamily = FontFamily(
+//            Font(
+//                Res.font.roboto_condensed_regular,
+//                FontWeight.SemiBold
+//            )
+//        ),
         color = textColor,
         modifier = Modifier.fillMaxWidth(),
         textAlign = TextAlign.Start
     )
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun SignUpScreenPreview() {
-    SignUpScreen(onNavigateToHome = {}, onNavigateBack = {})
 }

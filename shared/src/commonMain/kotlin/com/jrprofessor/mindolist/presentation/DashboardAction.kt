@@ -1,0 +1,10 @@
+package com.jrprofessor.mindolist.presentation
+
+sealed class DashboardAction {
+    data object LoadTasks : DashboardAction()
+    data object LoadUserData : DashboardAction()
+    data object UpdateDateTime : DashboardAction()
+    data class FilterByCategory(val category: String?) : DashboardAction()
+    data class MarkComplete(val taskId: String, val isCompleted: Boolean) : DashboardAction()
+    data class DeleteTask(val taskId: String) : DashboardAction()
+}

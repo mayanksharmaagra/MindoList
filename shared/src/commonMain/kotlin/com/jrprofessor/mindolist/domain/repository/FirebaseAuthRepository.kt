@@ -58,5 +58,6 @@ interface FirebaseAuthRepository {
      */
     suspend fun signOut(): Result<Unit>
     fun isLoggedIn(): Boolean
+    fun authState(): Flow<Boolean>
 
 }

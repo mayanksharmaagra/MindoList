@@ -6,6 +6,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.jrprofessor.mindolist.screen.DashboardScreen
 
+//import com.jrprofessor.mindolist.screen.DashboardScreen
+
 @Composable
 fun BottomNavGraph(
     navController: NavHostController,

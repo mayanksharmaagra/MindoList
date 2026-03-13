@@ -1,7 +1,9 @@
 package com.jrprofessor.mindolist.domain.model
 
+import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmField
 
+@Serializable
 data class OtpVerification(
     val email: String = "",
     val otp: String = "",

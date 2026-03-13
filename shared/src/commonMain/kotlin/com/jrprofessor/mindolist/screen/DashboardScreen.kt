@@ -33,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -46,25 +47,27 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.jrprofessor.mindolist.R
 import com.jrprofessor.mindolist.customView.CircularProgressBar
-import com.jrprofessor.mindolist.data.model.Priority
-import com.jrprofessor.mindolist.data.model.Task
-import com.jrprofessor.mindolist.data.model.TaskCardData
 import com.jrprofessor.mindolist.domain.model.User
+import com.jrprofessor.mindolist.model.Priority
+import com.jrprofessor.mindolist.model.Task
+import com.jrprofessor.mindolist.model.TaskCardData
+import com.jrprofessor.mindolist.presentation.DashboardEvent
 import com.jrprofessor.mindolist.presentation.DashboardState
 import com.jrprofessor.mindolist.screen.CardTaskSection
 import com.jrprofessor.mindolist.theme.backgroundColor
 import com.jrprofessor.mindolist.theme.btnColor
-import java.util.Locale
+import com.jrprofessor.mindolist.utils.showToast
+import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
+import mindolist.shared.generated.resources.Res
+//import mindolist.shared.generated.resources.roboto_condensed_regular
+import org.koin.compose.viewmodel.koinViewModel
+import org.jetbrains.compose.resources.Font
 
 // Color Constants
 private val PrimaryBlue = Color(0xFF3B82F6)
@@ -85,10 +88,19 @@ private val BorderLight = Color(0xFFCBD5E1)
 
 @Composable
 fun DashboardScreen(
-    viewModel: DashboardViewModel = hiltViewModel(),
+    viewModel: DashboardViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
 
+    LaunchedEffect(Unit) {
+        viewModel.event.collect { event ->
+            when (event) {
+                is DashboardEvent.Error -> showToast(event.message)
+                is DashboardEvent.TaskCompleted -> showToast("Task completed ✓")
+                is DashboardEvent.TaskDeleted -> showToast("Task deleted ✓")
+            }
+        }
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -139,22 +151,6 @@ fun DashboardContent(state: DashboardState) {
 
 @Composable
 fun TodayTask() {
-    val condensedSemiBold = remember {
-        FontFamily(
-            Font(
-                R.font.roboto_condensed_regular,
-                FontWeight.SemiBold
-            )
-        )
-    }
-    val condensedNormal = remember {
-        FontFamily(
-            Font(
-                R.font.roboto_condensed_regular,
-                FontWeight.Normal
-            )
-        )
-    }
     var tasks by remember {
         mutableStateOf(
             listOf(
@@ -174,14 +170,24 @@ fun TodayTask() {
             Text(
                 text = "Today's Tasks",
                 style = MaterialTheme.typography.titleLarge,
-                fontFamily = condensedSemiBold,
+//                fontFamily = FontFamily(
+//                    Font(
+//                        Res.font.roboto_condensed_regular,
+//                        FontWeight.SemiBold
+//                    )
+//                ),
                 color = TextDark
             )
             Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = "View All",
                 style = MaterialTheme.typography.titleMedium,
-                fontFamily = condensedNormal,
+//                fontFamily = FontFamily(
+//                    Font(
+//                        Res.font.roboto_condensed_regular,
+//                        FontWeight.Normal
+//                    )
+//                ),
                 color = PrimaryIndigo
             )
         }
@@ -214,22 +220,6 @@ fun TaskItem(
         animationSpec = tween(durationMillis = 200),
         label = "titleColor",
     )
-    val condensedSemiBold = remember {
-        FontFamily(
-            Font(
-                R.font.roboto_condensed_regular,
-                FontWeight.SemiBold
-            )
-        )
-    }
-    val condensedNormal = remember {
-        FontFamily(
-            Font(
-                R.font.roboto_condensed_regular,
-                FontWeight.Normal
-            )
-        )
-    }
 
     Card(
         modifier = modifier
@@ -292,7 +282,12 @@ fun TaskItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = task.title,
-                    fontFamily = condensedSemiBold,
+//                    fontFamily = FontFamily(
+//                        Font(
+//                            Res.font.roboto_condensed_regular,
+//                            FontWeight.SemiBold
+//                        )
+//                    ),
                     style = TextStyle(
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
@@ -313,7 +308,12 @@ fun TaskItem(
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = task.time,
-                        fontFamily = condensedNormal,
+//                        fontFamily = FontFamily(
+//                            Font(
+//                                Res.font.roboto_condensed_regular,
+//                                FontWeight.Normal
+//                            )
+//                        ),
                         color = TextGray,
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -349,9 +349,7 @@ fun CardForDailyProgress() {
     val backgroundProgressBarWidth by remember { mutableStateOf(12.dp) }
     val roundBorder by remember { mutableStateOf(true) }
     val animProgress by animateFloatAsState(progress)
-    val condensedSemiBold = remember {
-        FontFamily(Font(R.font.roboto_condensed_regular, FontWeight.SemiBold))
-    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth(),
@@ -387,13 +385,13 @@ fun CardForDailyProgress() {
                 Text(
                     text = "Your Progress",
                     style = MaterialTheme.typography.titleLarge,
-                    fontFamily = condensedSemiBold,
+//                    fontFamily = FontFamily(Font(Res.font.roboto_condensed_regular, FontWeight.SemiBold)),
                     color = TextDark
                 )
                 Text(
                     text = "No tasks for today yet",
                     style = MaterialTheme.typography.bodyMedium,
-                    fontFamily = condensedSemiBold,
+//                    fontFamily = FontFamily(Font(Res.font.roboto_condensed_regular, FontWeight.SemiBold)),
                     color = TextSlate
                 )
             }
@@ -403,9 +401,7 @@ fun CardForDailyProgress() {
 
 @Composable
 fun CardSection() {
-    val condensedSemiBold = remember {
-        FontFamily(Font(R.font.roboto_condensed_regular, FontWeight.SemiBold))
-    }
+
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -417,7 +413,10 @@ fun CardSection() {
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 rowCards.forEach { card ->
-                    CardTaskSection(card, condensedSemiBold)
+                    CardTaskSection(card,
+//                        FontFamily(Font(Res.font.roboto_condensed_regular,
+//                            FontWeight.SemiBold))
+                    )
                 }
             }
         }
@@ -427,11 +426,8 @@ fun CardSection() {
 @Composable
 fun RowScope.CardTaskSection(
     data: TaskCardData,
-    semiBoldFont: FontFamily,
+//    semiBoldFont: FontFamily,
 ) {
-    val normalFont = remember {
-        FontFamily(Font(R.font.roboto_condensed_regular, FontWeight.Normal))
-    }
 
     Card(
         modifier = Modifier
@@ -447,21 +443,21 @@ fun RowScope.CardTaskSection(
                 .padding(10.dp)
         ) {
             Text(
-                text = data.title.uppercase(Locale.getDefault()),
+                text = data.title.uppercase(),
                 style = MaterialTheme.typography.titleMedium,
-                fontFamily = semiBoldFont,
+//                fontFamily = semiBoldFont,
                 color = data.titleColor
             )
             Text(
                 text = data.taskCount.toString(),
                 style = MaterialTheme.typography.headlineMedium,
-                fontFamily = semiBoldFont,
+//                fontFamily = semiBoldFont,
                 color = data.taskCountColor
             )
             Text(
                 text = data.taskMsg,
                 style = MaterialTheme.typography.bodyLarge,
-                fontFamily = normalFont,
+//                fontFamily = FontFamily(Font(Res.font.roboto_condensed_regular, FontWeight.Normal)),
                 color = data.taskMsgColor
             )
         }
@@ -481,23 +477,23 @@ fun UserProfileSection(
             text = "$greeting, ${user?.displayName?.split(" ")?.get(0) ?: "User"} 👋",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily(
-                Font(
-                    R.font.roboto_condensed_regular,
-                    FontWeight.SemiBold
-                )
-            ),
+//            fontFamily = FontFamily(
+//                Font(
+//                    Res.font.roboto_condensed_regular,
+//                    FontWeight.SemiBold
+//                )
+//            ),
             color = TextDeep
         )
         Text(
             text = currentDate,
             style = MaterialTheme.typography.labelSmall,
-            fontFamily = FontFamily(
-                Font(
-                    R.font.roboto_condensed_regular,
-                    FontWeight.Normal
-                )
-            ),
+//            fontFamily = FontFamily(
+//                Font(
+//                    Res.font.roboto_condensed_regular,
+//                    FontWeight.Normal
+//                )
+//            ),
             color = TextSlate
         )
     }
@@ -603,7 +599,6 @@ fun CurrentDateCard(currentDate: String) {
     }
 }
 
-@Preview(showBackground = true)
 @Composable
 fun DashboardPreview() {
     val sampleState = DashboardState(

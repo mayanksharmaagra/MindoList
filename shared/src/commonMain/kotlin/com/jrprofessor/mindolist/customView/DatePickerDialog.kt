@@ -22,25 +22,100 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.format.DateTimeFormatter
 
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.minus
+import kotlinx.datetime.number
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
+
+// -- helper class for date-------------
+
+data class SimpleDate(
+    val year: Int,
+    val month: Int,   // 1-12
+    val day: Int
+){
+    fun plusDays(days: Int): SimpleDate {
+        var date = LocalDate(year, month, day).plus(days, DateTimeUnit.DAY)
+        return SimpleDate(date.year, date.month.number, date.day)
+    }
+
+    fun plusWeeks(weeks: Int): SimpleDate = plusDays(weeks * 7)
+
+    fun isBefore(other: SimpleDate): Boolean {
+        return LocalDate(year, month, day) < LocalDate(other.year, other.month, other.day)
+    }
+
+    fun daysInMonth(): Int = LocalDate(year, month, 1)
+        .plus(1, DateTimeUnit.MONTH)
+        .minus(1, DateTimeUnit.DAY)
+        .dayOfMonth
+
+    // 0 = Sunday, 1 = Monday ... 6 = Saturday
+    fun firstDayOfWeekOffset(): Int {
+        val dayOfWeek = LocalDate(year, month, 1).dayOfWeek.isoDayNumber % 7
+        return dayOfWeek
+    }
+
+    fun monthName(): String = when (month) {
+        1 -> "January"; 2 -> "February"; 3 -> "March"
+        4 -> "April"; 5 -> "May"; 6 -> "June"
+        7 -> "July"; 8 -> "August"; 9 -> "September"
+        10 -> "October"; 11 -> "November"; else -> "December"
+    }
+
+    fun dayOfWeekName(): String = when (LocalDate(year, month, day).dayOfWeek) {
+        DayOfWeek.MONDAY -> "Monday"; DayOfWeek.TUESDAY -> "Tuesday"
+        DayOfWeek.WEDNESDAY -> "Wednesday"; DayOfWeek.THURSDAY -> "Thursday"
+        DayOfWeek.FRIDAY -> "Friday"; DayOfWeek.SATURDAY -> "Saturday"
+        else -> "Sunday"
+    }
+
+    fun prevMonth(): SimpleDate {
+        val date = LocalDate(year, month, 1).minus(1, DateTimeUnit.MONTH)
+        return SimpleDate(date.year, date.monthNumber, date.dayOfMonth)
+    }
+
+    fun nextMonth(): SimpleDate {
+        val date = LocalDate(year, month, 1).plus(1, DateTimeUnit.MONTH)
+        return SimpleDate(date.year, date.monthNumber, date.dayOfMonth)
+    }
+
+    fun formatted(): String =
+        "${dayOfWeekName()}, ${monthName()} $day/*${getDaySuffix(day)}*/"
+
+    fun monthYearFormatted(): String = "${monthName()} $year"
+    fun monthYearDayFormatted(): String = "$day/${monthName()}/$year"
+}
+
+@OptIn(ExperimentalTime::class)
+fun today(): SimpleDate {
+    val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+    return SimpleDate(now.year, now.monthNumber, now.dayOfMonth)
+}
 // ── Date Picker Full Screen Dialog ────────────────────────────────────────────
 
 @Composable
 fun DatePickerDialog(
-    onDateSelected: (LocalDate) -> Unit,
+    onDateSelected: (SimpleDate) -> Unit,
     onDismiss: () -> Unit,
 ) {
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = false,
+            /*decorFitsSystemWindows = false,*/
         )
     ) {
         DatePickerScreen(
@@ -57,17 +132,17 @@ fun DatePickerDialog(
 
 @Composable
 fun DatePickerScreen(
-    onDateSelected: (LocalDate) -> Unit,
+    onDateSelected: (SimpleDate) -> Unit,
     onBack: () -> Unit,
 ) {
-    val today = LocalDate.now()
-    var selectedDate by remember { mutableStateOf(today) }
-    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
+    val todayDate = remember { today() }
+    var selectedDate by remember { mutableStateOf(todayDate) }
+    var currentMonth by remember { mutableStateOf(SimpleDate(todayDate.year, todayDate.month, 1)) }
 
     val quickPicks = listOf(
-        "Today" to today,
-        "Tomorrow" to today.plusDays(1),
-        "Next Week" to today.plusWeeks(1),
+        "Today" to todayDate,
+        "Tomorrow" to todayDate.plusDays(1),
+        "Next Week" to todayDate.plusWeeks(1),
     )
 
     Column(
@@ -129,7 +204,7 @@ fun DatePickerScreen(
                         )
                         .clickable {
                             selectedDate = date
-                            currentMonth = YearMonth.from(date)
+                            currentMonth = SimpleDate(date.year, date.month, 1)
                         }
                         .padding(horizontal = 18.dp, vertical = 10.dp),
                     contentAlignment = Alignment.Center,
@@ -161,7 +236,7 @@ fun DatePickerScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
+                    IconButton(onClick = { currentMonth = currentMonth.prevMonth() }) {
                         Icon(
                             imageVector = Icons.Default.ChevronLeft,
                             contentDescription = "Prev",
@@ -169,14 +244,14 @@ fun DatePickerScreen(
                         )
                     }
                     Text(
-                        text = currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")),
+                        text =  currentMonth.monthYearFormatted(),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF1E293B),
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center,
                     )
-                    IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
+                    IconButton(onClick = { currentMonth = currentMonth.nextMonth() }) {
                         Icon(
                             imageVector = Icons.Default.ChevronRight,
                             contentDescription = "Next",
@@ -204,9 +279,8 @@ fun DatePickerScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Calendar days
-                val firstDayOfMonth = currentMonth.atDay(1)
-                val firstDayOffset = firstDayOfMonth.dayOfWeek.value % 7 // Sunday = 0
-                val daysInMonth = currentMonth.lengthOfMonth()
+                val firstDayOffset = currentMonth.firstDayOfWeekOffset()
+                val daysInMonth = currentMonth.daysInMonth()
                 val totalCells = firstDayOffset + daysInMonth
                 val rows = (totalCells + 6) / 7
 
@@ -215,11 +289,11 @@ fun DatePickerScreen(
                         repeat(7) { col ->
                             val dayIndex = row * 7 + col - firstDayOffset + 1
                             val date = if (dayIndex in 1..daysInMonth)
-                                currentMonth.atDay(dayIndex) else null
+                                SimpleDate(currentMonth.year, currentMonth.month, dayIndex) else null
 
                             val isSelected = date == selectedDate
-                            val isToday = date == today
-                            val isPast = date != null && date.isBefore(today)
+                            val isToday = date == todayDate
+                            val isPast = date != null && date.isBefore(todayDate)
 
                             Box(
                                 modifier = Modifier
@@ -300,9 +374,7 @@ fun DatePickerScreen(
                     letterSpacing = 1.sp,
                 )
                 Text(
-                    text = selectedDate.format(
-                        DateTimeFormatter.ofPattern("EEEE, MMMM d'${getDaySuffix(selectedDate.dayOfMonth)}'")
-                    ),
+                    text = selectedDate.monthYearDayFormatted(),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF1E293B),

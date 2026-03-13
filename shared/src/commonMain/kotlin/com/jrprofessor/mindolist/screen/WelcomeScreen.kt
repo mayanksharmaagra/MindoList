@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -41,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,16 +54,17 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jrprofessor.mindolist.navGraph.Screen
 import com.jrprofessor.mindolist.theme.btnColor
-import com.jrprofessor.mindolist.utils.StatusBarInDarkMode
+import com.jrprofessor.mindolist.utils.StatusBarDarkMode
+import com.jrprofessor.mindolist.viewmodels.LoginViewModel
 import kotlinx.coroutines.delay
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun WelcomeScreen(
@@ -71,7 +72,7 @@ fun WelcomeScreen(
     onLoginClick: () -> Unit
 ) {
 
-    StatusBarInDarkMode()
+    StatusBarDarkMode()
     // Animation state
     var animateIn by remember { mutableStateOf(false) }
 
@@ -131,12 +132,12 @@ fun WelcomeScreen(
                 Text(
                     text = "MindoList",
                     fontSize = 56.sp,
-                    fontFamily = FontFamily(
-                        Font(
-                            Res.font.roboto_condensed_extra_bold,
-                            FontWeight.Bold
-                        )
-                    ),
+//                    fontFamily = FontFamily(
+//                        Font(
+//                            Res.font.roboto_condensed_extra_bold,
+//                            FontWeight.Bold
+//                        )
+//                    ),
                     style = LocalTextStyle.current.copy(
                         brush = Brush.linearGradient(
                             colors = listOf(
@@ -176,12 +177,12 @@ fun WelcomeScreen(
                     color = Color(0xFF334155),
                     textAlign = TextAlign.Center,
                     lineHeight = 32.sp,
-                    fontFamily = FontFamily(
-                        Font(
-                            Res.font.roboto_condensed_regular,
-                            FontWeight.Normal
-                        )
-                    )
+//                    fontFamily = FontFamily(
+//                        Font(
+//                            Res.font.roboto_condensed_regular,
+//                            FontWeight.Normal
+//                        )
+//                    )
                 )
 
                 Spacer(modifier = Modifier.height(48.dp))
@@ -399,12 +400,12 @@ fun SmartProductivityBadge() {
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
             color = Color(0xFF9333EA),
-            fontFamily = FontFamily(
-                Font(
-                    Res.font.roboto_condensed_regular,
-                    FontWeight.Normal
-                )
-            )
+//            fontFamily = FontFamily(
+//                Font(
+//                    Res.font.roboto_condensed_regular,
+//                    FontWeight.Normal
+//                )
+//            )
         )
         Spacer(modifier = Modifier.width(4.dp))
         Icon(
@@ -467,12 +468,12 @@ fun TrustBadge(icon: ImageVector, text: String, iconColor: Color) {
         Text(
             text = text,
             fontSize = 12.sp,
-            fontFamily = FontFamily(
+            /*fontFamily = FontFamily(
                 Font(
-                    Res.font.roboto_condensed_regular,
+                    Res.font.roboto_condensed_bold,
                     FontWeight.Normal
                 )
-            ),
+            ),*/
             color = Color(0xFF64748B)
         )
     }
@@ -488,12 +489,12 @@ fun SignInLink(onClick: () -> Unit) {
         Text(
             text = "Already have an account?",
             fontSize = 14.sp,
-            fontFamily = FontFamily(
-                Font(
-                    Res.font.roboto_condensed_regular,
-                    FontWeight.Normal
-                )
-            ),
+//            fontFamily = FontFamily(
+//                Font(
+//                    Res.font.roboto_condensed_regular,
+//                    FontWeight.Normal
+//                )
+//            ),
             color = Color(0xFF64748B)
         )
         Spacer(modifier = Modifier.width(4.dp))
@@ -504,12 +505,12 @@ fun SignInLink(onClick: () -> Unit) {
             Text(
                 text = "Sign In",
                 fontSize = 14.sp,
-                fontFamily = FontFamily(
-                    Font(
-                        Res.font.roboto_condensed_regular,
-                        FontWeight.Normal
-                    )
-                ),
+//                fontFamily = FontFamily(
+//                    Font(
+//                        Res.font.roboto_condensed_regular,
+//                        FontWeight.Normal
+//                    )
+//                ),
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF9333EA)
             )
@@ -617,14 +618,19 @@ fun FeatureCard(
         Text(
             text = label,
             fontSize = 12.sp,
-            fontFamily = FontFamily(
-                Font(
-                    Res.font.roboto_condensed_regular,
-                    FontWeight.SemiBold
-                )
-            ),
+//            fontFamily = FontFamily(
+//                Font(
+//                    Res.font.roboto_condensed_regular,
+//                    FontWeight.SemiBold
+//                )
+//            ),
             color = Color(0xFF334155),
             textAlign = TextAlign.Center
         )
     }
 }
+
+data class Feature(
+    val icon: ImageVector,
+    val text: String
+)

@@ -3,16 +3,15 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
-    alias(libs.plugins.ksp)
-//    alias(libs.plugins.hilt)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    kotlin("plugin.serialization") version "2.3.0"  // ← YE ADD KARO
 }
 
 kotlin {
     androidTarget {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
     
@@ -36,7 +35,7 @@ kotlin {
             implementation(libs.runtime)
             implementation(libs.foundation)
             implementation(libs.compose.icons)
-            implementation(libs.components.resources)
+            implementation(compose.components.resources)
             implementation(libs.ui)
             implementation(libs.material3)
             implementation(libs.animation)
@@ -52,12 +51,17 @@ kotlin {
 
             implementation(libs.coil.compose)
             implementation(libs.coil.network)
+
             implementation(libs.kotlinx.datetime)
+
             implementation(libs.kotlin.logging)
+
             implementation(libs.navigation.compose)
+
             api(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
+            implementation(libs.kotlinx.serialization)
 
         }
         androidMain.dependencies {
@@ -70,12 +74,7 @@ kotlin {
             implementation(libs.android.mail)
             implementation(libs.android.activation)
             implementation(libs.androidx.core.splashscreen)
-            implementation(libs.coil.compose)
             implementation(libs.kotlinx.coroutines.android)
-
-            implementation(libs.kotlinx.datetime)
-            implementation(libs.kotlin.logging)
-
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -90,8 +89,8 @@ android {
     namespace = "com.jrprofessor.mindolist.shared"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
@@ -114,4 +113,3 @@ android {
         }
     }
 }
-

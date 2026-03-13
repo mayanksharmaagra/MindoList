@@ -1,6 +1,5 @@
 package com.jrprofessor.mindolist.screen
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -19,11 +18,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.jrprofessor.mindolist.customView.ActionButton
 import com.jrprofessor.mindolist.customView.ShowEmailView
 import com.jrprofessor.mindolist.customView.ShowPasswordView
@@ -34,21 +30,22 @@ import com.jrprofessor.mindolist.presentation.LoginIntent
 import com.jrprofessor.mindolist.presentation.LoginMode
 import com.jrprofessor.mindolist.theme.backgroundColor
 import com.jrprofessor.mindolist.theme.btnColor
-import com.jrprofessor.mindolist.utils.StatusBarInDarkMode
+import com.jrprofessor.mindolist.utils.StatusBarDarkMode
+import com.jrprofessor.mindolist.utils.showToast
 import com.jrprofessor.mindolist.viewmodels.LoginViewModel
 import kotlinx.coroutines.flow.collectLatest
+import org.koin.compose.viewmodel.koinViewModel
 
 const val SIGN_IN_TAG = "LoginScreen"
 
 @Composable
 fun LoginScreen(
-    viewModel: LoginViewModel = hiltViewModel(),
+    viewModel: LoginViewModel = koinViewModel(),
     onNavigateToHome: () -> Unit,
     onNavigateBack: () -> Unit = {},
     onNavigateToForgot: () -> Unit
 ) {
     val state by viewModel.loginState.collectAsState()
-    val context = LocalContext.current
 
     val btnTitle = when (state.currentMode) {
         LoginMode.INITIAL -> "Continue with email"
@@ -60,7 +57,7 @@ fun LoginScreen(
         LoginMode.EMAIL_PASSWORD -> state.isEmailValid && state.isPasswordValid
     }
 
-    StatusBarInDarkMode()
+    StatusBarDarkMode()
 
     LaunchedEffect(Unit) {
         viewModel.loginEffect.collectLatest { effect ->
@@ -68,17 +65,9 @@ fun LoginScreen(
                 LoginEvent.NavigateBack -> onNavigateBack()
                 LoginEvent.NavigateToHome -> onNavigateToHome()
                 LoginEvent.NavigateToForgotPassword -> onNavigateToForgot()
-                is LoginEvent.ShowError -> Toast.makeText(
-                    context,
-                    effect.error,
-                    Toast.LENGTH_SHORT
-                ).show()
+                is LoginEvent.ShowError -> showToast(effect.error)
 
-                is LoginEvent.ShowToast -> Toast.makeText(
-                    context,
-                    effect.message,
-                    Toast.LENGTH_LONG
-                ).show()
+                is LoginEvent.ShowToast -> showToast(effect.message)
             }
         }
     }
@@ -171,10 +160,4 @@ fun LoginScreen(
             Spacer(modifier = Modifier.size(30.dp))
         }
     }
-}
-
-@Preview
-@Composable
-fun SignInScreenPreview() {
-
 }

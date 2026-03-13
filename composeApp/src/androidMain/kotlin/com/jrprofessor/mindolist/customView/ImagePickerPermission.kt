@@ -38,22 +38,22 @@ fun ImagePickerWithPermission(
         }
     }
 
-    ProfilePictureWithEdit(
-        imageUrl = selectedImageUri.toString(),
-        onEditClick = {
-            when {
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
-                    // Android 13+ - Request READ_MEDIA_IMAGES
-                    permissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
-                }
-
-                else -> {
-                    // Android 12 and below - Request READ_EXTERNAL_STORAGE
-                    permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
-                }
-            }
-        },
-        onRemoveClick = onRemoveImage,
-        modifier = modifier
-    )
+//    ProfilePictureWithEdit(
+//        imageUrl = selectedImageUri.toString(),
+//        onEditClick = {
+//            when {
+//                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
+//                    // Android 13+ - Request READ_MEDIA_IMAGES
+//                    permissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
+//                }
+//
+//                else -> {
+//                    // Android 12 and below - Request READ_EXTERNAL_STORAGE
+//                    permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+//                }
+//            }
+//        },
+//        onRemoveClick = onRemoveImage,
+//        modifier = modifier
+//    )
 }

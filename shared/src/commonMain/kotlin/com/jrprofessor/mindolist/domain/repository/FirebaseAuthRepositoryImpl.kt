@@ -3,17 +3,18 @@ package com.jrprofessor.mindolist.domain.repository
 import com.jrprofessor.mindolist.domain.model.OtpVerification
 import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.domain.model.User
-import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.database.DatabaseReference
 import dev.gitlive.firebase.database.FirebaseDatabase
-import dev.gitlive.firebase.database.database
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.serialization.builtins.serializer
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import dev.gitlive.firebase.database.database
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 
 
 private val logger = KotlinLogging.logger {
@@ -25,13 +26,14 @@ private val logger = KotlinLogging.logger {
 @OptIn(ExperimentalTime::class)
 private fun currentTimeMillis(): Long = Clock.System.now().toEpochMilliseconds()
 
-class FirebaseAuthRepositoryImpl(
+open class FirebaseAuthRepositoryImpl(
     private val firebaseAuth: FirebaseAuth,
     private val firebaseDatabase: FirebaseDatabase,
 ) : FirebaseAuthRepository {
 
-    private val userRef: DatabaseReference = Firebase.database.reference("users")
+    private val userRef: DatabaseReference = firebaseDatabase.reference("users")
     private val otpRef: DatabaseReference = firebaseDatabase.reference("otpVerifications")
+
 
     companion object {
         private const val OTP_EXPIRATION_MILLIS = 600000L
@@ -71,13 +73,14 @@ class FirebaseAuthRepositoryImpl(
 
     override suspend fun verifyOtp(email: String, otp: String): Result<Boolean> {
         return try {
-            val snapShot = otpRef.child(sanitizeEmail(email)).get()
+            val snapShot = otpRef.child(sanitizeEmail(email)).valueEvents.first()
 
-            if (!snapShot.exists()) {   // ← () lagao
+
+            if (!snapShot.exists) {   // ← () lagao
                 return Result.Error(Exception("No OTP found for this email"))
             }
 
-            val otpData = snapShot.value(OtpVerification.serializer())
+            val otpData = snapShot.value<OtpVerification>()
                 ?: return Result.Error(Exception("Invalid OTP data"))
 
             when {
@@ -107,7 +110,7 @@ class FirebaseAuthRepositoryImpl(
         password: String
     ): Result<User> {
         return try {
-            val otpSnapShot = otpRef.child(sanitizeEmail(email)).get()
+            val otpSnapShot = otpRef.child(sanitizeEmail(email)).valueEvents.first()
             val otpData = otpSnapShot.value<OtpVerification>()
 
             if (otpData == null || !otpData.isVerified) {
@@ -180,9 +183,19 @@ class FirebaseAuthRepositoryImpl(
         return firebaseAuth.currentUser != null
     }
 
+    override fun authState(): Flow<Boolean> = flow {
+        val current = firebaseAuth.currentUser
+        println(">>> currentUser: $current")  // ← check
+        emit(current != null)
+        emitAll(firebaseAuth.authStateChanged.map {
+            println(">>> authStateChanged: $it")  // ← check
+            it != null
+        })
+    }
+
     override suspend fun isOtpValid(email: String): Result<Boolean> {
         return try {
-            val snapshot = otpRef.child(sanitizeEmail(email)).get()
+            val snapshot = otpRef.child(sanitizeEmail(email)).valueEvents.first()
 
             if (!snapshot.exists) {
                 return Result.Success(false)
@@ -231,18 +244,19 @@ class FirebaseAuthRepositoryImpl(
                 )
                 Result.Success(user)
             } else {
-                Result.Error(Exception("Login failed"))
+                Result.Error(Exception("Login failed"), "Login failed")
             }
         } catch (e: Exception) {
             logger.error(e) { "Login error: ${e.message}" }
-            Result.Error(e)
+            Result.Error(e, e.message ?: "Login failed. Please try again.")
+
         }
     }
 
     // ─── Private Helpers ──────────────────────────────
 
     private suspend fun getResendCooldownInternal(email: String): Int {
-        val snapshot = otpRef.child(sanitizeEmail(email)).get()
+        val snapshot = otpRef.child(sanitizeEmail(email)).valueEvents.first()
 
         if (!snapshot.exists) return 0
 
