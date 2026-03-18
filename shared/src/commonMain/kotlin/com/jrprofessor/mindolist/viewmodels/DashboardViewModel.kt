@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
@@ -41,14 +42,15 @@ class DashboardViewModel(
     }
     fun dispatch(action: DashboardAction) {
         when (action) {
-            is DashboardAction.LoadTasks -> loadTasks()
+            is DashboardAction.LoadTasks -> loadTasks(null)
+            is DashboardAction.DateByTask -> loadTasks(action.selectedDate)
             is DashboardAction.LoadUserData -> loadUserData()
             is DashboardAction.UpdateDateTime -> updateDateTime()
             is DashboardAction.FilterByCategory -> {
 
             }
             is DashboardAction.MarkComplete -> {
-
+                updateTaskAsCompleted()
             }
             is DashboardAction.DeleteTask -> {
 
@@ -56,9 +58,13 @@ class DashboardViewModel(
         }
     }
 
-    private fun loadTasks() {
+    private fun updateTaskAsCompleted() {
+
+    }
+
+    private fun loadTasks(selectedDate: LocalDate?) {
         viewModelScope.launch {
-            getTaskUseCase().collect {result ->
+            getTaskUseCase(selectedDate).collect { result ->
                 when(result){
                     is Result.Error -> {
                         _state.update { it.copy(isLoading = false) }

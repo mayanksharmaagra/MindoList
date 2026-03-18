@@ -43,6 +43,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -59,6 +60,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
@@ -81,10 +83,11 @@ import com.jrprofessor.mindolist.model.Priority
 import com.jrprofessor.mindolist.presentation.AddTaskAction
 import com.jrprofessor.mindolist.presentation.AddTaskEvent
 import com.jrprofessor.mindolist.presentation.AddTaskUiState
+import com.jrprofessor.mindolist.theme.PrimaryBlue
 import com.jrprofessor.mindolist.theme.backgroundColor
 import com.jrprofessor.mindolist.theme.btnColor
 import com.jrprofessor.mindolist.utils.showToast
-import com.jrprofessor.mindolist.viewmodels.AddTaskViewModel
+import com.jrprofessor.mindolist.viewmodels.TaskViewModel
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
@@ -95,7 +98,8 @@ private val logger = KotlinLogging.logger {
 // Colors
 // Colors
 private val CardBackground = Color(0xFFFFFFFF)
-private val PurpleAccent = Color(0xFF6C3FC7)
+
+//private val PurpleAccent = Color(0xFF6C3FC7)
 private val TitleColor = Color(0xFF3A3A5C)
 private val PlaceholderColor = Color(0xFFB0B3C6)
 
@@ -116,11 +120,10 @@ enum class ReminderOption(val label: String) {
     ONE_DAY("1 day before"),
 }
 
-private val PrimaryBlue = Color(0xFF3B82F6)
 
 @Composable
 fun AddTaskScreen(
-    viewModel: AddTaskViewModel = koinViewModel(),
+    viewModel: TaskViewModel = koinViewModel(),
     onNavigateBack: () -> Unit = {}
 ) {
 
@@ -158,6 +161,7 @@ fun AddTaskScreen(
         } else {
             AddTaskContent(
                 state = state,
+                onNavigateBack,
                 viewModel,
                 onDateSelection = {
                     showDatePicker = it
@@ -170,15 +174,13 @@ fun AddTaskScreen(
 
     if (showTimePicker) {
         TimePickerDialog(
-            initialHour = state.selectedTime.split(":")[0].toInt(),
-            initialMinute = state.selectedTime.split(":")[1].toInt(),
-            onTimeSelected = { hour, minute ->
-                val displayHour = if (hour == 0) 12 else hour
+            initialHour = state.selectedTime.split(" ")[0].split(":")[0].toInt(),
+            initialMinute = state.selectedTime.split(" ")[0].split(":")[1].toInt(),
+            period = state.selectedTime.split(" ")[1],
+            onTimeSelected = { hour, minute,period ->
                 viewModel.dispatch(
                     AddTaskAction.TimeSelected(
-                        "${displayHour.toString().padStart(2, '0')}:${
-                    minute.toString().padStart(2, '0')
-                        }"
+                        "$hour:$minute $period"
                     )
                 )
                 showTimePicker = false
@@ -208,7 +210,8 @@ fun AddTaskScreen(
 @Composable
 fun AddTaskContent(
     state: AddTaskUiState,
-    viewModel: AddTaskViewModel,
+    onNavigateBack: () -> Unit,
+    viewModel: TaskViewModel,
     onDateSelection: (Boolean) -> Unit,
     onTimeSelection: (Boolean) -> Unit
 ) {
@@ -220,7 +223,7 @@ fun AddTaskContent(
             .padding(16.dp)
     ) {
         Spacer(modifier = Modifier.height(15.dp))
-        CustomToolBar(viewModel)
+        CustomToolBar(viewModel,onNavigateBack)
         Spacer(modifier = Modifier.height(15.dp))
         IdentityView(state, viewModel)
         Spacer(modifier = Modifier.height(15.dp))
@@ -253,7 +256,7 @@ fun AlertsSection(
     onToggle: (Boolean) -> Unit,
     onReminderSelected: (ReminderOption) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: AddTaskViewModel,
+    viewModel: TaskViewModel,
 ) {
     var showDropdown by remember { mutableStateOf(false) }
 
@@ -278,7 +281,7 @@ fun AlertsSection(
                 Icon(
                     imageVector = IcBell, // replace with your bell icon
                     contentDescription = "Alert",
-                    tint = Color(0xFF7C3AED),
+                    tint = PrimaryBlue,
                     modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -292,7 +295,7 @@ fun AlertsSection(
                 Switch(
                     checked = isEnabled, onCheckedChange = onToggle, colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
-                        checkedTrackColor = Color(0xFF7C3AED),
+                        checkedTrackColor = PrimaryBlue,
                         uncheckedThumbColor = Color.White,
                         uncheckedTrackColor = Color(0xFFCBD5E1),
                     )
@@ -331,13 +334,13 @@ fun AlertsSection(
                                 text = selectedReminder.label,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF7C3AED),
+                                color = PrimaryBlue,
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Icon(
                                 imageVector = Icons.Default.KeyboardArrowDown,
                                 contentDescription = "Dropdown",
-                                tint = Color(0xFF7C3AED),
+                                tint = PrimaryBlue,
                                 modifier = Modifier.size(18.dp),
                             )
                         }
@@ -358,7 +361,7 @@ fun AlertsSection(
                                     text = option.label,
                                     fontSize = 14.sp,
                                     fontWeight = if (option == selectedReminder) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (option == selectedReminder) Color(0xFF7C3AED) else Color(
+                                    color = if (option == selectedReminder) PrimaryBlue else Color(
                                         0xFF1E293B
                                     ),
                                 )
@@ -370,7 +373,7 @@ fun AlertsSection(
                                     Icon(
                                         imageVector = Icons.Default.CheckBoxOutlineBlank,
                                         contentDescription = null,
-                                        tint = Color(0xFF7C3AED),
+                                        tint = PrimaryBlue,
                                         modifier = Modifier.size(16.dp),
                                     )
                                 }
@@ -441,9 +444,8 @@ fun CategoryItem(category: Category, isSelected: Boolean, onClick: () -> Unit) {
             .clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) PurpleAccent else SegmentBackground
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = elevation)
+            containerColor = if (isSelected) PrimaryBlue else SegmentBackground
+        ), elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
@@ -466,7 +468,7 @@ fun CategoryItem(category: Category, isSelected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun ImportanceView(viewModel: AddTaskViewModel, state: AddTaskUiState) {
+fun ImportanceView(viewModel: TaskViewModel, state: AddTaskUiState) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -549,7 +551,7 @@ fun <T> SegmentedControl(
                     ) {
                         Text(
                             text = label(option),
-                            color = if (isSelected) PurpleAccent else UnselectedTextColor,
+                            color = if (isSelected) PrimaryBlue else UnselectedTextColor,
                             fontSize = 15.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )
@@ -564,7 +566,7 @@ fun <T> SegmentedControl(
 @Composable
 fun ScheduleView(
     state: AddTaskUiState,
-    viewModel: AddTaskViewModel,
+    viewModel: TaskViewModel,
     onDateSelection: (Boolean) -> Unit,
     onTimeSelection: (Boolean) -> Unit,
 ) {
@@ -602,7 +604,7 @@ fun ScheduleView(
 
 @Composable
 fun CommonDayTime(
-    viewModel: AddTaskViewModel,
+    viewModel: TaskViewModel,
     icon: ImageVector,
     title: String,
     onClick: (Boolean) -> Unit
@@ -610,8 +612,8 @@ fun CommonDayTime(
     Surface(
         onClick = { onClick(true) },
         shape = RoundedCornerShape(50.dp),
-        color = Color(0x0D7F13EC),
-        border = BorderStroke(1.dp, Color(0x1A7F13EC)),
+        color = Color(0x0D3B82F6),
+        border = BorderStroke(1.dp, Color(0x1A3B82F6)),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
@@ -619,7 +621,10 @@ fun CommonDayTime(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Image(
-                imageVector = icon, contentDescription = "Icon", modifier = Modifier.size(20.dp)
+                imageVector = icon,
+                contentDescription = "Icon",
+                modifier = Modifier.size(20.dp),
+                colorFilter = ColorFilter.tint(PrimaryBlue)
             )
             Text(
                 text = title, color = TitleColor, fontSize = 14.sp, fontWeight = FontWeight.Bold
@@ -629,7 +634,7 @@ fun CommonDayTime(
 }
 
 @Composable
-fun IdentityView(state: AddTaskUiState, viewModel: AddTaskViewModel) {
+fun IdentityView(state: AddTaskUiState, viewModel: TaskViewModel) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -654,8 +659,7 @@ fun IdentityView(state: AddTaskUiState, viewModel: AddTaskViewModel) {
                 onValueChange = { viewModel.dispatch(AddTaskAction.TitleChanged(it)) },
                 textStyle = TextStyle(
                     color = TitleColor, fontSize = 22.sp, fontWeight = FontWeight.Bold
-                ),
-                cursorBrush = SolidColor(PurpleAccent),
+                ), cursorBrush = SolidColor(PrimaryBlue),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = false,
                 maxLines = 3,
@@ -703,7 +707,10 @@ fun IdentityView(state: AddTaskUiState, viewModel: AddTaskViewModel) {
 fun HeaderWithIcon(icon: ImageVector, title: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Image(
-            imageVector = icon, contentDescription = "Icon", modifier = Modifier.size(20.dp)
+            imageVector = icon,
+            contentDescription = "Icon",
+            modifier = Modifier.size(20.dp),
+            colorFilter = ColorFilter.tint(PrimaryBlue)
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
@@ -713,13 +720,22 @@ fun HeaderWithIcon(icon: ImageVector, title: String) {
 }
 
 @Composable
-fun CustomToolBar(viewModel: AddTaskViewModel) {
+fun CustomToolBar(viewModel: TaskViewModel, onNavigateBack: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(imageVector = IcClose, contentDescription = "Close")
+        IconButton(
+            onClick = onNavigateBack,
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(
+                imageVector = IcClose,
+                contentDescription = "Back",
+                tint = Color.Black
+            )
+        }
         Spacer(modifier = Modifier.weight(1f))
         Text(
             text = "New Task",

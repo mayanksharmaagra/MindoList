@@ -3,17 +3,39 @@ package com.jrprofessor.mindolist.customView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,14 +44,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.YearMonth
 import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.minus
 import kotlinx.datetime.number
@@ -40,7 +60,7 @@ import kotlin.time.ExperimentalTime
 
 
 // -- helper class for date-------------
-
+private val PrimaryBlue = Color(0xFF3B82F6)
 data class SimpleDate(
     val year: Int,
     val month: Int,   // 1-12
@@ -96,7 +116,7 @@ data class SimpleDate(
         "${dayOfWeekName()}, ${monthName()} $day/*${getDaySuffix(day)}*/"
 
     fun monthYearFormatted(): String = "${monthName()} $year"
-    fun monthYearDayFormatted(): String = "$day/${monthName()}/$year"
+    fun monthYearDayFormatted(): String = "$day/${month.toString().padStart(2, '0')}/$year"
 }
 
 @OptIn(ExperimentalTime::class)
@@ -161,7 +181,7 @@ fun DatePickerScreen(
                 modifier = Modifier.align(Alignment.CenterStart)
             ) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
                     tint = Color(0xFF1E293B),
                 )
@@ -195,7 +215,7 @@ fun DatePickerScreen(
                     modifier = Modifier
                         .clip(RoundedCornerShape(50.dp))
                         .background(
-                            if (isSelected) Color(0xFF7C3AED) else Color.White
+                            if (isSelected) PrimaryBlue else Color.White
                         )
                         .border(
                             width = 1.dp,
@@ -303,7 +323,7 @@ fun DatePickerScreen(
                                     .clip(CircleShape)
                                     .background(
                                         when {
-                                            isSelected -> Color(0xFF7C3AED)
+                                            isSelected -> PrimaryBlue
                                             else -> Color.Transparent
                                         }
                                     )
@@ -324,7 +344,7 @@ fun DatePickerScreen(
                                             color = when {
                                                 isSelected -> Color.White
                                                 isPast -> Color(0xFFCBD5E1)
-                                                isToday -> Color(0xFF7C3AED)
+                                                isToday -> PrimaryBlue
                                                 else -> Color(0xFF1E293B)
                                             },
                                         )
@@ -334,7 +354,7 @@ fun DatePickerScreen(
                                                 modifier = Modifier
                                                     .size(4.dp)
                                                     .clip(CircleShape)
-                                                    .background(Color(0xFF7C3AED))
+                                                    .background(PrimaryBlue)
                                             )
                                         }
                                     }
@@ -354,7 +374,7 @@ fun DatePickerScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFFEDE9FE))
+                .background(Color(0x0D3B82F6))
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -362,7 +382,7 @@ fun DatePickerScreen(
             Icon(
                 imageVector = Icons.Default.CalendarMonth,
                 contentDescription = null,
-                tint = Color(0xFF7C3AED),
+                tint = PrimaryBlue,
                 modifier = Modifier.size(22.dp),
             )
             Column {
@@ -392,7 +412,7 @@ fun DatePickerScreen(
                 .padding(horizontal = 16.dp, vertical = 20.dp)
                 .height(56.dp),
             shape = RoundedCornerShape(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED)),
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
         ) {
             Text(
                 text = "Save Selection",

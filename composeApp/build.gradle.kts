@@ -39,8 +39,8 @@ kotlin {
             implementation(libs.android.activation)
             implementation(libs.androidx.core.splashscreen)
             implementation(libs.coil.compose)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
+//            implementation(libs.androidx.lifecycle.viewmodelCompose)
+//            implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kotlinx.coroutines.android)
 
             implementation(libs.kotlinx.datetime)

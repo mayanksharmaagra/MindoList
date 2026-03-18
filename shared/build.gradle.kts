@@ -62,7 +62,7 @@ kotlin {
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.kotlinx.serialization)
-
+            implementation(libs.multiplatform.settings)
         }
         androidMain.dependencies {
             implementation(libs.compose.icons)

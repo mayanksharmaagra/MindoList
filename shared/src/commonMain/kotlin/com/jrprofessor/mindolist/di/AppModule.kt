@@ -1,4 +1,4 @@
-package com.jrprofessor.mindolist.domain.di
+package com.jrprofessor.mindolist.di
 
 import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepository
 import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepositoryImpl
@@ -12,8 +12,7 @@ import com.jrprofessor.mindolist.domain.usecase.GetTasksUseCase
 import com.jrprofessor.mindolist.domain.usecase.LoginWithEmailUseCase
 import com.jrprofessor.mindolist.domain.usecase.SendOtpUseCase
 import com.jrprofessor.mindolist.domain.usecase.VerifyOtpUseCase
-import com.jrprofessor.mindolist.model.TaskCardData
-import com.jrprofessor.mindolist.viewmodels.AddTaskViewModel
+import com.jrprofessor.mindolist.viewmodels.TaskViewModel
 import com.jrprofessor.mindolist.viewmodels.AuthViewModel
 import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
 import com.jrprofessor.mindolist.viewmodels.LoginViewModel
@@ -21,7 +20,6 @@ import com.jrprofessor.mindolist.viewmodels.SignUpViewModel
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.database.database
-import org.koin.core.module.Module
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
@@ -32,7 +30,7 @@ val viewModelModule = module {
     viewModelOf(::LoginViewModel)
     viewModelOf(::SignUpViewModel)
     viewModelOf(::DashboardViewModel)
-    viewModelOf(::AddTaskViewModel)
+    viewModelOf(::TaskViewModel)
     viewModelOf(::AuthViewModel)
 }
 
@@ -51,12 +49,12 @@ val useCaseModule = module {
 val firebaseModule = module {
 
     // ✅ dev.gitlive Firebase Auth
-    single {
+    single(createdAtStart = false) {
         Firebase.auth
     }
 
     // ✅ dev.gitlive Firebase Database with persistence
-    single {
+    single(createdAtStart = false) {
         Firebase.database.apply {
             setPersistenceEnabled(true)
         }
@@ -66,7 +64,8 @@ val firebaseModule = module {
     single<FirebaseAuthRepository> {
         FirebaseAuthRepositoryImpl(
             firebaseAuth = get(),
-            firebaseDatabase = get()
+            firebaseDatabase = get(),
+            appSettings = get(),
         )
     }
     single<TaskRepository> {
@@ -80,7 +79,9 @@ val firebaseModule = module {
 
 // ✅ Sab modules ek jagah
 fun appModules() = listOf(
-    viewModelModule,
+    platformModule,
+    firebaseModule,
     useCaseModule,
-    firebaseModule
+    viewModelModule
 )
+

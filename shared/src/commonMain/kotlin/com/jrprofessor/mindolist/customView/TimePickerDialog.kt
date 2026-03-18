@@ -3,15 +3,38 @@ package com.jrprofessor.mindolist.customView
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,12 +45,13 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 
 // ── Time Picker Dialog ────────────────────────────────────────────────────────
-
+private val PrimaryBlue = Color(0xFF3B82F6)
 @Composable
 fun TimePickerDialog(
-    initialHour: Int = 11,
-    initialMinute: Int = 30,
-    onTimeSelected: (hour: Int, minute: Int) -> Unit,
+    initialHour: Int,
+    initialMinute: Int,
+    period: String,
+    onTimeSelected: (hour: String, minute: String, period: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val hours = (1..12).toList()
@@ -36,7 +60,7 @@ fun TimePickerDialog(
 
     var selectedHour by remember { mutableIntStateOf(initialHour) }
     var selectedMinute by remember { mutableIntStateOf(initialMinute) }
-    var selectedPeriod by remember { mutableStateOf(if (initialHour >= 12) "PM" else "AM") }
+    var selectedPeriod by remember { mutableStateOf(period)}
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -105,7 +129,7 @@ fun TimePickerDialog(
                             text = ":",
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF7C3AED),
+                            color = PrimaryBlue,
                             modifier = Modifier.padding(bottom = 4.dp),
                         )
 
@@ -145,17 +169,14 @@ fun TimePickerDialog(
                 // ── Set Time Button ───────────────────────────────────────────
                 Button(
                     onClick = {
-                        val hour24 = if (selectedPeriod == "PM" && selectedHour != 12) selectedHour + 12
-                        else if (selectedPeriod == "AM" && selectedHour == 12) 0
-                        else selectedHour
-                        onTimeSelected(hour24, selectedMinute)
+                        onTimeSelected(selectedHour.toString().padStart(2, '0'), selectedMinute.toString().padStart(2, '0'), selectedPeriod)
                         onDismiss()
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
                     shape = RoundedCornerShape(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED)),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
                 ) {
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
@@ -251,7 +272,7 @@ fun <T> ScrollPicker(
                         text = label(infiniteItems[index]),
                         fontSize = if (isSelected) 26.sp else 18.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) Color(0xFF7C3AED) else Color(0xFFCBD5E1),
+                        color = if (isSelected) PrimaryBlue else Color(0xFFCBD5E1),
                     )
                 }
             }

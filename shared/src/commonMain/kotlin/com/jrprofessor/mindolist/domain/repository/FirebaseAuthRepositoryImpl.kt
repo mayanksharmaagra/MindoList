@@ -1,5 +1,6 @@
 package com.jrprofessor.mindolist.domain.repository
 
+import com.jrprofessor.mindolist.local.AppSettings
 import com.jrprofessor.mindolist.domain.model.OtpVerification
 import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.domain.model.User
@@ -10,7 +11,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
-import dev.gitlive.firebase.database.database
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -29,6 +29,7 @@ private fun currentTimeMillis(): Long = Clock.System.now().toEpochMilliseconds()
 open class FirebaseAuthRepositoryImpl(
     private val firebaseAuth: FirebaseAuth,
     private val firebaseDatabase: FirebaseDatabase,
+    private val appSettings: AppSettings,
 ) : FirebaseAuthRepository {
 
     private val userRef: DatabaseReference = firebaseDatabase.reference("users")
@@ -172,6 +173,7 @@ open class FirebaseAuthRepositoryImpl(
     override suspend fun signOut(): Result<Unit> {
         return try {
             firebaseAuth.signOut()
+            appSettings.clear()
             Result.Success(Unit)
         } catch (e: Exception) {
             logger.error(e) { "Error signing out" }
@@ -180,17 +182,21 @@ open class FirebaseAuthRepositoryImpl(
     }
 
     override fun isLoggedIn(): Boolean {
-        return firebaseAuth.currentUser != null
+        return appSettings.isLoggedIn
     }
 
     override fun authState(): Flow<Boolean> = flow {
-        val current = firebaseAuth.currentUser
-        println(">>> currentUser: $current")  // ← check
-        emit(current != null)
-        emitAll(firebaseAuth.authStateChanged.map {
-            println(">>> authStateChanged: $it")  // ← check
-            it != null
-        })
+        // Step 1 — Local se turant emit karo (no delay)
+        emit(appSettings.isLoggedIn)
+
+        // Step 2 — Firebase se verify karo aur sync karo
+        emitAll(
+            firebaseAuth.authStateChanged.map { user ->
+                val loggedIn = user != null
+                appSettings.isLoggedIn = loggedIn  // ← local sync
+                loggedIn
+            }
+        )
     }
 
     override suspend fun isOtpValid(email: String): Result<Boolean> {
@@ -229,23 +235,22 @@ open class FirebaseAuthRepositoryImpl(
         return try {
             // ✅ dev.gitlive — no .await()
             val authResult = firebaseAuth.signInWithEmailAndPassword(email, password)
-            val firebaseUser = authResult.user
-
-            if (firebaseUser != null) {
-                val user = User(
-                    uid = firebaseUser.uid,
-                    email = firebaseUser.email ?: "",
-                    displayName = firebaseUser.displayName,
-                    photoUrl = firebaseUser.photoURL,
-                    createdAt = currentTimeMillis(),
-                    updatedAt = currentTimeMillis(),
-                    emailVerified = firebaseUser.isEmailVerified,
-                    isActive = true
-                )
-                Result.Success(user)
-            } else {
-                Result.Error(Exception("Login failed"), "Login failed")
-            }
+            val firebaseUser = authResult.user ?: return Result.Error(
+                Exception("Login failed"),
+                "Login failed. Please try again."
+            )
+            appSettings.isLoggedIn = true   // ← save locally
+            val user = User(
+                uid = firebaseUser.uid,
+                email = firebaseUser.email ?: "",
+                displayName = firebaseUser.displayName,
+                photoUrl = firebaseUser.photoURL,
+                createdAt = currentTimeMillis(),
+                updatedAt = currentTimeMillis(),
+                emailVerified = firebaseUser.isEmailVerified,
+                isActive = true
+            )
+            Result.Success(user)
         } catch (e: Exception) {
             logger.error(e) { "Login error: ${e.message}" }
             Result.Error(e, e.message ?: "Login failed. Please try again.")
