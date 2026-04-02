@@ -44,7 +44,8 @@ kotlin {
             implementation(libs.kotlinx.coroutines.android)
 
             implementation(libs.kotlinx.datetime)
-            implementation(libs.kotlin.logging)
+            implementation(libs.napier.logger)
+
         }
         commonMain.dependencies {
             implementation(libs.runtime)
@@ -60,7 +61,7 @@ kotlin {
             implementation(libs.coil.compose)
 
             implementation(libs.kotlinx.datetime)
-            implementation(libs.kotlin.logging)
+            implementation(libs.napier.logger)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

@@ -1,10 +1,13 @@
 package com.jrprofessor.mindolist.navGraph
 
+import androidx.compose.material.icons.Icons
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.jrprofessor.mindolist.icons.AnalyticsSelectedIcon
-import com.jrprofessor.mindolist.icons.AnalyticsUnSelectedIcon
+import com.jrprofessor.mindolist.icons.AnalyticsSelected
+import com.jrprofessor.mindolist.icons.AnalyticsUnselected
 import com.jrprofessor.mindolist.icons.DashboardSelected
 import com.jrprofessor.mindolist.icons.DashboardUnselected
+import com.jrprofessor.mindolist.icons.ProfileSelected
+import com.jrprofessor.mindolist.icons.ProfileUnselected
 import com.jrprofessor.mindolist.icons.SettingsSelected
 import com.jrprofessor.mindolist.icons.SettingsUnselected
 import com.jrprofessor.mindolist.icons.TasksSelected
@@ -34,8 +37,8 @@ sealed class BottomNavItem(
     object Analytics : BottomNavItem(
         route = Screen.Analytics.route,
         label = "Analytics",
-        selectedIcon = AnalyticsSelectedIcon,
-        unSelectedIcon = AnalyticsUnSelectedIcon
+        selectedIcon = Icons.AnalyticsSelected,
+        unSelectedIcon = Icons.AnalyticsUnselected
     )
 
     object Settings : BottomNavItem(

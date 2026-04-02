@@ -83,32 +83,22 @@ import com.jrprofessor.mindolist.model.Priority
 import com.jrprofessor.mindolist.presentation.AddTaskAction
 import com.jrprofessor.mindolist.presentation.AddTaskEvent
 import com.jrprofessor.mindolist.presentation.AddTaskUiState
+import com.jrprofessor.mindolist.theme.CardBackground
+import com.jrprofessor.mindolist.theme.CategoryUnselectedTextColor
+import com.jrprofessor.mindolist.theme.PlaceholderColor
 import com.jrprofessor.mindolist.theme.PrimaryBlue
+import com.jrprofessor.mindolist.theme.RemindViewBG
+import com.jrprofessor.mindolist.theme.SegmentBackground
+import com.jrprofessor.mindolist.theme.SelectedBackground
+import com.jrprofessor.mindolist.theme.TitleColor
+import com.jrprofessor.mindolist.theme.UnselectedTextColor
 import com.jrprofessor.mindolist.theme.backgroundColor
 import com.jrprofessor.mindolist.theme.btnColor
+import com.jrprofessor.mindolist.utils.Logger
 import com.jrprofessor.mindolist.utils.showToast
 import com.jrprofessor.mindolist.viewmodels.TaskViewModel
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
-
-private val logger = KotlinLogging.logger {
-
-}
-// Colors
-// Colors
-private val CardBackground = Color(0xFFFFFFFF)
-
-//private val PurpleAccent = Color(0xFF6C3FC7)
-private val TitleColor = Color(0xFF3A3A5C)
-private val PlaceholderColor = Color(0xFFB0B3C6)
-
-// Colors
-private val SegmentBackground = Color(0xFFF1F5F9)
-private val SelectedBackground = Color(0xFFFFFFFF)
-private val UnselectedTextColor = Color(0xFF64748B)
-private val CategoryUnselectedTextColor = Color(0xFF475569)
-private val RemindViewBG = Color(0xFFF8FAFC)
 
 enum class ReminderOption(val label: String) {
     FIVE_MINUTES("5 minutes before"),
@@ -184,7 +174,7 @@ fun AddTaskScreen(
                     )
                 )
                 showTimePicker = false
-                logger.debug {
+                Logger.debug {
                     "AddTaskScreen: ${state.selectedTime}"
                 }
             },
@@ -197,7 +187,7 @@ fun AddTaskScreen(
                 viewModel.dispatch(
                     AddTaskAction.DateSelected(date.monthYearDayFormatted())
                 )
-                logger.debug { "AddTaskScreen: ${state.selectedDate}" }
+                Logger.debug { "AddTaskScreen: ${state.selectedDate}" }
                 showDatePicker = false
             },
             onDismiss = {

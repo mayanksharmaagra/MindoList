@@ -1,7 +1,13 @@
 package com.jrprofessor.mindolist.presentation
 
 import com.jrprofessor.mindolist.domain.model.User
+import com.jrprofessor.mindolist.extension.today
+import com.jrprofessor.mindolist.model.Filter
 import com.jrprofessor.mindolist.model.TaskModel
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 data class DashboardState (
     // Tasks
@@ -13,5 +19,7 @@ data class DashboardState (
 
     val user: User?=null,
     val currentDate:String="",
-    val greeting: String=""
+    val greeting: String="",
+    val selectedDate: LocalDate = today(),
+    val selectedFilter: String= Filter.ALL.name
 )

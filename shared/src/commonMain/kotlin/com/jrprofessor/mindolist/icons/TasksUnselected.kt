@@ -9,10 +9,10 @@ import androidx.compose.ui.unit.dp
 
 val TasksUnselected: ImageVector = ImageVector.Builder(
     name = "TasksUnselected",
-    defaultWidth = 20.dp,
-    defaultHeight = 18.dp,
-    viewportWidth = 20f,
-    viewportHeight = 18f
+    defaultWidth = 22.0.dp,
+    defaultHeight = 21.0.dp,
+    viewportWidth = 22.0f,
+    viewportHeight = 21.0f,
 ).apply {
     path(
         fill = SolidColor(Color(0xFF94A3B8))

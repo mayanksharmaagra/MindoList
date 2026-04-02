@@ -3,9 +3,11 @@ package com.jrprofessor.mindolist.screen
 //import mindolist.shared.generated.resources.roboto_condensed_regular
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +17,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -44,6 +48,7 @@ import com.jrprofessor.mindolist.customView.CircularProgressBar
 import com.jrprofessor.mindolist.customView.TaskItem
 import com.jrprofessor.mindolist.customView.TasksEmptyState
 import com.jrprofessor.mindolist.domain.model.User
+import com.jrprofessor.mindolist.extension.today
 import com.jrprofessor.mindolist.model.TaskCardData
 import com.jrprofessor.mindolist.model.TaskModel
 import com.jrprofessor.mindolist.presentation.DashboardAction
@@ -78,10 +83,12 @@ import kotlin.time.Instant
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel = koinViewModel(),
+    navigateToAllTasks: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(Unit) {
+        viewModel.dispatch(DashboardAction.DateByTask(today()))
         viewModel.event.collect { event ->
             when (event) {
                 is DashboardEvent.Error -> showToast(event.message)
@@ -101,15 +108,23 @@ fun DashboardScreen(
                 color = PrimaryBlue
             )
         } else {
-            DashboardContent(state = state) {
-                viewModel.dispatch(DashboardAction.MarkComplete(it, true))
-            }
+            DashboardContent(
+                state = state,
+                markCompleted = { taskId, isCompleted ->
+                    viewModel.dispatch(DashboardAction.MarkComplete(taskId, isCompleted))
+                },
+                navigateToAllTasks = navigateToAllTasks
+            )
         }
     }
 }
 
 @Composable
-fun DashboardContent(state: DashboardState, selectedId: (String) -> Unit) {
+fun DashboardContent(
+    state: DashboardState,
+    markCompleted: (String, Boolean) -> Unit,
+    navigateToAllTasks: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -134,23 +149,29 @@ fun DashboardContent(state: DashboardState, selectedId: (String) -> Unit) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        TodayTask(state.tasks, selectedId)
+        TodayTask(state.tasks, markCompleted, navigateToAllTasks)
 
         Spacer(modifier = Modifier.height(100.dp))
     }
 }
 
 @Composable
-fun TodayTask(tasks: List<TaskModel> = emptyList(), selectedId: (String) -> Unit) {
+fun TodayTask(
+    todayTasks: List<TaskModel> = emptyList(),
+    markCompleted: (String, Boolean) -> Unit,
+    navigateToAllTasks: () -> Unit
+) {
+
+
+  /*
     val today = Clock.System.now()
         .toLocalDateTime(TimeZone.currentSystemDefault()).date
-
-    val todayTasks = tasks.filter { task ->
+   val todayTasks = tasks.filter { task ->
         println("due date : ${task.dueDate}")
         val taskDate = Instant.fromEpochMilliseconds(task.dueDate)
             .toLocalDateTime(TimeZone.currentSystemDefault()).date
         taskDate == today
-    }
+    }*/
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -178,19 +199,40 @@ fun TodayTask(tasks: List<TaskModel> = emptyList(), selectedId: (String) -> Unit
 //                        FontWeight.Normal
 //                    )
 //                ),
-                color = PrimaryIndigo
+                color = PrimaryIndigo,
+                modifier = Modifier.clickable {
+                    navigateToAllTasks()
+                }
             )
         }
         if (todayTasks.isEmpty()) {
+            Spacer(modifier = Modifier.height(20.dp))
             TasksEmptyState()
         } else {
-            todayTasks.forEach { task ->
+           /* todayTasks.forEach { task ->
                 TaskItem(
                     task = task,
-                    onToggleComplete = { id ->
-                        selectedId(id)
+                    onToggleComplete = { isComplete ->
+                        markCompleted(task.id, isComplete)
                     },
                 )
+            }*/
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items(
+                    items = todayTasks,
+                    key = { it.id },
+                ) { task ->
+                    TaskItem(
+                        task = task,
+                        onToggleComplete = { isComplete ->
+                            markCompleted(task.id, isComplete)
+                        },
+                    )
+                }
             }
         }
     }
@@ -199,21 +241,23 @@ fun TodayTask(tasks: List<TaskModel> = emptyList(), selectedId: (String) -> Unit
 
 
 @Composable
-fun CardForDailyProgress(tasks: List<TaskModel>) {
+fun CardForDailyProgress(todayTasks: List<TaskModel>) {
     val startAngle by remember { mutableFloatStateOf(0f) }
     val progressBarWidth by remember { mutableStateOf(7.dp) }
     val backgroundProgressBarWidth by remember { mutableStateOf(9.dp) }
     val roundBorder by remember { mutableStateOf(true) }
 
     // ── Progress calculate karo ───────────────────────────────────────────────────
+
+
+   /*
     val today = Clock.System.now()
         .toLocalDateTime(TimeZone.currentSystemDefault()).date
-
     val todayTasks = tasks.filter { task ->
         val taskDate = Instant.fromEpochMilliseconds(task.dueDate)
             .toLocalDateTime(TimeZone.currentSystemDefault()).date
         taskDate == today
-    }
+    }*/
 
     val completedToday = todayTasks.filter { it.isCompleted }.size
     val totalToday = todayTasks.size
@@ -315,12 +359,12 @@ fun CardSection(tasks: List<TaskModel>) {
     }
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         taskViewList.forEach { rowCards ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 rowCards.forEach { card ->
                     CardTaskSection(card,
@@ -340,9 +384,7 @@ fun RowScope.CardTaskSection(
 ) {
 
     Card(
-        modifier = Modifier
-            .weight(1f)
-            .padding(4.dp),
+        modifier = Modifier.weight(1f),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = data.cardBackgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

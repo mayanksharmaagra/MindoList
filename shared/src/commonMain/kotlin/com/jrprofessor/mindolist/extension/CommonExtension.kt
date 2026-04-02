@@ -1,11 +1,18 @@
 package com.jrprofessor.mindolist.extension
 
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.number
+import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant
 
+fun today(): LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 fun Duration.toDateFormat(): String {
 
     val instant = Instant.fromEpochMilliseconds(this.inWholeMilliseconds)
@@ -63,4 +70,28 @@ fun Long.toDisplayTime(): String {
         else -> hour
     }.toString().padStart(2, '0')
     return "$displayHour:$minute $period"
+}
+
+fun LocalDate.toMonthYearLabel(): String {
+    val month = month.name.lowercase().replaceFirstChar { it.uppercase() }
+    return "$month $year"
+}
+fun LocalDate.toDayMonthYearLabel(): String {
+    val month = month.name.lowercase().replaceFirstChar { it.uppercase() }
+    return " $day $month $year"
+}
+
+fun LocalDate.isPast(): Boolean =
+    this < today()
+
+fun LocalDate.isToday(): Boolean =
+    this == today()
+
+// Generate dates for entire month
+fun generateMonthDates(year: Int, month: Month): List<LocalDate> {
+    val firstDay = LocalDate(year, month, 1)
+    val lastDay = firstDay.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
+    return (firstDay.day..lastDay.day).map {
+        LocalDate(year, month, it)
+    }
 }

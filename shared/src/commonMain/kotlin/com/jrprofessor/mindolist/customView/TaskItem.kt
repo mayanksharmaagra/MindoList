@@ -1,11 +1,12 @@
 package com.jrprofessor.mindolist.customView
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,38 +14,39 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jrprofessor.mindolist.extension.toDisplayTime
+import com.jrprofessor.mindolist.model.Category
 import com.jrprofessor.mindolist.model.Priority
 import com.jrprofessor.mindolist.model.TaskModel
-import com.jrprofessor.mindolist.theme.BorderLight
-import com.jrprofessor.mindolist.theme.TextDark
-import com.jrprofessor.mindolist.theme.TextGray
-import com.jrprofessor.mindolist.theme.TextMuted
 
-@Composable
+/*@Composable
 fun TaskItem(
     task: TaskModel,
     onToggleComplete: (String) -> Unit,
@@ -184,6 +186,182 @@ fun TaskItem(
             }
 
             Spacer(modifier = Modifier.width(12.dp))
+        }
+    }
+}*/
+@Composable
+fun TaskItem(
+    task: TaskModel,
+    onToggleComplete: (Boolean) -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    var checked by remember(task.isCompleted) { mutableStateOf(task.isCompleted) }
+
+    val priorityColor = Priority.entries
+        .find { it.label == task.priority }?.dotColor ?: Color(0xFF94A3B8)
+
+    val category = Category.entries
+        .find { it.dbKey == task.category } ?: Category.PERSONAL
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 0.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+        ) {
+            // ── Left priority color strip ─────────────────────────────────────
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(50.dp))
+                    .background(
+                        if (checked) Color(0xFF86EFAC)   // green when completed
+                        else priorityColor
+                    )
+            )
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            // ── Title + time + category ───────────────────────────────────────
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = task.title,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (checked) Color(0xFFADB5BD) else Color(0xFF1A202C),
+                    textDecoration = if (checked) TextDecoration.LineThrough
+                    else TextDecoration.None,
+                    maxLines = 2,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = task.description,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (checked) Color(0xFFADB5BD) else Color(0xFF64748B),
+                    textDecoration = if (checked) TextDecoration.LineThrough
+                    else TextDecoration.None,
+                    maxLines = 5,
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    // Time
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.AccessTime,
+                            contentDescription = null,
+                            tint = Color(0xFF94A3B8),
+                            modifier = Modifier.size(12.dp),
+                        )
+                        Text(
+                            text = task.dueDate.toDisplayTime(),
+                            fontSize = 12.sp,
+                            color = Color(0xFF94A3B8),
+                        )
+                    }
+
+                    // Category chip — Category enum se colors lo
+                    Surface(
+                        shape = RoundedCornerShape(50.dp),
+                        color = category.iconBgColor,
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Icon(
+                                imageVector = category.iconRes,
+                                contentDescription = null,
+                                tint = category.iconColor,
+                                modifier = Modifier.size(12.dp),
+                            )
+                            Text(
+                                text = category.label.uppercase(),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = category.iconColor,
+                                letterSpacing = 0.5.sp,
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // ── Checkbox ──────────────────────────────────────────────────────
+            TaskCheckbox(
+                checked = checked,
+                onCheckedChange = {
+                    checked = it
+                    onToggleComplete(it)
+                },
+            )
+        }
+    }
+}
+
+// ── Checkbox ──────────────────────────────────────────────────────────────────
+
+@Composable
+private fun TaskCheckbox(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    val bgColor by animateColorAsState(
+        targetValue = if (checked) Color(0xFF7C3AED) else Color.Transparent,
+        animationSpec = tween(200),
+        label = "checkboxBg",
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (checked) Color(0xFF7C3AED) else Color(0xFFCBD5E0),
+        animationSpec = tween(200),
+        label = "checkboxBorder",
+    )
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(24.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(bgColor)
+            .border(
+                width = 1.5.dp,
+                color = borderColor,
+                shape = RoundedCornerShape(8.dp),
+            )
+            .clickable(
+                indication = null,
+                interactionSource = remember {
+                    androidx.compose.foundation.interaction.MutableInteractionSource()
+                },
+            ) { onCheckedChange(!checked) },
+    ) {
+        if (checked) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = "Completed",
+                tint = Color.White,
+                modifier = Modifier.size(14.dp),
+            )
         }
     }
 }

@@ -1,11 +1,12 @@
 package com.jrprofessor.mindolist.domain.repository
 
 import com.jrprofessor.mindolist.domain.model.Result
+import com.jrprofessor.mindolist.extension.toDayMonthYearLabel
 import com.jrprofessor.mindolist.model.TaskModel
+import com.jrprofessor.mindolist.utils.Logger
 import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.database.DatabaseReference
 import dev.gitlive.firebase.database.FirebaseDatabase
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -19,10 +20,6 @@ import kotlinx.datetime.plus
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
-
-private val logger = KotlinLogging.logger {
-
-}
 
 // dueDate range calculate karo
 fun LocalDate.toStartOfDayMillis(): Long =
@@ -48,8 +45,9 @@ open class TaskRepositoryImpl(
     // tasks/{uid}/{taskId}
     private fun tasksRef() = firebaseDatabase.reference("tasks").child(uid)
 
-    override fun getTasks(): Flow<Result<List<TaskModel>>> = callbackFlow {
-        println(">>>    $uid")
+    override fun getTasks(): Flow<Result<List<TaskModel>>> =
+        callbackFlow {
+            Logger.error { ">>> get data with date" }
         trySend(Result.Loading)
 
         val listener = tasksRef().valueEvents
@@ -70,15 +68,15 @@ open class TaskRepositoryImpl(
         }
 
         awaitClose { job.cancel() }
-    }.catch { e ->
-        logger.debug {
+        }.catch { e ->
+            Logger.debug {
             "Error fetching tasks: ${e.message}"
         }
-        emit(Result.Error(e as Exception, e.message ?: "Failed to fetch tasks"))
+            emit(Result.Error(e as Exception, e.message ?: "Failed to fetch tasks"))
     }
 
     override fun getTasksByDate(date: LocalDate): Flow<Result<List<TaskModel>>> = callbackFlow {
-        println(">>>    $uid")
+
         trySend(Result.Loading)
 
         val startMillis = date.toStartOfDayMillis()
@@ -98,14 +96,17 @@ open class TaskRepositoryImpl(
                     }.getOrNull()
                 }.sortedBy { it.dueDate }
 
-                println(">>> tasks: ${tasks.size}")
+                Logger.error {
+                    ">>> selected date    ${date.toDayMonthYearLabel()} tasks: ${tasks.size}"
+                }
+                println(">>> selected date    ${date.toDayMonthYearLabel()} tasks: ${tasks.size}")
                 trySend(Result.Success(tasks))
             }
         }
 
         awaitClose { job.cancel() }
     }.catch { e ->
-        logger.debug {
+        Logger.debug {
             "Error fetching tasks: ${e.message}"
         }
         emit(Result.Error(e as Exception, e.message ?: "Failed to fetch tasks"))
@@ -126,10 +127,10 @@ open class TaskRepositoryImpl(
                 updatedAt = now,
             )
             ref.setValue(taskWithId.toMap())
-            logger.debug { "Task saved successfully: ${taskWithId.id}" }
+            Logger.debug { "Task saved successfully: ${taskWithId.id}" }
             Result.Success(Unit)
         } catch (e: Exception) {
-            logger.error(e) { "Error saving task to database" }
+            Logger.error(e) { "Error saving task to database" }
             Result.Error(e, "Failed to save task")
         }
     }
@@ -150,25 +151,25 @@ open class TaskRepositoryImpl(
     )
 
     override suspend fun updateTask(task: TaskModel): Result<Unit> {
-        return try {
-            val updatedMap = task.toMap().toMutableMap().apply {
-                put("isCompleted", true)
-                put("updatedAt", Clock.System.now().toEpochMilliseconds())
-            }
-            tasksRef().child(task.id).updateChildren(updatedMap)
-            logger.debug { "Task Updated successfully" }
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            logger.error(e) { "Error updating task to database" }
-            Result.Error(e, "Failed to update task")
-        }
+        TODO("Not yet implemented")
     }
 
     override suspend fun markComplete(
         taskId: String,
         isCompleted: Boolean
     ): Result<Unit> {
-        TODO("Not yet implemented")
+        return try {
+            val updateMap = mapOf(
+                "isCompleted" to isCompleted,               // ← hardcoded nahi
+                "updatedAt" to Clock.System.now().toEpochMilliseconds()
+            )
+            tasksRef().child(taskId).updateChildren(updateMap)
+            Logger.debug { "Task marked $isCompleted: $taskId" }
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Logger.error(e) { "Error marking task: ${e.message}" }
+            Result.Error(e, "Failed to update task status")
+        }
     }
 
     override suspend fun deleteTask(taskId: String): Result<Unit> {

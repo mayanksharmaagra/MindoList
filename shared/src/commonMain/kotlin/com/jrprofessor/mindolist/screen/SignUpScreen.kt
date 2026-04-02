@@ -50,13 +50,11 @@ import com.jrprofessor.mindolist.presentation.SignUpState
 import com.jrprofessor.mindolist.theme.backgroundColor
 import com.jrprofessor.mindolist.theme.btnColor
 import com.jrprofessor.mindolist.theme.stepColor
+import com.jrprofessor.mindolist.utils.Logger
 import com.jrprofessor.mindolist.utils.StatusBarDarkMode
 import com.jrprofessor.mindolist.utils.showToast
 import com.jrprofessor.mindolist.viewmodels.SignUpViewModel
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.collectLatest
-import mindolist.shared.generated.resources.Res
-import org.jetbrains.compose.resources.Font
 import org.koin.compose.viewmodel.koinViewModel
 
 const val SIGN_UP_TAG="SignUpScreen"
@@ -335,9 +333,6 @@ private fun OtpInputField(
     otpLength: Int = 5,
     onOtpComplete: (String) -> Unit
 ) {
-    val logger= KotlinLogging.logger {
-
-    }
     val focusRequesters = remember { List(otpLength) { FocusRequester() } }
 
     // ✅ CRITICAL FIX: Use individual state for each field
@@ -349,7 +344,7 @@ private fun OtpInputField(
 
     // ✅ Sync state when otp prop changes from parent
     LaunchedEffect(otp) {
-        logger.debug { "OTP changed from parent: '$otp'"}
+        Logger.debug { "OTP changed from parent: '$otp'"}
         repeat(otpLength) { index ->
             otpState[index] = otp.getOrNull(index)?.toString() ?: ""
         }
@@ -377,7 +372,7 @@ private fun OtpInputField(
 
                         // ✅ Build and send complete OTP to parent
                         val newOtp = otpState.joinToString("")
-                        logger.debug { "OtpInputField: $newOtp"}
+                        Logger.debug { "OtpInputField: $newOtp"}
                         onOtpComplete(newOtp)
 
                         // ✅ Move to next field if digit entered

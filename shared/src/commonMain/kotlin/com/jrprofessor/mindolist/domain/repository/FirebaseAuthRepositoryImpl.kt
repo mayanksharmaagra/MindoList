@@ -4,10 +4,10 @@ import com.jrprofessor.mindolist.local.AppSettings
 import com.jrprofessor.mindolist.domain.model.OtpVerification
 import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.domain.model.User
+import com.jrprofessor.mindolist.utils.Logger
 import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.database.DatabaseReference
 import dev.gitlive.firebase.database.FirebaseDatabase
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -15,11 +15,6 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-
-
-private val logger = KotlinLogging.logger {
-
-}
 
 
 
@@ -64,10 +59,10 @@ open class FirebaseAuthRepositoryImpl(
             otpRef.child(sanitizeEmail(email)).setValue(otpVerification)
             sendOtpEmail(email, otp)
 
-            logger.debug { "OTP sent successfully to $email" }
+            Logger.debug { "OTP sent successfully to $email" }
             Result.Success("OTP sent to $email")
         } catch (e: Exception) {
-            logger.error(e) { "Error sending OTP" }
+            Logger.error(e) { "Error sending OTP" }
             Result.Error(e, "Failed to send OTP. Please try again.")
         }
     }
@@ -92,7 +87,7 @@ open class FirebaseAuthRepositoryImpl(
                     otpRef.child(sanitizeEmail(email))
                         .child("isVerified")
                         .setValue(true)
-                    logger.debug { "OTP verified successfully for $email" }
+                    Logger.debug { "OTP verified successfully for $email" }
                     Result.Success(true)
                 }
                 else -> {
@@ -100,7 +95,7 @@ open class FirebaseAuthRepositoryImpl(
                 }
             }
         } catch (e: Exception) {
-            logger.error(e) { "Error verifying OTP" }
+            Logger.error(e) { "Error verifying OTP" }
             Result.Error(e, "Failed to verify OTP")
         }
     }
@@ -135,10 +130,10 @@ open class FirebaseAuthRepositoryImpl(
             saveUserToDatabase(user)
             otpRef.child(sanitizeEmail(email)).removeValue()
 
-            logger.debug { "User created successfully: ${user.uid}" }
+            Logger.debug { "User created successfully: ${user.uid}" }
             Result.Success(user)
         } catch (e: Exception) {
-            logger.error(e) { "Error creating user" }
+            Logger.error(e) { "Error creating user" }
             Result.Error(e, "Failed to create account: ${e.message}")
         }
     }
@@ -146,10 +141,10 @@ open class FirebaseAuthRepositoryImpl(
     override suspend fun saveUserToDatabase(user: User): Result<Unit> {
         return try {
             userRef.child(user.uid).setValue(user)
-            logger.debug { "User saved successfully: ${user.uid}" }
+            Logger.debug { "User saved successfully: ${user.uid}" }
             Result.Success(Unit)
         } catch (e: Exception) {
-            logger.error(e) { "Error saving user to database" }
+            Logger.error(e) { "Error saving user to database" }
             Result.Error(e, "Failed to save user data")
         }
     }
@@ -176,7 +171,7 @@ open class FirebaseAuthRepositoryImpl(
             appSettings.clear()
             Result.Success(Unit)
         } catch (e: Exception) {
-            logger.error(e) { "Error signing out" }
+            Logger.error(e) { "Error signing out" }
             Result.Error(e, "Failed to sign out")
         }
     }
@@ -213,7 +208,7 @@ open class FirebaseAuthRepositoryImpl(
             val isValid = currentTimeMillis() <= otpData.expiresAt && !otpData.isVerified
             Result.Success(isValid)
         } catch (e: Exception) {
-            logger.error(e) { "Error checking OTP validity" }
+            Logger.error(e) { "Error checking OTP validity" }
             Result.Error(e)
         }
     }
@@ -223,7 +218,7 @@ open class FirebaseAuthRepositoryImpl(
             val cooldown = getResendCooldownInternal(email)
             Result.Success(cooldown)
         } catch (e: Exception) {
-            logger.error(e) { "Error getting resend cooldown" }
+            Logger.error(e) { "Error getting resend cooldown" }
             Result.Error(e)
         }
     }
@@ -252,7 +247,7 @@ open class FirebaseAuthRepositoryImpl(
             )
             Result.Success(user)
         } catch (e: Exception) {
-            logger.error(e) { "Login error: ${e.message}" }
+            Logger.error(e) { "Login error: ${e.message}" }
             Result.Error(e, e.message ?: "Login failed. Please try again.")
 
         }
@@ -284,6 +279,6 @@ open class FirebaseAuthRepositoryImpl(
     // ✅ Email sending — androidMain me JavaMail implement karo
     suspend fun sendOtpEmail(toEmail: String, otp: String) {
         // Override this in DI or use a platform-specific email service
-        logger.debug { "OTP for $toEmail: $otp" }
+        Logger.debug { "OTP for $toEmail: $otp" }
     }
 }

@@ -8,10 +8,10 @@ import androidx.compose.ui.unit.dp
 
 val DashboardUnselected: ImageVector = ImageVector.Builder(
     name = "DashboardUnselected",
-    defaultWidth = 18.dp,
-    defaultHeight = 18.dp,
-    viewportWidth = 18f,
-    viewportHeight = 18f
+    defaultWidth = 22.0.dp,
+    defaultHeight = 21.0.dp,
+    viewportWidth = 22.0f,
+    viewportHeight = 21.0f,
 ).apply {
     path(
         fill = SolidColor(Color(0xFF94A3B8))

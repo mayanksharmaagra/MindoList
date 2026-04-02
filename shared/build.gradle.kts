@@ -54,7 +54,7 @@ kotlin {
 
             implementation(libs.kotlinx.datetime)
 
-            implementation(libs.kotlin.logging)
+            implementation(libs.napier.logger)
 
             implementation(libs.navigation.compose)
 

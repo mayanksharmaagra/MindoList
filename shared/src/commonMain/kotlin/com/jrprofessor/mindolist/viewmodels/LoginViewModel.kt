@@ -10,19 +10,14 @@ import com.jrprofessor.mindolist.presentation.LoginIntent
 import com.jrprofessor.mindolist.presentation.LoginMode
 import com.jrprofessor.mindolist.presentation.LoginState
 import com.jrprofessor.mindolist.utils.Validators
-import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
 
 class LoginViewModel (
     private val loginWithEmailUseCase: LoginWithEmailUseCase,

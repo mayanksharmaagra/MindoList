@@ -31,14 +31,9 @@ import kotlin.time.Clock
 
 class TaskViewModel(
     private val addTaskUseCase: AddTaskUseCase,
-    val getTaskUseCase: GetTasksUseCase,
-    val firebaseAuthRepository: FirebaseAuthRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(AddTaskUiState())
     val state: StateFlow<AddTaskUiState> = _state.asStateFlow()
-    private val _taskState = MutableStateFlow(DashboardState())
-    val taskState: StateFlow<DashboardState> = _taskState.asStateFlow()
-    private val _allTasks = MutableStateFlow<List<TaskModel>>(emptyList())
     private val _eventTask = Channel<DashboardEvent>(Channel.BUFFERED)
     val eventTask = _eventTask.receiveAsFlow()
 
@@ -161,29 +156,5 @@ class TaskViewModel(
             isValid = false
         }
         return isValid
-    }
-    fun loadTasks(selectedDate: LocalDate?) {
-        viewModelScope.launch {
-            getTaskUseCase(selectedDate).collect { result ->
-                when(result){
-                    is Result.Error -> {
-                        _taskState.update { it.copy(isLoading = false) }
-                        _eventTask.send(DashboardEvent.Error(result.message?:"Something went wrong"))
-                    }
-                    Result.Loading -> Unit
-                    is Result.Success<*> -> {
-                        _allTasks.value = result.data as List<TaskModel>
-                        _taskState.update {
-                            it.copy(
-                                isLoading = false,
-                                tasks = _allTasks.value,
-                                error = null,
-                            )
-                        }
-                    }
-                }
-
-            }
-        }
     }
 }
