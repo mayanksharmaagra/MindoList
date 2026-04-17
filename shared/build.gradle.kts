@@ -63,18 +63,28 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.kotlinx.serialization)
             implementation(libs.multiplatform.settings)
+            // build.gradle.kts commonMain
+            implementation(libs.peekaboo.ui)
+            implementation(libs.peekaboo.image.picker)
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network)
+
+            implementation(compose.components.uiToolingPreview)
         }
         androidMain.dependencies {
+            implementation(libs.ui.tooling)
             implementation(libs.compose.icons)
             implementation(libs.koin.android)
-//            implementation(libs.hilt.android)
-//            implementation(libs.androidx.hilt.navigation.compose)
             implementation(libs.lottie.compose)
             implementation(libs.accompanist.systemuicontroller)
             implementation(libs.android.mail)
             implementation(libs.android.activation)
             implementation(libs.androidx.core.splashscreen)
             implementation(libs.kotlinx.coroutines.android)
+            implementation(libs.ktor.client.android)
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

@@ -7,7 +7,7 @@ import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepository
 
 class CreateUserAccountUseCase(private val firebaseAuthRepository: FirebaseAuthRepository) {
 
-    suspend operator fun invoke(name:String,email: String,password: String): Result<User> {
+    suspend operator fun invoke(name: String, email: String, password: String, profileUrl: String): Result<User> {
         if (password.length < 8) {
             return Result.Error(Exception("Password must be at least 8 characters"))
         }
@@ -20,6 +20,6 @@ class CreateUserAccountUseCase(private val firebaseAuthRepository: FirebaseAuthR
             return Result.Error(Exception("Password must contain at least one symbol"))
         }
 
-        return firebaseAuthRepository.createUserWithEmailAndPassword(name,email,password)
+        return firebaseAuthRepository.createUserWithEmailAndPassword(name,email,password,profileUrl)
     }
 }

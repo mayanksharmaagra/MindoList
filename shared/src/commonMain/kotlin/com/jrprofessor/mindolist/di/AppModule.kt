@@ -10,16 +10,20 @@ import com.jrprofessor.mindolist.domain.usecase.CreateUserAccountUseCase
 import com.jrprofessor.mindolist.domain.usecase.GetResendCooldownUseCase
 import com.jrprofessor.mindolist.domain.usecase.GetTasksUseCase
 import com.jrprofessor.mindolist.domain.usecase.LoginWithEmailUseCase
+import com.jrprofessor.mindolist.domain.usecase.SendForgotPasswordResetLink
 import com.jrprofessor.mindolist.domain.usecase.SendOtpUseCase
 import com.jrprofessor.mindolist.domain.usecase.VerifyOtpUseCase
 import com.jrprofessor.mindolist.viewmodels.TaskViewModel
 import com.jrprofessor.mindolist.viewmodels.AuthViewModel
 import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
+import com.jrprofessor.mindolist.viewmodels.ForgotPasswordViewModel
 import com.jrprofessor.mindolist.viewmodels.LoginViewModel
+import com.jrprofessor.mindolist.viewmodels.SettingsViewmodel
 import com.jrprofessor.mindolist.viewmodels.SignUpViewModel
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.database.database
+import dev.gitlive.firebase.storage.storage
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
@@ -29,9 +33,11 @@ import org.koin.dsl.module
 val viewModelModule = module {
     viewModelOf(::LoginViewModel)
     viewModelOf(::SignUpViewModel)
+    viewModelOf(::ForgotPasswordViewModel)
     viewModelOf(::DashboardViewModel)
     viewModelOf(::TaskViewModel)
     viewModelOf(::AuthViewModel)
+    viewModelOf(::SettingsViewmodel)
 }
 
 
@@ -43,6 +49,7 @@ val useCaseModule = module {
     factoryOf(::LoginWithEmailUseCase)
     factoryOf(::AddTaskUseCase)
     factoryOf(::GetTasksUseCase)
+    factoryOf(::SendForgotPasswordResetLink)
 }
 
 
@@ -59,12 +66,17 @@ val firebaseModule = module {
             setPersistenceEnabled(true)
         }
     }
+    // ✅ dev.gitlive Firebase storage with persistence
+    single(createdAtStart = false) {
+        Firebase.storage
+    }
 
     // ✅ Repository binding
     single<FirebaseAuthRepository> {
         FirebaseAuthRepositoryImpl(
             firebaseAuth = get(),
             firebaseDatabase = get(),
+            firebaseStorage = get (),
             appSettings = get(),
         )
     }

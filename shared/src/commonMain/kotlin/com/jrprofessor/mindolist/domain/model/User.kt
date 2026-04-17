@@ -7,6 +7,7 @@ import kotlin.jvm.JvmField
 data class User(
     val uid: String = "",
     val email: String = "",
+    val profileUrl: String = "",
     val displayName: String? = null,
     val photoUrl: String? = null,
     val createdAt: Long = 0L,  // Will be set when creating user

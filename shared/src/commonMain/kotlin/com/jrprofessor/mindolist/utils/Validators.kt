@@ -58,4 +58,8 @@ object Validators {
     fun validateOtp(otp: String, length: Int = 5): Boolean {
         return otp.length == length && otp.all { it.isDigit() }
     }
+    fun isValidEmail(email: String): Boolean {
+        val emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+        return email.matches(emailRegex.toRegex())
+    }
 }

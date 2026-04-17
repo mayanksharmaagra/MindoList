@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jrprofessor.mindolist.customView.ActionButton
+import com.jrprofessor.mindolist.customView.ProfileImageSection
 import com.jrprofessor.mindolist.customView.ShowEmailView
 import com.jrprofessor.mindolist.customView.ShowNameView
 import com.jrprofessor.mindolist.customView.ShowPasswordView
@@ -166,7 +167,7 @@ fun SignUpContent(state: SignUpState, onEvent: (SignUpIntent) -> Unit) {
 
             SignUpButtonState.VERIFY_EMAIL -> {
                 ShowEmailOtpView(
-                    email = state.email,
+                    emailMsg = "We've sent a 5-digit verification code to ${state.email}. Please check your inbox and enter the code below.",
                     otp = state.otp,
                     otpError = state.otpError,
                     canResendOtp = state.canResendOtp,
@@ -177,6 +178,18 @@ fun SignUpContent(state: SignUpState, onEvent: (SignUpIntent) -> Unit) {
             }
 
             SignUpButtonState.CREATE_PASSWORD -> {
+                Logger.debug {
+                    "user profile ${state.profileUrl}"
+                }
+                ProfileImageSection(
+                    userName = state.name,
+                    avatarUrl = state.profileUrl,
+                    onAvatarEditClick = {
+                        onEvent(SignUpIntent.UserProfileUrl(it,state.email))
+                    },
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
 
                 ShowPasswordView(
                     password = state.password,
@@ -264,8 +277,8 @@ fun StepIndicator(
 // =====================================================
 
 @Composable
-private fun ShowEmailOtpView(
-    email: String,
+fun ShowEmailOtpView(
+    emailMsg: String,
     otp: String,
     otpError: String?,
     canResendOtp: Boolean,
@@ -280,7 +293,7 @@ private fun ShowEmailOtpView(
     ) {
 
         Text(
-            text = "We just sent 5-digit code to $email, enter it below:",
+            text = emailMsg,
             fontSize = 16.sp,
             color = Color(0xFF64748B),
             textAlign = TextAlign.Center,

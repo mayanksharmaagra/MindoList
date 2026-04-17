@@ -24,7 +24,8 @@ interface FirebaseAuthRepository {
     suspend fun createUserWithEmailAndPassword(
         name: String,
         email: String,
-        password: String
+        password: String,
+        profileUrl: String
     ): Result<User>
 
     /**
@@ -46,6 +47,11 @@ interface FirebaseAuthRepository {
      * Login with email and password
      */
     suspend fun loginWithEmailAndPassword(email: String, password: String): Result<User>
+    /**
+     * Reset Password
+     * */
+    suspend fun resetPassword(email: String,
+                              password: String): Result<Unit>
 
     // ─── Session ──────────────────────────────────────
     /**
@@ -59,5 +65,11 @@ interface FirebaseAuthRepository {
     suspend fun signOut(): Result<Unit>
     fun isLoggedIn(): Boolean
     fun authState(): Flow<Boolean>
+
+    /**
+     * user profile
+     * */
+    suspend fun uploadProfileImage(imageBytes: ByteArray,email: String? = null): Result<String>
+    suspend fun sendPasswordResetEmail(email: String): Result<Unit>
 
 }

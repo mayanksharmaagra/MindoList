@@ -117,7 +117,7 @@ fun LoginScreen(
 
             else -> Unit
         }
-
+        Spacer(modifier = Modifier.height(15.dp))
         ActionButton(
             modifier = Modifier
                 .fillMaxWidth()
@@ -142,7 +142,7 @@ fun LoginScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(15.dp))
         if(state.currentMode== LoginMode.EMAIL_PASSWORD){
             // Resend OTP button
             TextButton(

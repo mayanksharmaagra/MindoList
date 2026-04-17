@@ -45,6 +45,9 @@ kotlin {
 
             implementation(libs.kotlinx.datetime)
             implementation(libs.napier.logger)
+            // build.gradle.kts commonMain
+            implementation(libs.peekaboo.ui)
+            implementation(libs.peekaboo.image.picker)
 
         }
         commonMain.dependencies {

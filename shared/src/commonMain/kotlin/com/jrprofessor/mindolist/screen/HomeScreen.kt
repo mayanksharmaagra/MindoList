@@ -37,7 +37,10 @@ import mindolist.shared.generated.resources.Res
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-fun HomeScreen( onTaskAdd:()->Unit = {}) {
+fun HomeScreen(
+    onTaskAdd: () -> Unit = {},
+    onLogout: () -> Unit = {},
+) {
     val navController = rememberNavController()
     val currentBackStack = navController.currentBackStackEntryAsState()
     val currentDestination = currentBackStack.value?.destination?.route
@@ -49,15 +52,22 @@ fun HomeScreen( onTaskAdd:()->Unit = {}) {
             .fillMaxSize()
             .background(backgroundColor)
     ) {
-        BottomNavGraph(navController = navController)
-        BottomNavigationBarGlassUI(navController, onTaskAdd, modifier = Modifier.align(Alignment.BottomCenter))
+        BottomNavGraph(
+            navController = navController,
+            onLogout = onLogout
+        )
+        BottomNavigationBarGlassUI(
+            navController,
+            onTaskAdd,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 
 @Composable
 fun BottomNavigationBarGlassUI(
     navController: NavHostController,
-    onTaskAdd:()->Unit,
+    onTaskAdd: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val listScreen = listOf(

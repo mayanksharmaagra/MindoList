@@ -5,25 +5,28 @@ import com.jrprofessor.mindolist.domain.model.OtpVerification
 import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.domain.model.User
 import com.jrprofessor.mindolist.utils.Logger
+import com.jrprofessor.mindolist.utils.toStorageData
 import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.database.DatabaseReference
 import dev.gitlive.firebase.database.FirebaseDatabase
+import dev.gitlive.firebase.storage.FirebaseStorage
+import dev.gitlive.firebase.storage.StorageReference
 import kotlinx.coroutines.flow.Flow
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-
+import kotlin.time.Clock.System.now
 
 
 @OptIn(ExperimentalTime::class)
-private fun currentTimeMillis(): Long = Clock.System.now().toEpochMilliseconds()
+private fun currentTimeMillis(): Long = now().toEpochMilliseconds()
 
 open class FirebaseAuthRepositoryImpl(
     private val firebaseAuth: FirebaseAuth,
     private val firebaseDatabase: FirebaseDatabase,
+    private val firebaseStorage: FirebaseStorage,
     private val appSettings: AppSettings,
 ) : FirebaseAuthRepository {
 
@@ -103,7 +106,8 @@ open class FirebaseAuthRepositoryImpl(
     override suspend fun createUserWithEmailAndPassword(
         name: String,
         email: String,
-        password: String
+        password: String,
+        profileUrl: String
     ): Result<User> {
         return try {
             val otpSnapShot = otpRef.child(sanitizeEmail(email)).valueEvents.first()
@@ -123,6 +127,7 @@ open class FirebaseAuthRepositoryImpl(
                 displayName = name,
                 email = firebaseUser.email ?: "",
                 emailVerified = firebaseUser.isEmailVerified,
+                profileUrl=profileUrl,
                 createdAt = currentTimeMillis(),
                 updatedAt = currentTimeMillis()
             )
@@ -194,6 +199,37 @@ open class FirebaseAuthRepositoryImpl(
         )
     }
 
+    override suspend fun uploadProfileImage(
+        imageBytes: ByteArray,
+        email: String?,          // ← signup time pe email pass karo
+    ): Result<String> {
+        return try {
+            // uid available hai to use karo, warna email use karo
+            val identifier = when {
+                firebaseAuth.currentUser != null -> "uid_${firebaseAuth.currentUser?.uid}"
+                email != null -> "email_${sanitizeEmail(email)}"
+                else -> return Result.Error(
+                    Exception("No identifier"),
+                    "User not logged in and no email provided"
+                )
+            }
+
+            val fileName = "profile_${identifier}_${
+                currentTimeMillis()
+            }.jpg"
+
+            val ref: StorageReference = firebaseStorage.reference("profiles/$identifier/$fileName")
+
+            ref.putData(imageBytes.toStorageData())
+
+            val downloadUrl = ref.getDownloadUrl()
+//            Logger.debug{ "download url $downloadUrl" }
+            Result.Success(downloadUrl)
+
+        } catch (e: Exception) {
+            Result.Error(e, "Failed to upload image: ${e.message}")
+        }
+    }
     override suspend fun isOtpValid(email: String): Result<Boolean> {
         return try {
             val snapshot = otpRef.child(sanitizeEmail(email)).valueEvents.first()
@@ -253,6 +289,38 @@ open class FirebaseAuthRepositoryImpl(
         }
     }
 
+    override suspend fun resetPassword(
+        email: String,
+        password: String
+    ): Result<Unit> {
+        return try {
+            // STEP 1: Get current user
+            val currentUser = firebaseAuth.currentUser
+                ?: return Result.Error(
+                    Exception("No authenticated user"),
+                    "User session expired. Please try again."
+                )
+
+            // STEP 2: Update password (dev.gitlive methods are already suspend)
+            currentUser.updatePassword(password)
+            Logger.debug { "Password updated in Firebase Auth for: $email" }
+
+            // STEP 3: Update metadata in Realtime DB
+            val updates = mapOf<String, Any?>(
+                "updatedAt" to currentTimeMillis(),
+                "resetOTP" to null  // Clear OTP after successful reset
+            )
+
+            userRef.child(currentUser.uid).updateChildren(updates)
+            Logger.debug { "Password reset metadata updated in DB for UID: ${currentUser.uid}" }
+
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Logger.error(e) { "Error resetting password: ${e.message}" }
+            Result.Error(e, "Failed to reset password. ${e.message}")
+        }
+    }
+
     // ─── Private Helpers ──────────────────────────────
 
     private suspend fun getResendCooldownInternal(email: String): Int {
@@ -280,5 +348,22 @@ open class FirebaseAuthRepositoryImpl(
     suspend fun sendOtpEmail(toEmail: String, otp: String) {
         // Override this in DI or use a platform-specific email service
         Logger.debug { "OTP for $toEmail: $otp" }
+    }
+    override suspend fun sendPasswordResetEmail(email: String): Result<Unit> {
+        return try {
+            firebaseAuth.sendPasswordResetEmail(email)
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error(e, parsePasswordResetError(e.message))
+        }
+    }
+
+    private fun parsePasswordResetError(message: String?): String {
+        return when {
+            message?.contains("no user record") == true -> "No account found with this email"
+            message?.contains("network error") == true -> "No internet connection"
+            message?.contains("invalid email") == true -> "Invalid email format"
+            else -> "Failed to send reset email. Please try again"
+        }
     }
 }

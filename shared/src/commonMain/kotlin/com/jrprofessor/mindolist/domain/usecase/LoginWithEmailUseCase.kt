@@ -3,6 +3,7 @@ package com.jrprofessor.mindolist.domain.usecase
 import com.jrprofessor.mindolist.domain.model.User
 import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepository
 import com.jrprofessor.mindolist.domain.model.Result
+import com.jrprofessor.mindolist.utils.Validators.isValidEmail
 
 /**
  * Login with email and password
@@ -26,10 +27,5 @@ class LoginWithEmailUseCase(
 
         // ✅ Call repository
         return repository.loginWithEmailAndPassword(email, password)
-    }
-
-    private fun isValidEmail(email: String): Boolean {
-        val emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
-        return email.matches(emailRegex.toRegex())
     }
 }

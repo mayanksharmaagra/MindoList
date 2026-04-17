@@ -13,6 +13,7 @@ import com.jrprofessor.mindolist.screen.SettingsScreen
 @Composable
 fun BottomNavGraph(
     navController: NavHostController,
+    onLogout: () -> Unit = {}
 ) {
     NavHost(
         navController = navController,
@@ -27,9 +28,10 @@ fun BottomNavGraph(
             AllTaskScreen()
         }
         composable(route = BottomNavItem.Analytics.route) {
+
         }
         composable(route = BottomNavItem.Settings.route) {
-            SettingsScreen()
+            SettingsScreen(onNavigateToSignUp = onLogout)
         }
     }
 }

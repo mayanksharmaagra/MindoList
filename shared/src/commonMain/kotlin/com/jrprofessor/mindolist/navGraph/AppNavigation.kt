@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.jrprofessor.mindolist.screen.AddTaskScreen
+import com.jrprofessor.mindolist.screen.ForgotPasswordScreen
 import com.jrprofessor.mindolist.screen.HomeScreen
 import com.jrprofessor.mindolist.screen.LoginScreen
 import com.jrprofessor.mindolist.screen.SignUpScreen
@@ -48,16 +49,14 @@ fun AppNavigation() {
     val navController = rememberNavController()
 
     NavHost(
-        navController = navController,
-        startDestination = Screen.Splash.route
+        navController = navController, startDestination = Screen.Splash.route
     ) {
         composable(Screen.Splash.route) {
             SplashScreen(navController)
         }
 
         navigation(
-            startDestination = Screen.Welcome.route,
-            route = Screen.AuthGraph.route
+            startDestination = Screen.Welcome.route, route = Screen.AuthGraph.route
         ) {
             composable(Screen.Welcome.route) {
                 WelcomeScreen({
@@ -68,55 +67,57 @@ fun AppNavigation() {
             }
 
             composable(Screen.Login.route) {
-                LoginScreen(
-                    onNavigateToHome = {
-                        navController.navigate(Screen.MainGraph.route) {
-                            popUpTo(Screen.AuthGraph.route) { inclusive = true }
-                        }
-                    },
-                    onNavigateBack = {
+                LoginScreen(onNavigateToHome = {
+                    navController.navigate(Screen.MainGraph.route) {
+                        popUpTo(Screen.AuthGraph.route) { inclusive = true }
+                    }
+                }, onNavigateBack = {
 //                        navController.navigate(Screen.Welcome.route) {
 //                            popUpTo(Screen.Welcome.route) { inclusive = false }
 //                        }
-                        navController.popBackStack()
-                    },
-                    onNavigateToForgot = {
-
-                    }
-                )
+                    navController.popBackStack()
+                }, onNavigateToForgot = {
+                    navController.navigate(Screen.ForgotPassword.route)
+                })
             }
 
             composable(Screen.SignUp.route) {
-                SignUpScreen(
-                    onNavigateToHome = {
-                        navController.navigate(Screen.MainGraph.route) {
-                            popUpTo(Screen.AuthGraph.route) { inclusive = true }
-                        }
-                    },
-                    onNavigateBack = {
+                SignUpScreen(onNavigateToHome = {
+                    navController.navigate(Screen.MainGraph.route) {
+                        popUpTo(Screen.AuthGraph.route) { inclusive = true }
+                    }
+                }, onNavigateBack = {
 //                        navController.navigate(Screen.Welcome.route) {
 //                            popUpTo(Screen.Welcome.route) { inclusive = false }
 //                        }
+                    navController.popBackStack()
+                })
+            }
+            composable(Screen.ForgotPassword.route) {
+                ForgotPasswordScreen(
+                    onNavigateBack = {
                         navController.popBackStack()
                     }
                 )
-
             }
         }
-        // ── Main Graph ────────────────────────────────────────────────────
         navigation(
             startDestination = Screen.Home.route,  // ← fix
             route = Screen.MainGraph.route
         ) {
             composable(Screen.Home.route) {
                 HomeScreen(
-                    onTaskAdd = { navController.navigate(Screen.AddTask.route) }
+                    onTaskAdd = { navController.navigate(Screen.AddTask.route) },
+                    onLogout = {
+                        navController.navigate(Screen.AuthGraph.route) {
+                            popUpTo(Screen.MainGraph.route) { inclusive = true }
+                        }
+                    }
                 )
             }
             composable(Screen.AddTask.route) {
                 AddTaskScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
+                    onNavigateBack = { navController.popBackStack() })
             }
         }
     }

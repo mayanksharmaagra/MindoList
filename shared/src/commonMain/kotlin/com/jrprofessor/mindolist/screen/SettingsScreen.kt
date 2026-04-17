@@ -1,10 +1,7 @@
 package com.jrprofessor.mindolist.screen
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,28 +14,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Alarm
-import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.DarkMode
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.Feedback
-import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -46,33 +28,37 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButtonDefaults.Icon
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import coil3.compose.AsyncImage
+import com.jrprofessor.mindolist.customView.ProfileImageSection
+import com.jrprofessor.mindolist.presentation.SettingsAction
+import com.jrprofessor.mindolist.presentation.SettingsEvent
 import com.jrprofessor.mindolist.theme.PrimaryBlue
 import com.jrprofessor.mindolist.theme.backgroundColor
+import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
+import com.jrprofessor.mindolist.viewmodels.SettingsViewmodel
+import org.koin.compose.viewmodel.koinViewModel
 
 // ── Colors ────────────────────────────────────────────────────────────────────
 
@@ -86,24 +72,33 @@ private val DangerRed = Color(0xFFEF4444)
 
 @Composable
 fun SettingsScreen(
-    userName: String = "Alex Thompson",
-    userEmail: String = "alex.thompson@mindo.app",
-    userAvatarUrl: String? = null,
-    isDarkMode: Boolean = false,
+    viewModelDashboard: DashboardViewModel = koinViewModel(),
+    viewModelSettings: SettingsViewmodel = koinViewModel(),
     isReminderEnabled: Boolean = true,
-    onEditProfileClick: () -> Unit = {},
-    onAvatarEditClick: () -> Unit = {},
-    onDarkModeToggle: (Boolean) -> Unit = {},
+    onAvatarEditClick: (ByteArray) -> Unit = {},
     onReminderToggle: (Boolean) -> Unit = {},
-    onLogoutClick: () -> Unit = {},
-    onBackClick: () -> Unit = {},
-    onNavigate: (String) -> Unit = {},
+    onNavigateToSignUp: () -> Unit,
 ) {
-    var showLogoutDialog by remember { mutableStateOf(false) }
+    val stateDashboard by viewModelDashboard.state.collectAsState()
+    val stateSettings by viewModelSettings.state.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    // Collect one-time events
+    LaunchedEffect(Unit) {
+        viewModelSettings.event.collect { event ->
+            when (event) {
+                is SettingsEvent.Message -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+                is SettingsEvent.NavigateToSignUp -> {
+                    onNavigateToSignUp()
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
-            SettingsTopBar(onBackClick = onBackClick)
+            SettingsTopBar()
         },
         containerColor = backgroundColor,
     ) { paddingValues ->
@@ -116,12 +111,19 @@ fun SettingsScreen(
 
             // ── Profile section ───────────────────────────────────────────────
             item {
-                ProfileSection(
-                    userName = userName,
-                    userEmail = userEmail,
-                    avatarUrl = userAvatarUrl,
-                    onEditProfileClick = onEditProfileClick,
+                ProfileImageSection(
+                    userName = stateDashboard.user?.displayName,
+                    avatarUrl = stateDashboard.user?.profileUrl,
                     onAvatarEditClick = onAvatarEditClick,
+                    isEdit=false
+                )
+            }
+            // ------- Profile name section -----------
+            item {
+                ProfileDetailsSection(
+                    userName = stateDashboard.user?.displayName,
+                    userEmail = stateDashboard.user?.email,
+                    onEditProfileClick = { viewModelSettings.dispatch(SettingsAction.EditProfile) },
                 )
             }
 
@@ -132,20 +134,20 @@ fun SettingsScreen(
                     SettingsMenuItem(
                         icon = Icons.Outlined.Person,
                         label = "My Profile",
-                        onClick = { onNavigate("profile") },
+                        onClick = { viewModelSettings.dispatch(SettingsAction.ShowProfile) },
                     )
-                    SettingsDivider()
-                    SettingsMenuItem(
-                        icon = Icons.Outlined.Notifications,
-                        label = "Notifications",
-                        onClick = { onNavigate("notifications") },
-                    )
-                    SettingsDivider()
-                    SettingsMenuItem(
-                        icon = Icons.Outlined.Shield,
-                        label = "Privacy & Security",
-                        onClick = { onNavigate("privacy") },
-                    )
+//                    SettingsDivider()
+//                    SettingsMenuItem(
+//                        icon = Icons.Outlined.Notifications,
+//                        label = "Notifications",
+//                        onClick = { onNavigate("notifications") },
+//                    )
+//                    SettingsDivider()
+//                    SettingsMenuItem(
+//                        icon = Icons.Outlined.Shield,
+//                        label = "Privacy & Security",
+//                        onClick = { onNavigate("privacy") },
+//                    )
                 }
             }
 
@@ -153,33 +155,33 @@ fun SettingsScreen(
             item {
                 SectionHeader(title = "PREFERENCES")
                 SettingsCard {
-                    SettingsToggleItem(
-                        icon = Icons.Outlined.DarkMode,
-                        label = "Dark Mode",
-                        checked = isDarkMode,
-                        onCheckedChange = onDarkModeToggle,
-                    )
-                    SettingsDivider()
+//                    SettingsToggleItem(
+//                        icon = Icons.Outlined.DarkMode,
+//                        label = "Dark Mode",
+//                        checked = isDarkMode,
+//                        onCheckedChange = onDarkModeToggle,
+//                    )
+//                    SettingsDivider()
                     SettingsToggleItem(
                         icon = Icons.Outlined.Alarm,
                         label = "Reminder Alerts",
                         checked = isReminderEnabled,
                         onCheckedChange = onReminderToggle,
                     )
-                    SettingsDivider()
-                    SettingsMenuItem(
-                        icon = Icons.Outlined.Language,
-                        label = "Language",
-                        value = "English",
-                        onClick = { onNavigate("language") },
-                    )
-                    SettingsDivider()
-                    SettingsMenuItem(
-                        icon = Icons.Outlined.GridView,
-                        label = "Default View",
-                        value = "List",
-                        onClick = { onNavigate("default_view") },
-                    )
+//                    SettingsDivider()
+//                    SettingsMenuItem(
+//                        icon = Icons.Outlined.Language,
+//                        label = "Language",
+//                        value = "English",
+//                        onClick = { onNavigate("language") },
+//                    )
+//                    SettingsDivider()
+//                    SettingsMenuItem(
+//                        icon = Icons.Outlined.GridView,
+//                        label = "Default View",
+//                        value = "List",
+//                        onClick = { onNavigate("default_view") },
+//                    )
                 }
             }
 
@@ -187,25 +189,25 @@ fun SettingsScreen(
             item {
                 SectionHeader(title = "ABOUT")
                 SettingsCard {
-                    SettingsMenuItem(
-                        icon = Icons.Outlined.Star,
-                        label = "Rate the App",
-                        trailingIcon = Icons.Outlined.OpenInNew,
-                        onClick = { onNavigate("rate") },
-                    )
-                    SettingsDivider()
-                    SettingsMenuItem(
-                        icon = Icons.Outlined.Feedback,
-                        label = "Send Feedback",
-                        onClick = { onNavigate("feedback") },
-                    )
-                    SettingsDivider()
-                    SettingsMenuItem(
-                        icon = Icons.Outlined.Description,
-                        label = "Privacy Policy",
-                        onClick = { onNavigate("privacy_policy") },
-                    )
-                    SettingsDivider()
+//                    SettingsMenuItem(
+//                        icon = Icons.Outlined.Star,
+//                        label = "Rate the App",
+//                        trailingIcon = Icons.Outlined.OpenInNew,
+//                        onClick = { onNavigate("rate") },
+//                    )
+//                    SettingsDivider()
+//                    SettingsMenuItem(
+//                        icon = Icons.Outlined.Feedback,
+//                        label = "Send Feedback",
+//                        onClick = { onNavigate("feedback") },
+//                    )
+//                    SettingsDivider()
+//                    SettingsMenuItem(
+//                        icon = Icons.Outlined.Description,
+//                        label = "Privacy Policy",
+//                        onClick = { onNavigate("privacy_policy") },
+//                    )
+//                    SettingsDivider()
                     SettingsMenuItem(
                         icon = Icons.Outlined.Info,
                         label = "App Version",
@@ -219,21 +221,70 @@ fun SettingsScreen(
             // ── Logout button ─────────────────────────────────────────────────
             item {
                 Spacer(modifier = Modifier.height(16.dp))
-                LogoutButton(onClick = { showLogoutDialog = true })
-                Spacer(modifier = Modifier.height(16.dp))
+                LogoutButton(onClick = { viewModelSettings.dispatch(SettingsAction.Logout)})
+                Spacer(modifier = Modifier.height(30.dp))
             }
         }
     }
 
     // ── Logout confirmation dialog ────────────────────────────────────────────
-    if (showLogoutDialog) {
+    if (stateSettings.showLogoutConfirmDialog) {
         LogoutDialog(
             onConfirm = {
-                showLogoutDialog = false
-                onLogoutClick()
+                viewModelSettings.confirmLogout()
             },
-            onDismiss = { showLogoutDialog = false },
+            onDismiss = { viewModelSettings.dismissLogoutDialog() },
         )
+    }
+}
+
+@Composable
+fun ProfileDetailsSection(
+    userName: String?,
+    userEmail: String?,
+    onEditProfileClick: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        userName?.let {
+            Text(
+                text = it,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        userEmail?.let {
+            Text(
+                text = it,
+                fontSize = 13.sp,
+                color = TextSecondary,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Edit Profile button
+        Button(
+            onClick = onEditProfileClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 48.dp)
+                .height(44.dp),
+            shape = RoundedCornerShape(50.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = PrimaryBlue,
+            ),
+        ) {
+            Text(
+                text = "Edit Profile",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White,
+            )
+        }
     }
 }
 
@@ -241,7 +292,7 @@ fun SettingsScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SettingsTopBar(onBackClick: () -> Unit) {
+private fun SettingsTopBar(onBackClick: () -> Unit={}) {
     TopAppBar(
         title = {
             Text(
@@ -277,110 +328,6 @@ private fun SettingsTopBar(onBackClick: () -> Unit) {
 
 // ── Profile Section ───────────────────────────────────────────────────────────
 
-@Composable
-private fun ProfileSection(
-    userName: String,
-    userEmail: String,
-    avatarUrl: String?,
-    onEditProfileClick: () -> Unit,
-    onAvatarEditClick: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        // Avatar + pencil button
-        Box(contentAlignment = Alignment.BottomEnd) {
-            // Avatar
-            Box(
-                modifier = Modifier
-                    .size(90.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFEDE9FE))
-                    .border(3.dp, Color.White, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (avatarUrl != null) {
-                    AsyncImage(
-                        model = avatarUrl,
-                        contentDescription = "Avatar",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize().clip(CircleShape),
-                    )
-                } else {
-                    // Initials fallback
-                    Text(
-                        text = userName.split(" ")
-                            .mapNotNull { it.firstOrNull()?.toString() }
-                            .take(2)
-                            .joinToString(""),
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = PrimaryBlue,
-                    )
-                }
-            }
-
-            // Pencil FAB
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .background(PrimaryBlue)
-                    .clickable { onAvatarEditClick() },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit avatar",
-                    tint = Color.White,
-                    modifier = Modifier.size(14.dp),
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Text(
-            text = userName,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = TextPrimary,
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = userEmail,
-            fontSize = 13.sp,
-            color = TextSecondary,
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Edit Profile button
-        Button(
-            onClick = onEditProfileClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 48.dp)
-                .height(44.dp),
-            shape = RoundedCornerShape(50.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = PrimaryBlue,
-            ),
-        ) {
-            Text(
-                text = "Edit Profile",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White,
-            )
-        }
-    }
-}
 
 // ── Section Header ────────────────────────────────────────────────────────────
 

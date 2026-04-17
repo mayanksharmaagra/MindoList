@@ -182,4 +182,8 @@ class DashboardViewModel(
             else -> "Good Night"
         }
     }
+
+    fun logoutUser() {
+
+    }
 }

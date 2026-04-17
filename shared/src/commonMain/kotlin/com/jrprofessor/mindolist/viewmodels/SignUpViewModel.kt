@@ -3,6 +3,7 @@ package com.jrprofessor.mindolist.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jrprofessor.mindolist.domain.model.Result
+import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepository
 import com.jrprofessor.mindolist.domain.usecase.CreateUserAccountUseCase
 import com.jrprofessor.mindolist.domain.usecase.GetResendCooldownUseCase
 import com.jrprofessor.mindolist.domain.usecase.SendOtpUseCase
@@ -11,6 +12,7 @@ import com.jrprofessor.mindolist.presentation.SignUpButtonState
 import com.jrprofessor.mindolist.presentation.SignUpEvent
 import com.jrprofessor.mindolist.presentation.SignUpIntent
 import com.jrprofessor.mindolist.presentation.SignUpState
+import com.jrprofessor.mindolist.utils.Logger
 import com.jrprofessor.mindolist.utils.Validators
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -30,6 +32,7 @@ class SignUpViewModel (
     private val verifyOtpUseCase: VerifyOtpUseCase,
     private val createUserAccountUseCase: CreateUserAccountUseCase,
     private val getResendCooldownUseCase: GetResendCooldownUseCase,
+    private val firebaseAuthRepository: FirebaseAuthRepository
 ) : ViewModel() {
     private val _signUpState = MutableStateFlow(SignUpState())
     val signUpState: StateFlow<SignUpState> = _signUpState.asStateFlow()
@@ -52,6 +55,36 @@ class SignUpViewModel (
             SignUpIntent.ErrorDismissed -> onErrorDismissed()
             SignUpIntent.ResendOtpClicked -> onResendOtp()
             SignUpIntent.VerifyEmailClicked -> onVerifyEmail()
+            is SignUpIntent.UserProfileUrl -> uploadUserProfile(intent.url,intent.email
+            )
+        }
+
+    }
+
+    private fun uploadUserProfile(bytes: ByteArray, email: String) {
+        viewModelScope.launch {
+            _signUpState.update { it.copy(isLoading = true) }
+
+            when (val result = firebaseAuthRepository.uploadProfileImage(bytes,email)) {
+                is Result.Success -> {
+                    Logger.debug { "user profile ${result} : ${result.data}" }
+                    _signUpState.update {
+                        it.copy(
+                            isLoading = false,
+                            profileUrl = result.data,  // ← Firebase URL save
+                        )
+                    }
+                    sendEffect(SignUpEvent.ShowToast("Profile photo updated!"))
+
+                    // TODO: Save URL to Firebase Database user profile
+                    // saveProfileImageUrl(result.data)
+                }
+                is Result.Error -> {
+                    _signUpState.update { it.copy(isLoading = false) }
+                    sendEffect(SignUpEvent.ShowToast("Upload failed"))
+                }
+                Result.Loading -> Unit
+            }
         }
     }
 
@@ -145,6 +178,7 @@ class SignUpViewModel (
         val currentName = _signUpState.value.name
         val currentEmail = _signUpState.value.email
         val currentPassword = _signUpState.value.password
+        val profileUrl = _signUpState.value.profileUrl
 
         if (!Validators.validatePassword(currentPassword)) {
             _signUpState.update {
@@ -158,7 +192,7 @@ class SignUpViewModel (
         viewModelScope.launch {
             _signUpState.update { it.copy(isLoading = true, error = null) }
 
-            when (val result = createUserAccountUseCase(currentName,currentEmail, currentPassword)) {
+            when (val result = createUserAccountUseCase(currentName,currentEmail, currentPassword,profileUrl)) {
                 is Result.Success -> {
                     _signUpState.update { it.copy(isLoading = false) }
                     sendEffect(SignUpEvent.ShowToast("Account created successfully!"))

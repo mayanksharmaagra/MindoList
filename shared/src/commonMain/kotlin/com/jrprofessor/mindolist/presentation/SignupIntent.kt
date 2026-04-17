@@ -5,6 +5,7 @@ sealed class SignUpIntent {
     data class EmailChanged(val email: String) : SignUpIntent()
     data class OtpChanged(val otp: String) : SignUpIntent()
     data class PasswordChanged(val password: String) : SignUpIntent()
+    data class UserProfileUrl(val url: ByteArray,val email: String) : SignUpIntent()
 
     object ContinueWithEmailClicked : SignUpIntent()
     object CreateAccountClicked : SignUpIntent()
