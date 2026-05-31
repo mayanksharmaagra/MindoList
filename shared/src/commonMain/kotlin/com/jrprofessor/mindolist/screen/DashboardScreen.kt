@@ -51,9 +51,9 @@ import com.jrprofessor.mindolist.domain.model.User
 import com.jrprofessor.mindolist.extension.today
 import com.jrprofessor.mindolist.model.TaskCardData
 import com.jrprofessor.mindolist.model.TaskModel
-import com.jrprofessor.mindolist.presentation.DashboardAction
-import com.jrprofessor.mindolist.presentation.DashboardEvent
-import com.jrprofessor.mindolist.presentation.DashboardState
+import com.jrprofessor.mindolist.presentation.dashboard.DashboardAction
+import com.jrprofessor.mindolist.presentation.dashboard.DashboardEvent
+import com.jrprofessor.mindolist.presentation.dashboard.DashboardState
 import com.jrprofessor.mindolist.theme.ErrorRed
 import com.jrprofessor.mindolist.theme.ErrorRedDark
 import com.jrprofessor.mindolist.theme.ErrorRedLight
@@ -131,7 +131,7 @@ fun DashboardContent(
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(48.dp))
 
         UserProfileSection(
             user = state.user,

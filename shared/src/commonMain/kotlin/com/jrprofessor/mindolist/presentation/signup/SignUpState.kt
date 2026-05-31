@@ -1,4 +1,4 @@
-package com.jrprofessor.mindolist.presentation
+package com.jrprofessor.mindolist.presentation.signup
 
 data class SignUpState(
     val currentStep: SignUpButtonState = SignUpButtonState.CONTINUE_WITH_EMAIL,

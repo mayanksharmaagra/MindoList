@@ -5,10 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepository
 import com.jrprofessor.mindolist.domain.usecase.LoginWithEmailUseCase
-import com.jrprofessor.mindolist.presentation.LoginEvent
-import com.jrprofessor.mindolist.presentation.LoginIntent
-import com.jrprofessor.mindolist.presentation.LoginMode
-import com.jrprofessor.mindolist.presentation.LoginState
+import com.jrprofessor.mindolist.presentation.login.LoginEvent
+import com.jrprofessor.mindolist.presentation.login.LoginIntent
+import com.jrprofessor.mindolist.presentation.login.LoginMode
+import com.jrprofessor.mindolist.presentation.login.LoginState
 import com.jrprofessor.mindolist.utils.Validators
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow

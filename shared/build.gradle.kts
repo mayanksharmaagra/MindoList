@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     kotlin("plugin.serialization") version "2.3.0"  // ← YE ADD KARO
+    kotlin("native.cocoapods")
 }
 
 kotlin {
@@ -15,17 +16,38 @@ kotlin {
         }
     }
     
-    listOf(
-        iosX64(),
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
+//    listOf(
+//        iosX64(),
+//        iosArm64(),
+//        iosSimulatorArm64()
+//    ).forEach { iosTarget ->
+//        iosTarget.binaries.framework {
+//            baseName = "Shared"
+//            isStatic = true
+//        }
+//    }
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+
+    cocoapods {
+        summary = "Shared Module"
+        homepage = "https://example.com"
+        version = "1.0"
+        ios.deploymentTarget = "16.0"
+
+        // ✅ Sirf ek framework block — listOf wala hatao
+        framework {
             baseName = "Shared"
             isStatic = true
         }
+
+//        pod("FirebaseCore")
+//        pod("FirebaseAuth")
+//        pod("FirebaseDatabase")
+//        pod("FirebaseStorage")
     }
-    
+
     sourceSets {
         commonMain {
             resources.srcDirs("src/commonMain/composeResources")  // ← SIRF YE ADD KARO

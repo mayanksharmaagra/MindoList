@@ -16,6 +16,7 @@ import com.jrprofessor.mindolist.domain.usecase.VerifyOtpUseCase
 import com.jrprofessor.mindolist.viewmodels.TaskViewModel
 import com.jrprofessor.mindolist.viewmodels.AuthViewModel
 import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
+import com.jrprofessor.mindolist.viewmodels.EditProfileViewModel
 import com.jrprofessor.mindolist.viewmodels.ForgotPasswordViewModel
 import com.jrprofessor.mindolist.viewmodels.LoginViewModel
 import com.jrprofessor.mindolist.viewmodels.SettingsViewmodel
@@ -38,6 +39,7 @@ val viewModelModule = module {
     viewModelOf(::TaskViewModel)
     viewModelOf(::AuthViewModel)
     viewModelOf(::SettingsViewmodel)
+    viewModelOf(::EditProfileViewModel)
 }
 
 

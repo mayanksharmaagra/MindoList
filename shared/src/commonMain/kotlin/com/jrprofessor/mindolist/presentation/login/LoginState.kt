@@ -1,4 +1,4 @@
-package com.jrprofessor.mindolist.presentation
+package com.jrprofessor.mindolist.presentation.login
 
 data class LoginState(
     val currentMode: LoginMode = LoginMode.INITIAL,

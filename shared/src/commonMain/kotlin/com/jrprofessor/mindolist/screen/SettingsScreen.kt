@@ -20,12 +20,12 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
@@ -34,15 +34,12 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,8 +49,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.jrprofessor.mindolist.customView.ProfileImageSection
-import com.jrprofessor.mindolist.presentation.SettingsAction
-import com.jrprofessor.mindolist.presentation.SettingsEvent
+import com.jrprofessor.mindolist.customView.TopBar
+import com.jrprofessor.mindolist.presentation.dashboard.DashboardAction
+import com.jrprofessor.mindolist.presentation.settings.SettingsAction
+import com.jrprofessor.mindolist.presentation.settings.SettingsEvent
 import com.jrprofessor.mindolist.theme.PrimaryBlue
 import com.jrprofessor.mindolist.theme.backgroundColor
 import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
@@ -75,20 +74,23 @@ fun SettingsScreen(
     viewModelDashboard: DashboardViewModel = koinViewModel(),
     viewModelSettings: SettingsViewmodel = koinViewModel(),
     isReminderEnabled: Boolean = true,
-    onAvatarEditClick: (ByteArray) -> Unit = {},
     onReminderToggle: (Boolean) -> Unit = {},
     onNavigateToSignUp: () -> Unit,
+    onEditProfileClick: () -> Unit,
 ) {
     val stateDashboard by viewModelDashboard.state.collectAsState()
     val stateSettings by viewModelSettings.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
     // Collect one-time events
     LaunchedEffect(Unit) {
+        viewModelDashboard.dispatch(DashboardAction.LoadTasks)
         viewModelSettings.event.collect { event ->
             when (event) {
                 is SettingsEvent.Message -> {
                     snackbarHostState.showSnackbar(event.message)
                 }
+
                 is SettingsEvent.NavigateToSignUp -> {
                     onNavigateToSignUp()
                 }
@@ -98,7 +100,7 @@ fun SettingsScreen(
 
     Scaffold(
         topBar = {
-            SettingsTopBar()
+            TopBar(name = "Settings")
         },
         containerColor = backgroundColor,
     ) { paddingValues ->
@@ -111,44 +113,15 @@ fun SettingsScreen(
 
             // ── Profile section ───────────────────────────────────────────────
             item {
-                ProfileImageSection(
-                    userName = stateDashboard.user?.displayName,
-                    avatarUrl = stateDashboard.user?.profileUrl,
-                    onAvatarEditClick = onAvatarEditClick,
-                    isEdit=false
-                )
-            }
-            // ------- Profile name section -----------
-            item {
-                ProfileDetailsSection(
+                ProfileSection(
                     userName = stateDashboard.user?.displayName,
                     userEmail = stateDashboard.user?.email,
-                    onEditProfileClick = { viewModelSettings.dispatch(SettingsAction.EditProfile) },
+                    avatarUrl = stateDashboard.user?.profileUrl,
+                    tasksDone = stateDashboard.user?.completedTasks?.toString() ?: "0",
+                    allTasks = stateDashboard.user?.totalTasks ?: 0,
+                    streak = stateDashboard.user?.currentStreak ?: 0,
+                    onEditProfileClick = onEditProfileClick
                 )
-            }
-
-            // ── Account section ───────────────────────────────────────────────
-            item {
-                SectionHeader(title = "ACCOUNT")
-                SettingsCard {
-                    SettingsMenuItem(
-                        icon = Icons.Outlined.Person,
-                        label = "My Profile",
-                        onClick = { viewModelSettings.dispatch(SettingsAction.ShowProfile) },
-                    )
-//                    SettingsDivider()
-//                    SettingsMenuItem(
-//                        icon = Icons.Outlined.Notifications,
-//                        label = "Notifications",
-//                        onClick = { onNavigate("notifications") },
-//                    )
-//                    SettingsDivider()
-//                    SettingsMenuItem(
-//                        icon = Icons.Outlined.Shield,
-//                        label = "Privacy & Security",
-//                        onClick = { onNavigate("privacy") },
-//                    )
-                }
             }
 
             // ── Preferences section ───────────────────────────────────────────
@@ -168,20 +141,15 @@ fun SettingsScreen(
                         checked = isReminderEnabled,
                         onCheckedChange = onReminderToggle,
                     )
-//                    SettingsDivider()
-//                    SettingsMenuItem(
-//                        icon = Icons.Outlined.Language,
-//                        label = "Language",
-//                        value = "English",
-//                        onClick = { onNavigate("language") },
-//                    )
-//                    SettingsDivider()
-//                    SettingsMenuItem(
-//                        icon = Icons.Outlined.GridView,
-//                        label = "Default View",
-//                        value = "List",
-//                        onClick = { onNavigate("default_view") },
-//                    )
+                    SettingsDivider()
+
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.Notifications,
+                        label = "Notifications",
+                        onClick = {
+
+                        },
+                    )
                 }
             }
 
@@ -189,25 +157,6 @@ fun SettingsScreen(
             item {
                 SectionHeader(title = "ABOUT")
                 SettingsCard {
-//                    SettingsMenuItem(
-//                        icon = Icons.Outlined.Star,
-//                        label = "Rate the App",
-//                        trailingIcon = Icons.Outlined.OpenInNew,
-//                        onClick = { onNavigate("rate") },
-//                    )
-//                    SettingsDivider()
-//                    SettingsMenuItem(
-//                        icon = Icons.Outlined.Feedback,
-//                        label = "Send Feedback",
-//                        onClick = { onNavigate("feedback") },
-//                    )
-//                    SettingsDivider()
-//                    SettingsMenuItem(
-//                        icon = Icons.Outlined.Description,
-//                        label = "Privacy Policy",
-//                        onClick = { onNavigate("privacy_policy") },
-//                    )
-//                    SettingsDivider()
                     SettingsMenuItem(
                         icon = Icons.Outlined.Info,
                         label = "App Version",
@@ -221,7 +170,7 @@ fun SettingsScreen(
             // ── Logout button ─────────────────────────────────────────────────
             item {
                 Spacer(modifier = Modifier.height(16.dp))
-                LogoutButton(onClick = { viewModelSettings.dispatch(SettingsAction.Logout)})
+                LogoutButton(onClick = { viewModelSettings.dispatch(SettingsAction.Logout) })
                 Spacer(modifier = Modifier.height(30.dp))
             }
         }
@@ -234,6 +183,134 @@ fun SettingsScreen(
                 viewModelSettings.confirmLogout()
             },
             onDismiss = { viewModelSettings.dismissLogoutDialog() },
+        )
+    }
+}
+
+@Composable
+fun ProfileSection(
+    userName: String?,
+    userEmail: String?,
+    avatarUrl: String?,
+    tasksDone: String = "0",
+    allTasks: Int = 0,
+    streak: Int = 0,
+    onEditProfileClick: () -> Unit
+) {
+    SettingsCard {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 24.dp, horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // PRO MEMBER Badge
+            /*Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = BadgeBg),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Text(
+                        text = "PRO MEMBER",
+                        color = BadgeText,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))*/
+
+            // Avatar Section
+            ProfileImageSection(
+                userName = userName,
+                avatarUrl = avatarUrl,
+                onAvatarEditClick = { },
+                isEdit = false
+            )
+
+            // Name and Email
+            Text(
+                text = userName ?: "User Name",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary,
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = userEmail ?: "email@example.com",
+                fontSize = 15.sp,
+                color = TextSecondary,
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            val focusRate = if (allTasks > 0) {
+                (tasksDone.toInt().toFloat() / allTasks.toFloat() * 100).toInt()
+            } else {
+                0
+            }
+
+            // Stats Row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                StatItem(value = tasksDone, label = "TASKS DONE")
+                VerticalDivider(modifier = Modifier.height(40.dp).width(1.dp), color = DividerColor)
+                StatItem(value = streak.toString(), label = "DAY STREAK")
+                VerticalDivider(modifier = Modifier.height(40.dp).width(1.dp), color = DividerColor)
+                StatItem(value = "$focusRate%", label = "FOCUS RATE")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = onEditProfileClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .height(44.dp),
+                shape = RoundedCornerShape(50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryBlue,
+                ),
+            ) {
+                Text(
+                    text = "Edit Profile",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatItem(value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = value,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = PrimaryBlue
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = label,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = TextSecondary
         )
     }
 }
@@ -287,47 +364,6 @@ fun ProfileDetailsSection(
         }
     }
 }
-
-// ── Top Bar ───────────────────────────────────────────────────────────────────
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SettingsTopBar(onBackClick: () -> Unit={}) {
-    TopAppBar(
-        title = {
-            Text(
-                text = "Settings",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = PrimaryBlue,
-            )
-        },
-        navigationIcon = {
-//            IconButton(onClick = onBackClick) {
-//                Icon(
-//                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-//                    contentDescription = "Back",
-//                    tint = PrimaryBlue,
-//                )
-//            }
-        },
-        actions = {
-//            IconButton(onClick = {}) {
-//                Icon(
-//                    imageVector = Icons.Default.MoreVert,
-//                    contentDescription = "More",
-//                    tint = PrimaryBlue,
-//                )
-//            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = backgroundColor,
-        ),
-    )
-}
-
-// ── Profile Section ───────────────────────────────────────────────────────────
-
 
 // ── Section Header ────────────────────────────────────────────────────────────
 
@@ -499,7 +535,7 @@ private fun LogoutButton(onClick: () -> Unit) {
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = "Logout",
+            text = "Logout Account",
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
             color = DangerRed,

@@ -1,4 +1,4 @@
-package com.jrprofessor.mindolist.presentation
+package com.jrprofessor.mindolist.presentation.forgotPassword
 
 data class ForgotPasswordState(
     val email: String = "",

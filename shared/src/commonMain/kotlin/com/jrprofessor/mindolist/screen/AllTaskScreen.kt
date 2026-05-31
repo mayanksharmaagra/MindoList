@@ -59,9 +59,9 @@ import com.jrprofessor.mindolist.extension.toMonthYearLabel
 import com.jrprofessor.mindolist.extension.today
 import com.jrprofessor.mindolist.model.Filter
 import com.jrprofessor.mindolist.model.TaskModel
-import com.jrprofessor.mindolist.presentation.DashboardAction
-import com.jrprofessor.mindolist.presentation.DashboardEvent
-import com.jrprofessor.mindolist.presentation.DashboardState
+import com.jrprofessor.mindolist.presentation.dashboard.DashboardAction
+import com.jrprofessor.mindolist.presentation.dashboard.DashboardEvent
+import com.jrprofessor.mindolist.presentation.dashboard.DashboardState
 import com.jrprofessor.mindolist.theme.PrimaryBlue
 import com.jrprofessor.mindolist.theme.TextDark
 import com.jrprofessor.mindolist.theme.TextGray

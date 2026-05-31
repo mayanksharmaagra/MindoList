@@ -57,14 +57,14 @@ fun SignUpHeader(toolbarTitle: String, onBackClick: () -> Unit) {
 }
 
 @Composable
-fun WelcomeText(title: String) {
+fun WelcomeText(title: String,textColor: Color=Color(0xFF64748B)) {
     Text(
         text = title,
         fontSize = 16.sp,
         /*fontFamily = FontFamily(
             Font(Res.font.roboto_condensed_regular, FontWeight.Normal)
         ),*/
-        color = Color(0xFF64748B),
+        color = textColor,
         textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth()
     )

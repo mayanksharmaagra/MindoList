@@ -8,10 +8,10 @@ import com.jrprofessor.mindolist.domain.usecase.CreateUserAccountUseCase
 import com.jrprofessor.mindolist.domain.usecase.GetResendCooldownUseCase
 import com.jrprofessor.mindolist.domain.usecase.SendOtpUseCase
 import com.jrprofessor.mindolist.domain.usecase.VerifyOtpUseCase
-import com.jrprofessor.mindolist.presentation.SignUpButtonState
-import com.jrprofessor.mindolist.presentation.SignUpEvent
-import com.jrprofessor.mindolist.presentation.SignUpIntent
-import com.jrprofessor.mindolist.presentation.SignUpState
+import com.jrprofessor.mindolist.presentation.signup.SignUpButtonState
+import com.jrprofessor.mindolist.presentation.signup.SignUpEvent
+import com.jrprofessor.mindolist.presentation.signup.SignUpIntent
+import com.jrprofessor.mindolist.presentation.signup.SignUpState
 import com.jrprofessor.mindolist.utils.Logger
 import com.jrprofessor.mindolist.utils.Validators
 import kotlinx.coroutines.Job

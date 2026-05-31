@@ -26,9 +26,10 @@ import com.jrprofessor.mindolist.customView.ShowEmailView
 import com.jrprofessor.mindolist.customView.SignUpHeader
 import com.jrprofessor.mindolist.customView.WelcomeText
 import com.jrprofessor.mindolist.icons.IcLockEmail
-import com.jrprofessor.mindolist.presentation.ForgotPasswordEvent
-import com.jrprofessor.mindolist.presentation.ForgotPasswordIntent
-import com.jrprofessor.mindolist.presentation.ForgotPasswordStep
+import com.jrprofessor.mindolist.presentation.forgotPassword.ForgotPasswordEvent
+import com.jrprofessor.mindolist.presentation.forgotPassword.ForgotPasswordIntent
+import com.jrprofessor.mindolist.presentation.forgotPassword.ForgotPasswordState
+import com.jrprofessor.mindolist.presentation.forgotPassword.ForgotPasswordStep
 import com.jrprofessor.mindolist.theme.backgroundColor
 import com.jrprofessor.mindolist.theme.btnColor
 import com.jrprofessor.mindolist.utils.showToast
@@ -43,14 +44,7 @@ fun ForgotPasswordScreen(
     onNavigateBack: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
-    val btnTitle = when (state.currentStep) {
-        ForgotPasswordStep.ENTER_EMAIL -> "Send"
-        else -> "Back to Login"
-    }
-    val isEnabled = when (state.currentStep) {
-        ForgotPasswordStep.ENTER_EMAIL -> state.isEmailValid
-        else -> true
-    }
+
     LaunchedEffect(Unit) {
         viewModel.forgotEffect.collectLatest { effect ->
             when (effect) {
@@ -62,6 +56,38 @@ fun ForgotPasswordScreen(
                 is ForgotPasswordEvent.ShowToast -> showToast(effect.message)
             }
         }
+    }
+
+    ForgotPasswordContent(
+        state = state,
+        onBackPressed = {
+            viewModel.forgotPasswordEventHandle(ForgotPasswordIntent.BackPressed)
+        },
+        onEmailChange = {
+            viewModel.forgotPasswordEventHandle(ForgotPasswordIntent.EmailChanged(it))
+        },
+        onContinueClicked = {
+            viewModel.forgotPasswordEventHandle(ForgotPasswordIntent.ContinueWithEmailClicked)
+        },
+        onNavigateBack = onNavigateBack
+    )
+}
+
+@Composable
+fun ForgotPasswordContent(
+    state: ForgotPasswordState,
+    onBackPressed: () -> Unit,
+    onEmailChange: (String) -> Unit,
+    onContinueClicked: () -> Unit,
+    onNavigateBack: () -> Unit
+) {
+    val btnTitle = when (state.currentStep) {
+        ForgotPasswordStep.ENTER_EMAIL -> "Send"
+        else -> "Back to Login"
+    }
+    val isEnabled = when (state.currentStep) {
+        ForgotPasswordStep.ENTER_EMAIL -> state.isEmailValid
+        else -> true
     }
     Column(
         modifier = Modifier
@@ -75,9 +101,7 @@ fun ForgotPasswordScreen(
 
         SignUpHeader(
             toolbarTitle = "Reset Password",
-            onBackClick = {
-                viewModel.forgotPasswordEventHandle(ForgotPasswordIntent.BackPressed)
-            }
+            onBackClick = onBackPressed
         )
         Spacer(modifier = Modifier.height(30.dp))
         if (state.currentStep == ForgotPasswordStep.ENTER_EMAIL) {
@@ -86,9 +110,7 @@ fun ForgotPasswordScreen(
             ShowEmailView(
                 email = state.email,
                 emailError = state.emailError,
-                onEmailChange = {
-                    viewModel.forgotPasswordEventHandle(ForgotPasswordIntent.EmailChanged(it))
-                }
+                onEmailChange = onEmailChange
             )
         }
         Spacer(modifier = Modifier.height(15.dp))
@@ -116,9 +138,7 @@ fun ForgotPasswordScreen(
             isLoading = state.isLoading
         ) {
             when (state.currentStep) {
-                ForgotPasswordStep.ENTER_EMAIL -> viewModel.forgotPasswordEventHandle(
-                    ForgotPasswordIntent.ContinueWithEmailClicked
-                )
+                ForgotPasswordStep.ENTER_EMAIL -> onContinueClicked()
 
                 else -> {
                     onNavigateBack()

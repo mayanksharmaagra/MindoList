@@ -8,9 +8,9 @@ import com.jrprofessor.mindolist.domain.repository.TaskRepository
 import com.jrprofessor.mindolist.domain.usecase.GetTasksUseCase
 import com.jrprofessor.mindolist.model.Filter
 import com.jrprofessor.mindolist.model.TaskModel
-import com.jrprofessor.mindolist.presentation.DashboardAction
-import com.jrprofessor.mindolist.presentation.DashboardEvent
-import com.jrprofessor.mindolist.presentation.DashboardState
+import com.jrprofessor.mindolist.presentation.dashboard.DashboardAction
+import com.jrprofessor.mindolist.presentation.dashboard.DashboardEvent
+import com.jrprofessor.mindolist.presentation.dashboard.DashboardState
 import com.jrprofessor.mindolist.utils.Logger
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow

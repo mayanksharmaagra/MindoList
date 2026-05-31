@@ -10,9 +10,16 @@ data class User(
     val profileUrl: String = "",
     val displayName: String? = null,
     val photoUrl: String? = null,
-    val createdAt: Long = 0L,  // Will be set when creating user
-    val updatedAt: Long = 0L,  // Will be set when creating user
+    val createdAt: Long = 0L,
+    val updatedAt: Long = 0L,
     val emailVerified: Boolean = false,
     @JvmField
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    
+    // Task Statistics
+    val totalTasks: Int = 0,
+    val completedTasks: Int = 0,
+    val pendingTasks: Int = 0,
+    val currentStreak: Int = 0,
+    val focusRate: Double = 0.0
 )

@@ -6,9 +6,13 @@ import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.domain.model.User
 import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepository
 import com.jrprofessor.mindolist.presentation.editProfile.EditProfileAction
+import com.jrprofessor.mindolist.presentation.editProfile.EditProfileEvent
 import com.jrprofessor.mindolist.presentation.editProfile.EditProfileState
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -19,6 +23,9 @@ class EditProfileViewModel(
 
     private val _state = MutableStateFlow(EditProfileState())
     val state: StateFlow<EditProfileState> = _state.asStateFlow()
+
+    private val _event = MutableSharedFlow<EditProfileEvent>()
+    val event: SharedFlow<EditProfileEvent> = _event.asSharedFlow()
 
     private var currentUser: User? = null
 
@@ -86,6 +93,7 @@ class EditProfileViewModel(
                         _state.update { it.copy(isLoading = false, error = result.message) }
                         return@launch
                     }
+                    is Result.Loading -> { /* Handle if needed */ }
                 }
             }
 
@@ -110,18 +118,22 @@ class EditProfileViewModel(
                         when (val pwResult = firebaseAuthRepository.resetPassword(currentState.email, currentState.newPassword)) {
                             is Result.Success -> {
                                 _state.update { it.copy(isLoading = false, success = true, currentPassword = "", newPassword = "", confirmPassword = "") }
+                                _event.emit(EditProfileEvent.ShowToast("Profile updated successfully"))
                             }
                             is Result.Error -> {
                                 _state.update { it.copy(isLoading = false, error = pwResult.message) }
                             }
+                            is Result.Loading -> { /* Handle if needed */ }
                         }
                     } else {
                         _state.update { it.copy(isLoading = false, success = true) }
+                        _event.emit(EditProfileEvent.ShowToast("Profile updated successfully"))
                     }
                 }
                 is Result.Error -> {
                     _state.update { it.copy(isLoading = false, error = result.message) }
                 }
+                is Result.Loading -> { /* Handle if needed */ }
             }
         }
     }

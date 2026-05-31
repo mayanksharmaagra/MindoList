@@ -1,4 +1,4 @@
-package com.jrprofessor.mindolist.presentation
+package com.jrprofessor.mindolist.presentation.forgotPassword
 
 sealed class ForgotPasswordIntent {
     // Email/Password screen

@@ -1,4 +1,4 @@
-package com.jrprofessor.mindolist.presentation
+package com.jrprofessor.mindolist.presentation.addTask
 
 import com.jrprofessor.mindolist.extension.toDateFormat
 import com.jrprofessor.mindolist.extension.toTimeFormat

@@ -1,4 +1,4 @@
-package com.jrprofessor.mindolist.presentation
+package com.jrprofessor.mindolist.presentation.addTask
 
 import com.jrprofessor.mindolist.model.Category
 import com.jrprofessor.mindolist.model.Priority

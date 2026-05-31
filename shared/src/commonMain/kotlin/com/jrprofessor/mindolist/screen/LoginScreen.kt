@@ -25,9 +25,9 @@ import com.jrprofessor.mindolist.customView.ShowEmailView
 import com.jrprofessor.mindolist.customView.ShowPasswordView
 import com.jrprofessor.mindolist.customView.SignUpHeader
 import com.jrprofessor.mindolist.customView.WelcomeText
-import com.jrprofessor.mindolist.presentation.LoginEvent
-import com.jrprofessor.mindolist.presentation.LoginIntent
-import com.jrprofessor.mindolist.presentation.LoginMode
+import com.jrprofessor.mindolist.presentation.login.LoginEvent
+import com.jrprofessor.mindolist.presentation.login.LoginIntent
+import com.jrprofessor.mindolist.presentation.login.LoginMode
 import com.jrprofessor.mindolist.theme.backgroundColor
 import com.jrprofessor.mindolist.theme.btnColor
 import com.jrprofessor.mindolist.utils.StatusBarDarkMode

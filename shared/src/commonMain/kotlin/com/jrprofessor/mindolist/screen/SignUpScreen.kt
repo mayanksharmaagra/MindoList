@@ -44,10 +44,10 @@ import com.jrprofessor.mindolist.customView.ShowNameView
 import com.jrprofessor.mindolist.customView.ShowPasswordView
 import com.jrprofessor.mindolist.customView.SignUpHeader
 import com.jrprofessor.mindolist.customView.WelcomeText
-import com.jrprofessor.mindolist.presentation.SignUpButtonState
-import com.jrprofessor.mindolist.presentation.SignUpEvent
-import com.jrprofessor.mindolist.presentation.SignUpIntent
-import com.jrprofessor.mindolist.presentation.SignUpState
+import com.jrprofessor.mindolist.presentation.signup.SignUpButtonState
+import com.jrprofessor.mindolist.presentation.signup.SignUpEvent
+import com.jrprofessor.mindolist.presentation.signup.SignUpIntent
+import com.jrprofessor.mindolist.presentation.signup.SignUpState
 import com.jrprofessor.mindolist.theme.backgroundColor
 import com.jrprofessor.mindolist.theme.btnColor
 import com.jrprofessor.mindolist.theme.stepColor
@@ -427,18 +427,13 @@ private fun OtpInputField(
 // =====================================================
 
 @Composable
-fun InputLabel(text: String,textColor: Color = Color.Black) {
+fun InputLabel(text: String,textColor: Color = Color.Black,fontWeight: FontWeight= FontWeight.Normal) {
     Text(
         text = text,
         fontSize = 16.sp,
-//        fontFamily = FontFamily(
-//            Font(
-//                Res.font.roboto_condensed_regular,
-//                FontWeight.SemiBold
-//            )
-//        ),
         color = textColor,
         modifier = Modifier.fillMaxWidth(),
+        fontWeight=fontWeight,
         textAlign = TextAlign.Start
     )
 }

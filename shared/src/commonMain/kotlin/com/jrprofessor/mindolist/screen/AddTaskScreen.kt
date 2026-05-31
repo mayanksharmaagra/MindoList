@@ -80,9 +80,9 @@ import com.jrprofessor.mindolist.icons.IcDay
 import com.jrprofessor.mindolist.icons.IcInfo
 import com.jrprofessor.mindolist.model.Category
 import com.jrprofessor.mindolist.model.Priority
-import com.jrprofessor.mindolist.presentation.AddTaskAction
-import com.jrprofessor.mindolist.presentation.AddTaskEvent
-import com.jrprofessor.mindolist.presentation.AddTaskUiState
+import com.jrprofessor.mindolist.presentation.addTask.AddTaskAction
+import com.jrprofessor.mindolist.presentation.addTask.AddTaskEvent
+import com.jrprofessor.mindolist.presentation.addTask.AddTaskUiState
 import com.jrprofessor.mindolist.theme.CardBackground
 import com.jrprofessor.mindolist.theme.CategoryUnselectedTextColor
 import com.jrprofessor.mindolist.theme.PlaceholderColor

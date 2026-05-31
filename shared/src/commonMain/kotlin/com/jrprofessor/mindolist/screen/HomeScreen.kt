@@ -42,8 +42,16 @@ fun HomeScreen(
     onLogout: () -> Unit = {},
 ) {
     val navController = rememberNavController()
-    val currentBackStack = navController.currentBackStackEntryAsState()
-    val currentDestination = currentBackStack.value?.destination?.route
+    val currentBackStack by navController.currentBackStackEntryAsState()
+    val currentDestination = currentBackStack?.destination?.route
+
+    val bottomBarRoutes = listOf(
+        BottomNavItem.Dashboard.route,
+        BottomNavItem.Tasks.route,
+        BottomNavItem.Analytics.route,
+        BottomNavItem.Settings.route
+    )
+    val shouldShowBottomBar = currentDestination in bottomBarRoutes
 
     StatusBarDarkMode()
 
@@ -56,11 +64,13 @@ fun HomeScreen(
             navController = navController,
             onLogout = onLogout
         )
-        BottomNavigationBarGlassUI(
-            navController,
-            onTaskAdd,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+        if (shouldShowBottomBar) {
+            BottomNavigationBarGlassUI(
+                navController,
+                onTaskAdd,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
     }
 }
 

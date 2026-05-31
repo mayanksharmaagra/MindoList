@@ -73,7 +73,7 @@ fun ProfileImageSection(
             // Avatar
             Box(
                 modifier = Modifier
-                    .size(90.dp)
+                    .size(120.dp)
                     .clip(CircleShape)
                     .background(Color(0xFFEDE9FE))
                     .border(3.dp, Color.White, CircleShape),
@@ -106,7 +106,7 @@ fun ProfileImageSection(
             if (isEdit) {// Pencil FAB
                 Box(
                     modifier = Modifier
-                        .size(28.dp)
+                        .size(32.dp)
                         .clip(CircleShape)
                         .background(PrimaryBlue)
                         .clickable {

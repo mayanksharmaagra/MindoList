@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.domain.usecase.SendForgotPasswordResetLink
-import com.jrprofessor.mindolist.presentation.ForgotPasswordEvent
-import com.jrprofessor.mindolist.presentation.ForgotPasswordIntent
-import com.jrprofessor.mindolist.presentation.ForgotPasswordState
-import com.jrprofessor.mindolist.presentation.ForgotPasswordStep
+import com.jrprofessor.mindolist.presentation.forgotPassword.ForgotPasswordEvent
+import com.jrprofessor.mindolist.presentation.forgotPassword.ForgotPasswordIntent
+import com.jrprofessor.mindolist.presentation.forgotPassword.ForgotPasswordState
+import com.jrprofessor.mindolist.presentation.forgotPassword.ForgotPasswordStep
 import com.jrprofessor.mindolist.utils.Validators
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow

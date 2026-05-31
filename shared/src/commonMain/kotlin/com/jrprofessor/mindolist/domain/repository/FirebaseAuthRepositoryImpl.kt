@@ -18,6 +18,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlin.time.Clock.System.now
+import kotlinx.coroutines.flow.combine
+import com.jrprofessor.mindolist.model.TaskModel
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.minus
+import kotlinx.datetime.Instant
 
 
 @OptIn(ExperimentalTime::class)
@@ -79,8 +86,7 @@ open class FirebaseAuthRepositoryImpl(
                 return Result.Error(Exception("No OTP found for this email"))
             }
 
-            val otpData = snapShot.value<OtpVerification>()
-                ?: return Result.Error(Exception("Invalid OTP data"))
+            val otpData = snapShot.value<OtpVerification>() ?: return Result.Error(Exception("Invalid OTP data"))
 
             when {
                 otpData.isVerified -> {
@@ -161,13 +167,64 @@ open class FirebaseAuthRepositoryImpl(
             emit(null)
             return@flow
         }
-        // ✅ dev.gitlive database flow
-        userRef.child(currentUser.uid)
-            .valueEvents
-            .collect { snapshot ->
-                val user = snapshot.value<User>()
-                emit(user)
+
+        val userFlow = userRef.child(currentUser.uid).valueEvents.map { it.value<User>() }
+        val tasksFlow = firebaseDatabase
+            .reference("tasks")
+            .child(currentUser.uid)
+            .valueEvents.map { snapshot ->
+                snapshot.children.mapNotNull { it.value<TaskModel>() }
             }
+
+        emitAll(
+            combine(userFlow, tasksFlow) { user, tasks ->
+                Logger.debug { "tasks size ===== ${tasks.size}" }
+                user?.copy(
+                    totalTasks = tasks.size,
+                    completedTasks = tasks.count { it.isCompleted },
+                    pendingTasks = tasks.count { !it.isCompleted },
+                    currentStreak = calculateStreak(tasks),
+                    focusRate = if (tasks.isNotEmpty()) (tasks.count { it.isCompleted }.toDouble() / tasks.size * 100) else 0.0
+                )
+            }
+        )
+    }
+
+    private fun calculateStreak(tasks: List<TaskModel>): Int {
+        if (tasks.isEmpty()) return 0
+        
+        val completedDates = tasks.filter { it.isCompleted }
+            .map { 
+                Instant.fromEpochMilliseconds(it.dueDate)
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .date 
+            }
+            .distinct()
+            .sortedDescending()
+
+        if (completedDates.isEmpty()) return 0
+
+        val today = now()
+            .toLocalDateTime(TimeZone.currentSystemDefault())
+            .date
+            
+        // Streak might be broken if nothing completed today or yesterday
+        if (completedDates.first() < today.minus(1, DateTimeUnit.DAY)) {
+            return 0
+        }
+
+        var streak = 0
+        var currentDate = completedDates.first()
+        
+        for (date in completedDates) {
+            if (date == currentDate) {
+                streak++
+                currentDate = currentDate.minus(1, DateTimeUnit.DAY)
+            } else {
+                break
+            }
+        }
+        return streak
     }
 
     override suspend fun signOut(): Result<Unit> {

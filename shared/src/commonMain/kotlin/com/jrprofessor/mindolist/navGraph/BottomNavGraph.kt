@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.jrprofessor.mindolist.screen.AllTaskScreen
 import com.jrprofessor.mindolist.screen.DashboardScreen
+import com.jrprofessor.mindolist.screen.EditProfileScreen
 import com.jrprofessor.mindolist.screen.SettingsScreen
 
 //import com.jrprofessor.mindolist.screen.DashboardScreen
@@ -20,7 +21,7 @@ fun BottomNavGraph(
         startDestination = BottomNavItem.Dashboard.route,
     ) {
         composable(route = BottomNavItem.Dashboard.route) {
-            DashboardScreen{
+            DashboardScreen {
                 navController.navigate(BottomNavItem.Tasks.route)
             }
         }
@@ -31,7 +32,20 @@ fun BottomNavGraph(
 
         }
         composable(route = BottomNavItem.Settings.route) {
-            SettingsScreen(onNavigateToSignUp = onLogout)
+            SettingsScreen(
+                onNavigateToSignUp = onLogout,
+                onEditProfileClick = {
+                    navController.navigate(Screen.EditProfile.route)
+                }
+            )
+        }
+        // ✅ Add EditProfile here inside NavHost
+        composable(route = Screen.EditProfile.route) {
+            EditProfileScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }

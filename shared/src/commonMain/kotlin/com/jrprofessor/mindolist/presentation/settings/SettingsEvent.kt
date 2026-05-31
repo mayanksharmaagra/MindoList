@@ -1,4 +1,4 @@
-package com.jrprofessor.mindolist.presentation
+package com.jrprofessor.mindolist.presentation.settings
 
 import com.jrprofessor.mindolist.model.TaskModel
 
