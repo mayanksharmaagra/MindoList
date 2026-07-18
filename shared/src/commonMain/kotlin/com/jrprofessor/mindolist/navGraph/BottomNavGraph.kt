@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.jrprofessor.mindolist.screen.AllTaskScreen
+import com.jrprofessor.mindolist.screen.AnalyticsScreen
 import com.jrprofessor.mindolist.screen.DashboardScreen
 import com.jrprofessor.mindolist.screen.EditProfileScreen
 import com.jrprofessor.mindolist.screen.SettingsScreen
@@ -29,7 +30,7 @@ fun BottomNavGraph(
             AllTaskScreen()
         }
         composable(route = BottomNavItem.Analytics.route) {
-
+           AnalyticsScreen()
         }
         composable(route = BottomNavItem.Settings.route) {
             SettingsScreen(

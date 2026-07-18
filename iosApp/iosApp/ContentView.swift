@@ -1,17 +1,18 @@
-import SwiftUI
-import Shared
-
 struct ComposeView: UIViewControllerRepresentable {
+    let aiTaskRepository: AiTaskRepository
+    
     func makeUIViewController(context: Context) -> UIViewController {
-        MainViewControllerKt.MainViewController()
+        MainViewControllerKt.MainViewController(aiTaskRepository: aiTaskRepository)
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 }
 
 struct ContentView: View {
+    let aiTaskRepository: AiTaskRepository
+    
     var body: some View {
-        ComposeView()
+        ComposeView(aiTaskRepository: aiTaskRepository)
                 .ignoresSafeArea(.all, edges: .bottom) // Compose has own keyboard handler
     }
 }

@@ -3,7 +3,9 @@ package com.jrprofessor.mindolist.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jrprofessor.mindolist.domain.model.Result
+import com.jrprofessor.mindolist.domain.repository.AiTaskRepository
 import com.jrprofessor.mindolist.domain.usecase.AddTaskUseCase
+import com.jrprofessor.mindolist.model.Category
 import com.jrprofessor.mindolist.model.TaskModel
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskAction
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskEvent
@@ -11,6 +13,7 @@ import com.jrprofessor.mindolist.presentation.addTask.AddTaskEvent.Error
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskEvent.Success
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskUiState
 import com.jrprofessor.mindolist.presentation.dashboard.DashboardEvent
+import com.jrprofessor.mindolist.utils.SpeechToTextParser
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +21,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -28,6 +32,8 @@ import kotlin.time.Clock
 
 class TaskViewModel(
     private val addTaskUseCase: AddTaskUseCase,
+    private val aiRepository: AiTaskRepository? = null,
+    private val sttParser: SpeechToTextParser
 ) : ViewModel() {
     private val _state = MutableStateFlow(AddTaskUiState())
     val state: StateFlow<AddTaskUiState> = _state.asStateFlow()
@@ -36,6 +42,20 @@ class TaskViewModel(
 
     private val _addTaskEffect = MutableSharedFlow<AddTaskEvent>()
     val addTaskEffect: SharedFlow<AddTaskEvent> = _addTaskEffect.asSharedFlow()
+
+    init {
+        viewModelScope.launch {
+            sttParser.state.collectLatest { sttState ->
+                _state.update { 
+                    it.copy(
+                        isRecording = sttState.isSpeaking,
+                        naturalInput = if (sttState.spokenText.isNotEmpty()) sttState.spokenText else it.naturalInput,
+                        aiError = sttState.error
+                    )
+                }
+            }
+        }
+    }
 
     fun dispatch(action: AddTaskAction) {
         when (action) {
@@ -47,11 +67,46 @@ class TaskViewModel(
             is AddTaskAction.TimeSelected,
             is AddTaskAction.TitleChanged,
             is AddTaskAction.ReminderValue,
+            is AddTaskAction.NaturalInputChanged,
             is AddTaskAction.ResetState -> _state.update {
                 reduceTask(it, action)
             }
 
             AddTaskAction.SaveClicked -> saveTask()
+            AddTaskAction.ParseAiClicked -> parseWithAi()
+            AddTaskAction.ToggleRecording -> {
+                if (_state.value.isRecording) {
+                    sttParser.stopListening()
+                } else {
+                    sttParser.startListening()
+                }
+            }
+        }
+    }
+
+    private fun parseWithAi() {
+        val input = _state.value.naturalInput
+        if (input.isBlank() || aiRepository == null) return
+
+        viewModelScope.launch {
+            _state.update { it.copy(isParsingAi = true, aiError = null) }
+            try {
+                val parsed = aiRepository.parseReminderText(input)
+                _state.update {
+                    it.copy(
+                        title = parsed.title,
+                        description = parsed.description,
+                        category = Category.entries.find { cat -> cat.label.equals(parsed.category, ignoreCase = true) } ?: Category.PERSONAL,
+                        selectedDate = parsed.date ?: it.selectedDate,
+                        selectedTime = parsed.time ?: it.selectedTime,
+                        isParsingAi = false
+                    )
+                }
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(isParsingAi = false, aiError = "Couldn't parse. Try again.")
+                }
+            }
         }
     }
 
@@ -67,6 +122,7 @@ class TaskViewModel(
         is AddTaskAction.CategoryChanged -> state.copy(category = action.category)
         is AddTaskAction.ReminderToggled -> state.copy(reminderEnabled = action.enabled)
         is AddTaskAction.ReminderValue -> state.copy(reminderOption = action.reminder)
+        is AddTaskAction.NaturalInputChanged -> state.copy(naturalInput = action.value)
         AddTaskAction.ResetState -> AddTaskUiState()
         else -> state
     }

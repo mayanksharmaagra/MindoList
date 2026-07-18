@@ -7,7 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -17,8 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -69,6 +66,7 @@ import com.jrprofessor.mindolist.theme.TextSlate
 import com.jrprofessor.mindolist.theme.WarningAmber
 import com.jrprofessor.mindolist.theme.backgroundColor
 import com.jrprofessor.mindolist.theme.btnColor
+import com.jrprofessor.mindolist.utils.Logger
 import com.jrprofessor.mindolist.utils.showToast
 import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
 import kotlinx.datetime.TimeZone
@@ -161,8 +159,7 @@ fun TodayTask(
     markCompleted: (String, Boolean) -> Unit,
     navigateToAllTasks: () -> Unit
 ) {
-
-
+    Logger.error{"TodayTask called"+todayTasks.size}
   /*
     val today = Clock.System.now()
         .toLocalDateTime(TimeZone.currentSystemDefault()).date
@@ -205,27 +202,12 @@ fun TodayTask(
                 }
             )
         }
-        if (todayTasks.isEmpty()) {
-            Spacer(modifier = Modifier.height(20.dp))
-            TasksEmptyState()
-        } else {
-           /* todayTasks.forEach { task ->
-                TaskItem(
-                    task = task,
-                    onToggleComplete = { isComplete ->
-                        markCompleted(task.id, isComplete)
-                    },
-                )
-            }*/
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+        if (todayTasks.isNotEmpty()) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(
-                    items = todayTasks,
-                    key = { it.id },
-                ) { task ->
+                todayTasks.forEach { task ->
                     TaskItem(
                         task = task,
                         onToggleComplete = { isComplete ->
@@ -234,6 +216,9 @@ fun TodayTask(
                     )
                 }
             }
+        } else {
+            Spacer(modifier = Modifier.height(20.dp))
+            TasksEmptyState()
         }
     }
 }

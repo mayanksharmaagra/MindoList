@@ -116,6 +116,9 @@ class DashboardViewModel(
                     }
                     Result.Loading -> Unit
                     is Result.Success<*> -> {
+                        Logger.error {
+                            "Loading tasks :${result.data}"
+                        }
                         _allTasks.value = result.data as List<TaskModel>
                         _state.update {
                             it.copy(

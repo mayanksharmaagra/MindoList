@@ -48,7 +48,9 @@ kotlin {
             // build.gradle.kts commonMain
             implementation(libs.peekaboo.ui)
             implementation(libs.peekaboo.image.picker)
-
+            implementation(libs.kotlinx.serialization)
+            implementation(libs.firebase.ai)
+            implementation(libs.firebase.appcheck.debug)
         }
         commonMain.dependencies {
             implementation(libs.runtime)

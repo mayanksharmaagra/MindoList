@@ -5,10 +5,8 @@ import FirebaseCore
 @main
 struct iOSApp: App {
 
-    // init() {
-    //     // Koin init karo
-    // initKoin()  // ya jo bhi aapka init function hai
-    // }
+    private let aiTaskRepository = IosAiTaskRepositoryImpl()
+
     init() {
         // ✅ Firebase configure
         FirebaseApp.configure()
@@ -16,7 +14,7 @@ struct iOSApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(aiTaskRepository: aiTaskRepository)
         }
     }
 }

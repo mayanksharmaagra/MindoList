@@ -36,7 +36,7 @@ sealed class BottomNavItem(
 
     object Analytics : BottomNavItem(
         route = Screen.Analytics.route,
-        label = "Analytics",
+        label = "Stats",
         selectedIcon = Icons.AnalyticsSelected,
         unSelectedIcon = Icons.AnalyticsUnselected
     )

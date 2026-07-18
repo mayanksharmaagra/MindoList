@@ -81,8 +81,8 @@ kotlin {
             implementation(libs.navigation.compose)
 
             api(libs.koin.core)
-            implementation(libs.koin.compose)
-            implementation(libs.koin.compose.viewmodel)
+            api(libs.koin.compose)
+            api(libs.koin.compose.viewmodel)
             implementation(libs.kotlinx.serialization)
             implementation(libs.multiplatform.settings)
             // build.gradle.kts commonMain
@@ -104,6 +104,7 @@ kotlin {
             implementation(libs.androidx.core.splashscreen)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.ktor.client.android)
+            implementation(libs.firebase.ai)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

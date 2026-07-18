@@ -23,4 +23,10 @@ data class AddTaskUiState(
     var dateError: String? = null,
     var isEditMode: Boolean = false,
     var editTaskId: String = "",
+
+    // AI related
+    val naturalInput: String = "",
+    val isParsingAi: Boolean = false,
+    val aiError: String? = null,
+    val isRecording: Boolean = false
 )

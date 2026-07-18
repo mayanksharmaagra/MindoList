@@ -1,0 +1,13 @@
+- `[x]` Add `RECORD_AUDIO` permission to Android Manifest
+- `[x]` Update `Platform` interface with `isAndroid`
+- `[x]` Implement `isAndroid` in `Platform.android.kt`
+- `[x]` Implement `isAndroid` in `Platform.ios.kt`
+- `[x]` Create `SpeechRecognizer` interface in `commonMain`
+- `[x]` Implement `SpeechRecognizer` in `androidMain`
+- `[x]` Implement `SpeechRecognizer` in `iosMain` (dummy)
+- `[x]` Update Koin modules to provide `SpeechRecognizer`
+- `[x]` Update `TaskViewModel` to handle nullable `AiTaskRepository` and STT logic
+- `[x]` Update `AddTaskScreen` to hide AI on iOS and add Mic button on Android
+- `[ ]` Fix Koin render issue in `LoginActivity.kt` Preview
+- `[ ]` Verify Android (AI + Mic)
+- `[ ]` Verify iOS (No AI)

@@ -18,8 +18,9 @@ sealed class AddTaskAction{
 
     // Side effects → ViewModel
     data object SaveClicked : AddTaskAction()
-//    data class DeleteClicked(val taskId: String) : AddTaskAction()
-//    data class ToggleComplete(val taskId: String, val isCompleted: Boolean) : AddTaskAction()
-//    data class LoadTaskForEdit(val task: Task) : AddTaskAction()
-//    data object RegenerateImageClicked : AddTaskAction()
+
+    // AI Actions
+    data class NaturalInputChanged(val value: String) : AddTaskAction()
+    data object ParseAiClicked : AddTaskAction()
+    data object ToggleRecording : AddTaskAction()
 }

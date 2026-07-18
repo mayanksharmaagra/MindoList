@@ -80,6 +80,9 @@ import com.jrprofessor.mindolist.icons.IcDay
 import com.jrprofessor.mindolist.icons.IcInfo
 import com.jrprofessor.mindolist.model.Category
 import com.jrprofessor.mindolist.model.Priority
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskAction
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskEvent
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskUiState
@@ -96,7 +99,10 @@ import com.jrprofessor.mindolist.theme.backgroundColor
 import com.jrprofessor.mindolist.theme.btnColor
 import com.jrprofessor.mindolist.utils.Logger
 import com.jrprofessor.mindolist.utils.showToast
+import com.jrprofessor.mindolist.getPlatform
 import com.jrprofessor.mindolist.viewmodels.TaskViewModel
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Stop
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -215,6 +221,83 @@ fun AddTaskContent(
         Spacer(modifier = Modifier.height(15.dp))
         CustomToolBar(viewModel,onNavigateBack)
         Spacer(modifier = Modifier.height(15.dp))
+
+        // ── AI Input Section ──────────────────────────────
+        if (getPlatform().isAndroid) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(6.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = CardBackground),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    HeaderWithIcon(icon = Icons.Default.AutoAwesome, title = "Smart Add")
+
+                    OutlinedTextField(
+                        value = state.naturalInput,
+                        onValueChange = { viewModel.dispatch(AddTaskAction.NaturalInputChanged(it)) },
+                        placeholder = {
+                            Text(
+                                "e.g. Remind me to call Mom tomorrow at 6 PM",
+                                fontSize = 14.sp,
+                                color = PlaceholderColor
+                            )
+                        },
+                        leadingIcon = {
+                            IconButton(onClick = { viewModel.dispatch(AddTaskAction.ToggleRecording) }) {
+                                Icon(
+                                    imageVector = if (state.isRecording) Icons.Default.Stop else Icons.Default.Mic,
+                                    contentDescription = "Speak",
+                                    tint = if (state.isRecording) Color.Red else PrimaryBlue
+                                )
+                            }
+                        },
+                        trailingIcon = {
+                            if (state.isParsingAi) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                IconButton(onClick = { viewModel.dispatch(AddTaskAction.ParseAiClicked) }) {
+                                    Icon(
+                                        imageVector = Icons.Default.AutoAwesome,
+                                        contentDescription = "Parse with AI",
+                                        tint = PrimaryBlue
+                                    )
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = TitleColor,
+                            unfocusedTextColor = TitleColor,
+                            focusedBorderColor = PrimaryBlue,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedContainerColor = RemindViewBG,
+                            unfocusedContainerColor = RemindViewBG
+                        ),
+                        minLines = 2
+                    )
+
+                    state.aiError?.let {
+                        Text(
+                            it, color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(15.dp))
+        }
         IdentityView(state, viewModel)
         Spacer(modifier = Modifier.height(15.dp))
         ScheduleView(

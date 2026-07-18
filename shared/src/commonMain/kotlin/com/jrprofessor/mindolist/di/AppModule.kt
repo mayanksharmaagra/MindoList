@@ -13,7 +13,7 @@ import com.jrprofessor.mindolist.domain.usecase.LoginWithEmailUseCase
 import com.jrprofessor.mindolist.domain.usecase.SendForgotPasswordResetLink
 import com.jrprofessor.mindolist.domain.usecase.SendOtpUseCase
 import com.jrprofessor.mindolist.domain.usecase.VerifyOtpUseCase
-import com.jrprofessor.mindolist.viewmodels.TaskViewModel
+import com.jrprofessor.mindolist.viewmodels.AnalyticsViewModel
 import com.jrprofessor.mindolist.viewmodels.AuthViewModel
 import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
 import com.jrprofessor.mindolist.viewmodels.EditProfileViewModel
@@ -21,12 +21,14 @@ import com.jrprofessor.mindolist.viewmodels.ForgotPasswordViewModel
 import com.jrprofessor.mindolist.viewmodels.LoginViewModel
 import com.jrprofessor.mindolist.viewmodels.SettingsViewmodel
 import com.jrprofessor.mindolist.viewmodels.SignUpViewModel
+import com.jrprofessor.mindolist.viewmodels.TaskViewModel
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.database.database
 import dev.gitlive.firebase.storage.storage
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModelOf
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 
@@ -36,10 +38,11 @@ val viewModelModule = module {
     viewModelOf(::SignUpViewModel)
     viewModelOf(::ForgotPasswordViewModel)
     viewModelOf(::DashboardViewModel)
-    viewModelOf(::TaskViewModel)
+    viewModel { TaskViewModel(get(), getOrNull(), get()) }
     viewModelOf(::AuthViewModel)
     viewModelOf(::SettingsViewmodel)
     viewModelOf(::EditProfileViewModel)
+    viewModelOf(::AnalyticsViewModel)
 }
 
 
