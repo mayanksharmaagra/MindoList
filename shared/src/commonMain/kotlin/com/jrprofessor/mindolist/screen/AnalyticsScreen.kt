@@ -20,9 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jrprofessor.mindolist.customView.CircularProgressBar
-import com.jrprofessor.mindolist.icons.IcHealth
-import com.jrprofessor.mindolist.icons.IcPersonal
-import com.jrprofessor.mindolist.icons.IcWork
+import com.jrprofessor.mindolist.customView.CustomLinearProgressBar
+import com.jrprofessor.mindolist.model.Category
 import com.jrprofessor.mindolist.theme.*
 import com.jrprofessor.mindolist.viewmodels.AnalyticsViewModel
 import org.koin.compose.viewmodel.koinViewModel
@@ -68,12 +67,12 @@ fun AnalyticsScreen(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(lightPurple)
+                    .background(PrimaryBlue.copy(alpha = .1f))
             ) {
                 Icon(
                     imageVector = Icons.Default.CalendarMonth,
                     contentDescription = "Calendar",
-                    tint = primaryPurple
+                    tint = PrimaryBlue
                 )
             }
         }
@@ -111,7 +110,7 @@ fun AnalyticsScreen(
                 ) {
                     Text(
                         text = tab,
-                        color = if (isSelected) primaryPurple else Color(0xFF64748B),
+                        color = if (isSelected) PrimaryBlue else Color(0xFF64748B),
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         fontSize = 16.sp
                     )
@@ -129,11 +128,12 @@ fun AnalyticsScreen(
             CircularProgressBar(
                 modifier = Modifier.size(240.dp),
                 progress = state.completionPercentage.toFloat(),
-                progressBarColor = primaryPurple,
-                progressBarWidth = 24.dp,
-                backgroundProgressBarColor = lightPurple.copy(alpha = 0.5f),
-                backgroundProgressBarWidth = 24.dp,
-                roundBorder = true
+                progressBarColor = PrimaryBlue,
+                progressBarWidth = 20.dp,
+                backgroundProgressBarColor = PrimaryBlue.copy(alpha = 0.1f),
+                backgroundProgressBarWidth = 21.dp,
+                roundBorder = true,
+                isHide = true
             )
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
@@ -206,7 +206,7 @@ fun AnalyticsScreen(
                 color = TitleColor
             )
             TextButton(onClick = { }) {
-                Text(text = "View All", color = primaryPurple, fontWeight = FontWeight.Bold)
+                Text(text = "View All", color = PrimaryBlue, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -221,19 +221,12 @@ fun AnalyticsScreen(
             )
         } else {
             state.categoryProgress.forEach { stats ->
+                val category = Category.entries.find { it.label == stats.name } ?: Category.PERSONAL
                 CategoryProgressItem(
                     name = stats.name,
                     progress = stats.progress,
-                    color = when (stats.name) {
-                        "Work" -> primaryPurple
-                        "Shopping" -> ExpenseGreen
-                        else -> primaryPurple
-                    },
-                    icon = when (stats.name) {
-                        "Work" -> IcWork
-                        "Health" -> IcHealth
-                        else -> IcPersonal
-                    }
+                    color = category.iconColor,
+                    icon = category.iconRes
                 )
             }
         }
@@ -282,15 +275,15 @@ fun CategoryProgressItem(name: String, progress: Float, color: Color, icon: andr
             Text(text = "${(progress * 100).toInt()}%", fontWeight = FontWeight.Bold, color = TitleColor)
         }
         Spacer(modifier = Modifier.height(12.dp))
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .clip(CircleShape),
-            color = color,
-            trackColor = SegmentBackground,
-            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+        CustomLinearProgressBar(
+            progress = progress,
+            progressMax = 1.0f,
+            modifier = Modifier.fillMaxWidth(),
+            progressBarColor = color,
+            progressBarHeight = 8.dp,
+            backgroundProgressBarColor = PlaceholderColor.copy(alpha = .1f),
+            backgroundProgressBarHeight = 8.dp,
+            roundBorder = true
         )
     }
 }

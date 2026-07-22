@@ -53,7 +53,7 @@ fun Long.toDisplayDate(): String {
     val dateTime = Instant.fromEpochMilliseconds(this)
         .toLocalDateTime(TimeZone.currentSystemDefault())
     return "${dateTime.dayOfMonth.toString().padStart(2, '0')}/" +
-            "${dateTime.monthNumber.toString().padStart(2, '0')}/" +
+            "${dateTime.month.number.toString().padStart(2, '0')}/" +
             "${dateTime.year}"
 }
 

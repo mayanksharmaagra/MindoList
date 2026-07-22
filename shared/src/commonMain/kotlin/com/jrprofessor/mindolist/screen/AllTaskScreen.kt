@@ -51,6 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jrprofessor.mindolist.customView.MonthYearPickerDialog
 import com.jrprofessor.mindolist.customView.TaskItem
 import com.jrprofessor.mindolist.customView.TasksEmptyState
 import com.jrprofessor.mindolist.extension.generateMonthDates
@@ -72,6 +73,7 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
+import kotlinx.datetime.number
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
@@ -95,6 +97,8 @@ fun AllTaskScreen(
             }
         }
     }
+    var showMonthYearDialog by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -116,6 +120,22 @@ fun AllTaskScreen(
                 },
                 onFilterSelected = { filter ->
                     dashboardViewModel.dispatch(DashboardAction.FilterSelected(filter))
+                },
+                onCalendarClick = {
+                    showMonthYearDialog = true
+                }
+            )
+        }
+
+        if (showMonthYearDialog) {
+            MonthYearPickerDialog(
+                initialYear = state.selectedDate.year,
+                initialMonth = state.selectedDate.month.number,
+                onDismiss = { showMonthYearDialog = false },
+                onMonthYearSelected = { year, month ->
+                    val newDate = LocalDate(year, month, 1)
+                    dashboardViewModel.dispatch(DashboardAction.SelectedDate(newDate))
+                    showMonthYearDialog = false
                 }
             )
         }
@@ -127,7 +147,8 @@ fun AllTaskScreenContent(
     state: DashboardState,
     onDateSelected: (LocalDate) -> Unit,
     markCompleted: (String, Boolean) -> Unit,
-    onFilterSelected: (String) -> Unit
+    onFilterSelected: (String) -> Unit,
+    onCalendarClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -141,7 +162,7 @@ fun AllTaskScreenContent(
             onDateSelected = { date ->
                 onDateSelected(date)
             }, onCalendarClick = {
-
+                onCalendarClick()
             }
         )
         Spacer(modifier = Modifier.height(20.dp))
@@ -167,7 +188,7 @@ fun AllTaskScreenContent(
         // Empty state
         if (state.tasks.isEmpty()) {
             Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                TasksEmptyState()
+                TasksEmptyState(isToday = state.selectedDate.isToday())
             }
             return
         }

@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun TasksEmptyState(
+    isToday: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     var visible by remember { mutableStateOf(false) }
@@ -83,7 +84,7 @@ fun TasksEmptyState(
 
                 // ── Primary text ──────────────────────────────────────────────
                 Text(
-                    text = "No tasks for today",
+                    text = if (isToday) "No tasks for today" else "No tasks for this day",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF1E293B),
@@ -91,7 +92,7 @@ fun TasksEmptyState(
 
                 // ── Secondary text ────────────────────────────────────────────
                 Text(
-                    text = "Tap + to add your first task",
+                    text = if (isToday) "Tap + to add your first task" else "Relax! No plans for this date",
                     fontSize = 13.sp,
                     color = Color(0xFF94A3B8),
                 )

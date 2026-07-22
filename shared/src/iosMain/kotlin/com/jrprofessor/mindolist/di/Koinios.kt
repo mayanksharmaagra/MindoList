@@ -1,13 +1,9 @@
 package com.jrprofessor.mindolist.di
 
-import com.jrprofessor.mindolist.domain.repository.AiTaskRepository
 import org.koin.core.context.startKoin
-import org.koin.dsl.module
 
-fun initKoin(aiTaskRepository: AiTaskRepository) {
+fun initKoin() {
     startKoin {
-        modules(appModules() + module {
-            single { aiTaskRepository }
-        })
+        modules(appModules())
     }
 }

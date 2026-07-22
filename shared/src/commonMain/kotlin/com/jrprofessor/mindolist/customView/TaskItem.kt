@@ -45,6 +45,7 @@ import com.jrprofessor.mindolist.extension.toDisplayTime
 import com.jrprofessor.mindolist.model.Category
 import com.jrprofessor.mindolist.model.Priority
 import com.jrprofessor.mindolist.model.TaskModel
+import com.jrprofessor.mindolist.theme.PrimaryBlue
 
 /*@Composable
 fun TaskItem(
@@ -327,12 +328,12 @@ private fun TaskCheckbox(
     onCheckedChange: (Boolean) -> Unit,
 ) {
     val bgColor by animateColorAsState(
-        targetValue = if (checked) Color(0xFF7C3AED) else Color.Transparent,
+        targetValue = if (checked) PrimaryBlue else Color.Transparent,
         animationSpec = tween(200),
         label = "checkboxBg",
     )
     val borderColor by animateColorAsState(
-        targetValue = if (checked) Color(0xFF7C3AED) else Color(0xFFCBD5E0),
+        targetValue = if (checked) PrimaryBlue else Color(0xFFCBD5E0),
         animationSpec = tween(200),
         label = "checkboxBorder",
     )

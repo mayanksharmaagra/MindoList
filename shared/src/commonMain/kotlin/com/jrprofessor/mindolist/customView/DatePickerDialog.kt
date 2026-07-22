@@ -104,12 +104,12 @@ data class SimpleDate(
 
     fun prevMonth(): SimpleDate {
         val date = LocalDate(year, month, 1).minus(1, DateTimeUnit.MONTH)
-        return SimpleDate(date.year, date.monthNumber, date.dayOfMonth)
+        return SimpleDate(date.year, date.month.number, date.dayOfMonth)
     }
 
     fun nextMonth(): SimpleDate {
         val date = LocalDate(year, month, 1).plus(1, DateTimeUnit.MONTH)
-        return SimpleDate(date.year, date.monthNumber, date.dayOfMonth)
+        return SimpleDate(date.year, date.month.number, date.dayOfMonth)
     }
 
     fun formatted(): String =
@@ -122,7 +122,7 @@ data class SimpleDate(
 @OptIn(ExperimentalTime::class)
 fun today(): SimpleDate {
     val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-    return SimpleDate(now.year, now.monthNumber, now.dayOfMonth)
+    return SimpleDate(now.year, now.month.number, now.dayOfMonth)
 }
 // ── Date Picker Full Screen Dialog ────────────────────────────────────────────
 

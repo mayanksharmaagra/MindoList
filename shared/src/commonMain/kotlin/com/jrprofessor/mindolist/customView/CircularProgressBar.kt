@@ -2,6 +2,7 @@ package com.jrprofessor.mindolist.customView
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme.typography
@@ -20,6 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jrprofessor.mindolist.theme.TextGray
+import com.jrprofessor.mindolist.theme.TitleColor
 
 @Composable
 fun CircularProgressBar(
@@ -31,7 +34,8 @@ fun CircularProgressBar(
     backgroundProgressBarColor: Color = Color.Gray,
     backgroundProgressBarWidth: Dp = 3.dp,
     roundBorder: Boolean = false,
-    startAngle: Float = 0f
+    startAngle: Float = 0f,
+    isHide: Boolean = false
 ) {
     Box(contentAlignment = Alignment.Center) {
         Canvas(modifier = modifier.fillMaxSize()) {
@@ -61,13 +65,15 @@ fun CircularProgressBar(
                 )
             )
         }
-        Text(
-            text = progress.toInt().toString() + "%",
-            color = progressBarColor,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = FontFamily.Monospace,
-        )
+        if(!isHide) {
+            Text(
+                text = progress.toInt().toString() + "%",
+                color = progressBarColor,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = FontFamily.Monospace,
+            )
+        }
     }
 
 }
