@@ -173,7 +173,7 @@ fun AddTaskScreen(
             initialHour = state.selectedTime.split(" ")[0].split(":")[0].toInt(),
             initialMinute = state.selectedTime.split(" ")[0].split(":")[1].toInt(),
             period = state.selectedTime.split(" ")[1],
-            onTimeSelected = { hour, minute,period ->
+            onTimeSelected = { hour, minute, period ->
                 viewModel.dispatch(
                     AddTaskAction.TimeSelected(
                         "$hour:$minute $period"
@@ -219,85 +219,86 @@ fun AddTaskContent(
             .padding(16.dp)
     ) {
         Spacer(modifier = Modifier.height(15.dp))
-        CustomToolBar(viewModel,onNavigateBack)
+        CustomToolBar(viewModel, onNavigateBack)
         Spacer(modifier = Modifier.height(15.dp))
 
         // ── AI Input Section ──────────────────────────────
-        if (getPlatform().isAndroid) {
-            Card(
+//        if (getPlatform().isAndroid) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(6.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(6.dp),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = CardBackground),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    HeaderWithIcon(icon = Icons.Default.AutoAwesome, title = "Smart Add")
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            )
+            {
+                HeaderWithIcon(icon = Icons.Default.AutoAwesome, title = "Smart Add")
 
-                    OutlinedTextField(
-                        value = state.naturalInput,
-                        onValueChange = { viewModel.dispatch(AddTaskAction.NaturalInputChanged(it)) },
-                        placeholder = {
-                            Text(
-                                "e.g. Remind me to call Mom tomorrow at 6 PM",
-                                fontSize = 14.sp,
-                                color = PlaceholderColor
-                            )
-                        },
-                        leadingIcon = {
-                            IconButton(onClick = { viewModel.dispatch(AddTaskAction.ToggleRecording) }) {
-                                Icon(
-                                    imageVector = if (state.isRecording) Icons.Default.Stop else Icons.Default.Mic,
-                                    contentDescription = "Speak",
-                                    tint = if (state.isRecording) Color.Red else PrimaryBlue
-                                )
-                            }
-                        },
-                        trailingIcon = {
-                            if (state.isParsingAi) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                IconButton(onClick = { viewModel.dispatch(AddTaskAction.ParseAiClicked) }) {
-                                    Icon(
-                                        imageVector = Icons.Default.AutoAwesome,
-                                        contentDescription = "Parse with AI",
-                                        tint = PrimaryBlue
-                                    )
-                                }
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = TitleColor,
-                            unfocusedTextColor = TitleColor,
-                            focusedBorderColor = PrimaryBlue,
-                            unfocusedBorderColor = Color.Transparent,
-                            focusedContainerColor = RemindViewBG,
-                            unfocusedContainerColor = RemindViewBG
-                        ),
-                        minLines = 2
-                    )
-
-                    state.aiError?.let {
+                OutlinedTextField(
+                    value = state.naturalInput,
+                    onValueChange = { viewModel.dispatch(AddTaskAction.NaturalInputChanged(it)) },
+                    placeholder = {
                         Text(
-                            it, color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
+                            "e.g. Remind me to call Mom tomorrow at 6 PM",
+                            fontSize = 14.sp,
+                            color = PlaceholderColor
                         )
-                    }
+                    },
+                    leadingIcon = {
+                        IconButton(onClick = { viewModel.dispatch(AddTaskAction.ToggleRecording) }) {
+                            Icon(
+                                imageVector = if (state.isRecording) Icons.Default.Stop else Icons.Default.Mic,
+                                contentDescription = "Speak",
+                                tint = if (state.isRecording) Color.Red else PrimaryBlue
+                            )
+                        }
+                    },
+                    trailingIcon = {
+                        if (state.isParsingAi) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            IconButton(onClick = { viewModel.dispatch(AddTaskAction.ParseAiClicked) }) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoAwesome,
+                                    contentDescription = "Parse with AI",
+                                    tint = PrimaryBlue
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = TitleColor,
+                        unfocusedTextColor = TitleColor,
+                        focusedBorderColor = PrimaryBlue,
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedContainerColor = RemindViewBG,
+                        unfocusedContainerColor = RemindViewBG
+                    ),
+                    minLines = 2
+                )
+
+                state.aiError?.let {
+                    Text(
+                        it, color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
-            Spacer(modifier = Modifier.height(15.dp))
         }
+        Spacer(modifier = Modifier.height(15.dp))
+//        }
         IdentityView(state, viewModel)
         Spacer(modifier = Modifier.height(15.dp))
         ScheduleView(

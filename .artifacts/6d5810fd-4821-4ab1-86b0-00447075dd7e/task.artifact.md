@@ -1,0 +1,6 @@
+- [x] Fix Gradle and Kotlin versions in `libs.versions.toml`
+- [x] Refactor `shared/build.gradle.kts`
+- [x] Fix `iosApp/Podfile` and resolve Firebase conflicts
+- [ ] Improve Koin initialization in `Koinios.kt`
+- [ ] Verify build via `./gradlew :shared:generatePodspec`
+- [ ] Verify `pod install` in `iosApp` directory

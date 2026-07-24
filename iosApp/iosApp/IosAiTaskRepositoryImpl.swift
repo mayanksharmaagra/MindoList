@@ -3,10 +3,10 @@ import FirebaseAI
 import Shared
 
 class IosAiTaskRepositoryImpl: NSObject, AiTaskRepository {
-    private let model = VertexAI.vertexAI().generativeModel(modelName: "gemini-1.5-flash")
+    private let model = FirebaseAI.firebaseAI(backend: .googleAI()).generativeModel(modelName: "gemini-3.1-flash-lite")
 
     func parseReminderText(userInput: String, completionHandler: @escaping (ParsedTask?, Error?) -> Void) {
-        Task {
+        Swift.Task {
             do {
                 let result = try await self.parseInternal(userInput: userInput)
                 completionHandler(result, nil)

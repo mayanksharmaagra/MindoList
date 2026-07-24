@@ -316,11 +316,7 @@ import Foundation
     var prefixes = [StorageReference]()
     var items = [StorageReference]()
 
-    #if swift(>=6.2)
-      weak let weakSelf = self
-    #else
-      weak var weakSelf = self
-    #endif
+    weak var weakSelf = self
 
     var paginatedCompletion: ((_: StorageListResult?, _: Error?) -> Void)?
     paginatedCompletion = { (_ listResult: StorageListResult?, _ error: Error?) in

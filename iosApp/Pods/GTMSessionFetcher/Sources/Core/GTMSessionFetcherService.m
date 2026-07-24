@@ -1281,17 +1281,11 @@ static id<GTMUserAgentProvider> SharedStandardUserAgentProvider(void) {
                     newRequest:(NSURLRequest *)request
              completionHandler:(void (^)(NSURLRequest *))completionHandler {
   id<NSURLSessionTaskDelegate> fetcher = [self fetcherForTask:task];
-  if (fetcher) {
-    [fetcher URLSession:session
-                              task:task
-        willPerformHTTPRedirection:response
-                        newRequest:request
-                 completionHandler:completionHandler];
-  } else {
-    GTMSESSION_LOG_DEBUG(
-        @"WARNING: fetcher not found willPerformHTTPRedirection:, hopefully just stopped");
-    completionHandler(nil);
-  }
+  [fetcher URLSession:session
+                            task:task
+      willPerformHTTPRedirection:response
+                      newRequest:request
+               completionHandler:completionHandler];
 }
 
 - (void)URLSession:(NSURLSession *)session
@@ -1299,25 +1293,14 @@ static id<GTMUserAgentProvider> SharedStandardUserAgentProvider(void) {
     didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
       completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential *))handler {
   id<NSURLSessionTaskDelegate> fetcher = [self fetcherForTask:task];
-  if (fetcher) {
-    [fetcher URLSession:session task:task didReceiveChallenge:challenge completionHandler:handler];
-  } else {
-    GTMSESSION_LOG_DEBUG(
-        @"WARNING: fetcher not found didReceiveChallenge:, hopefully just stopped");
-    handler(NSURLSessionAuthChallengeCancelAuthenticationChallenge, nil);
-  }
+  [fetcher URLSession:session task:task didReceiveChallenge:challenge completionHandler:handler];
 }
 
 - (void)URLSession:(NSURLSession *)session
                  task:(NSURLSessionTask *)task
     needNewBodyStream:(void (^)(NSInputStream *bodyStream))handler {
   id<NSURLSessionTaskDelegate> fetcher = [self fetcherForTask:task];
-  if (fetcher) {
-    [fetcher URLSession:session task:task needNewBodyStream:handler];
-  } else {
-    GTMSESSION_LOG_DEBUG(@"WARNING: fetcher not found needNewBodyStream:, hopefully just stopped");
-    handler(nil);
-  }
+  [fetcher URLSession:session task:task needNewBodyStream:handler];
 }
 
 - (void)URLSession:(NSURLSession *)session
@@ -1326,7 +1309,6 @@ static id<GTMUserAgentProvider> SharedStandardUserAgentProvider(void) {
               totalBytesSent:(int64_t)totalBytesSent
     totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend {
   id<NSURLSessionTaskDelegate> fetcher = [self fetcherForTask:task];
-  // Ok to silently noop if things were canceled and fetcher no longer found, likely stopped.
   [fetcher URLSession:session
                           task:task
                didSendBodyData:bytesSent
@@ -1342,7 +1324,6 @@ static id<GTMUserAgentProvider> SharedStandardUserAgentProvider(void) {
   // This is the usual way tasks are removed from the task map.
   [self removeTaskFromMap:task];
 
-  // Ok to silently noop if things were canceled and fetcher no longer found, likely stopped.
   [fetcher URLSession:session task:task didCompleteWithError:error];
 }
 
@@ -1350,7 +1331,6 @@ static id<GTMUserAgentProvider> SharedStandardUserAgentProvider(void) {
                           task:(NSURLSessionTask *)task
     didFinishCollectingMetrics:(NSURLSessionTaskMetrics *)metrics {
   id<NSURLSessionTaskDelegate> fetcher = [self fetcherForTask:task];
-  // Ok to silently noop if things were canceled and fetcher no longer found, likely stopped.
   [fetcher URLSession:session task:task didFinishCollectingMetrics:metrics];
 }
 
@@ -1361,15 +1341,10 @@ static id<GTMUserAgentProvider> SharedStandardUserAgentProvider(void) {
     didReceiveResponse:(NSURLResponse *)response
      completionHandler:(void (^)(NSURLSessionResponseDisposition))handler {
   id<NSURLSessionDataDelegate> fetcher = [self fetcherForTask:dataTask];
-  if (fetcher) {
-    [fetcher URLSession:session
-                  dataTask:dataTask
-        didReceiveResponse:response
-         completionHandler:handler];
-  } else {
-    GTMSESSION_LOG_DEBUG(@"WARNING: fetcher not found didReceiveResponse:, hopefully just stopped");
-    handler(NSURLSessionResponseCancel);
-  }
+  [fetcher URLSession:session
+                dataTask:dataTask
+      didReceiveResponse:response
+       completionHandler:handler];
 }
 
 - (void)URLSession:(NSURLSession *)session
@@ -1391,7 +1366,6 @@ static id<GTMUserAgentProvider> SharedStandardUserAgentProvider(void) {
           dataTask:(NSURLSessionDataTask *)dataTask
     didReceiveData:(NSData *)data {
   id<NSURLSessionDataDelegate> fetcher = [self fetcherForTask:dataTask];
-  // Ok to silently noop if things were canceled and fetcher no longer found, likely stopped.
   [fetcher URLSession:session dataTask:dataTask didReceiveData:data];
 }
 
@@ -1400,15 +1374,10 @@ static id<GTMUserAgentProvider> SharedStandardUserAgentProvider(void) {
     willCacheResponse:(NSCachedURLResponse *)proposedResponse
     completionHandler:(void (^)(NSCachedURLResponse *))handler {
   id<NSURLSessionDataDelegate> fetcher = [self fetcherForTask:dataTask];
-  if (fetcher) {
-    [fetcher URLSession:session
-                 dataTask:dataTask
-        willCacheResponse:proposedResponse
-        completionHandler:handler];
-  } else {
-    GTMSESSION_LOG_DEBUG(@"WARNING: fetcher not found willCacheResponse:, hopefully just stopped");
-    handler(nil);  // Don't cache anything
-  }
+  [fetcher URLSession:session
+               dataTask:dataTask
+      willCacheResponse:proposedResponse
+      completionHandler:handler];
 }
 
 // NSURLSessionDownloadDelegate protocol methods.
@@ -1417,7 +1386,6 @@ static id<GTMUserAgentProvider> SharedStandardUserAgentProvider(void) {
                  downloadTask:(NSURLSessionDownloadTask *)downloadTask
     didFinishDownloadingToURL:(NSURL *)location {
   id<NSURLSessionDownloadDelegate> fetcher = [self fetcherForTask:downloadTask];
-  // Ok to silently noop if things were canceled and fetcher no longer found, likely stopped.
   [fetcher URLSession:session downloadTask:downloadTask didFinishDownloadingToURL:location];
 }
 
@@ -1427,7 +1395,6 @@ static id<GTMUserAgentProvider> SharedStandardUserAgentProvider(void) {
             totalBytesWritten:(int64_t)totalWritten
     totalBytesExpectedToWrite:(int64_t)totalExpected {
   id<NSURLSessionDownloadDelegate> fetcher = [self fetcherForTask:downloadTask];
-  // Ok to silently noop if things were canceled and fetcher no longer found, likely stopped.
   [fetcher URLSession:session
                    downloadTask:downloadTask
                    didWriteData:bytesWritten
@@ -1440,7 +1407,6 @@ static id<GTMUserAgentProvider> SharedStandardUserAgentProvider(void) {
      didResumeAtOffset:(int64_t)fileOffset
     expectedTotalBytes:(int64_t)expectedTotalBytes {
   id<NSURLSessionDownloadDelegate> fetcher = [self fetcherForTask:downloadTask];
-  // Ok to silently noop if things were canceled and fetcher no longer found, likely stopped.
   [fetcher URLSession:session
             downloadTask:downloadTask
        didResumeAtOffset:fileOffset
