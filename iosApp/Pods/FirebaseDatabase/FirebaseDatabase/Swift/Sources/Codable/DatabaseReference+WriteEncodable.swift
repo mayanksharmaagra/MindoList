@@ -36,7 +36,7 @@ public extension DatabaseReference {
   ///                 immediately.
   func setValue<T: Encodable>(from value: T,
                               encoder: Database.Encoder = Database.Encoder(),
-                              completion: (@Sendable (Error?) -> Void)? =
+                              completion: ((Error?) -> Void)? =
                                 nil) throws {
     let encoded = try encoder.encode(value)
     if let completion {

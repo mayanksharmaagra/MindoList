@@ -97,6 +97,26 @@ NS_ASSUME_NONNULL_END
 #define GTM_TARGET_SUPPORTS_APP_TRANSPORT_SECURITY 1
 #endif
 
+#if TARGET_OS_IOS
+#if defined(__IPHONE_13_0) && __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_13_0
+#define GTM_SDK_REQUIRES_TLSMINIMUMSUPPORTEDPROTOCOLVERSION 1
+#else
+#define GTM_SDK_REQUIRES_TLSMINIMUMSUPPORTEDPROTOCOLVERSION 0
+#endif
+#else  // Not iOS
+#define GTM_SDK_REQUIRES_TLSMINIMUMSUPPORTEDPROTOCOLVERSION 1
+#endif
+
+#if TARGET_OS_IOS
+#if defined(__IPHONE_13_0) && __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_13_0
+#define GTM_SDK_REQUIRES_SECTRUSTEVALUATEWITHERROR 1
+#else
+#define GTM_SDK_REQUIRES_SECTRUSTEVALUATEWITHERROR 0
+#endif
+#else  // Not iOS
+#define GTM_SDK_REQUIRES_SECTRUSTEVALUATEWITHERROR 1
+#endif
+
 #if __has_attribute(swift_async)
 // Once Clang 13/Xcode 13 can be assumed, can switch to NS_SWIFT_DISABLE_ASYNC.
 #define GTM_SWIFT_DISABLE_ASYNC __attribute__((swift_async(none)))
@@ -784,11 +804,6 @@ static GTMSessionFetcherTestBlock _Nullable gGlobalTestBlock;
       // The User-Agent is already cached in memory, so set it synchronously.
       [fetchRequest setValue:cachedUserAgent forHTTPHeaderField:@"User-Agent"];
     } else if (userAgentProvider != nil) {
-      // If this session is held by the fetcher service, clear the session now so that we don't
-      // assume it's still valid after asynchronous User-Agent calculation completes.
-      if (self.canShareSession) {
-        self.session = nil;
-      }
       // The User-Agent is not cached in memory. Fetch it asynchronously.
       [self updateUserAgentAsynchronouslyForRequest:fetchRequest
                                   userAgentProvider:userAgentProvider
@@ -1082,7 +1097,15 @@ static GTMSessionFetcherTestBlock _Nullable gGlobalTestBlock;
       _configuration = [NSURLSessionConfiguration ephemeralSessionConfiguration];
     }
 #if !GTM_ALLOW_INSECURE_REQUESTS
+#if GTM_SDK_REQUIRES_TLSMINIMUMSUPPORTEDPROTOCOLVERSION
     _configuration.TLSMinimumSupportedProtocolVersion = tls_protocol_version_TLSv12;
+#else
+    if (@available(iOS 13, *)) {
+      _configuration.TLSMinimumSupportedProtocolVersion = tls_protocol_version_TLSv12;
+    } else {
+      _configuration.TLSMinimumSupportedProtocol = kTLSProtocol12;
+    }
+#endif  // GTM_SDK_REQUIRES_TLSMINIMUMSUPPORTEDPROTOCOLVERSION
 #endif
   }  // !_configuration
   _configuration.HTTPCookieStorage = self.cookieStorage;
@@ -1749,7 +1772,7 @@ NSData *_Nullable GTMDataFromInputStream(NSInputStream *inputStream, NSError **o
   }
 }
 
-- (nullable NSDictionary<NSString *, id> *)sessionIdentifierMetadata {
+- (nullable NSDictionary *)sessionIdentifierMetadata {
   @synchronized(self) {
     GTMSessionMonitorSynchronized(self);
 
@@ -1757,7 +1780,7 @@ NSData *_Nullable GTMDataFromInputStream(NSInputStream *inputStream, NSError **o
   }
 }
 
-- (nullable NSDictionary<NSString *, id> *)sessionIdentifierMetadataUnsynchronized {
+- (nullable NSDictionary *)sessionIdentifierMetadataUnsynchronized {
   GTMSessionCheckSynchronized(self);
 
   // Session Identifier format: "com.google.<ClassName>_<UUID>_<Metadata in JSON format>
@@ -1892,15 +1915,6 @@ NSData *_Nullable GTMDataFromInputStream(NSInputStream *inputStream, NSError **o
   [_service fetcherDidStop:self];
 
   self.authorizer = nil;
-  @synchronized(self) {
-    GTMSessionMonitorSynchronized(self);
-
-    NSURLSession *oldSession = _session;
-    _session = nil;
-    if (_shouldInvalidateSession) {
-      [oldSession finishTasksAndInvalidate];
-    }
-  }  // @synchronized(self)
 }
 
 + (GTMSessionCookieStorage *)staticCookieStorage {
@@ -2884,6 +2898,7 @@ static _Nullable id<GTMUIApplicationProtocol> gSubstituteUIApp;
     // so it may be redundant for us to also lock, but it's easy to synchronize here
     // anyway.
     BOOL shouldAllow;
+#if GTM_SDK_REQUIRES_SECTRUSTEVALUATEWITHERROR
     CFErrorRef errorRef = NULL;
     @synchronized([GTMSessionFetcher class]) {
       GTMSessionMonitorSynchronized([GTMSessionFetcher class]);
@@ -2898,6 +2913,32 @@ static _Nullable id<GTMUIApplicationProtocol> gSubstituteUIApp;
                            request);
       CFRelease(errorRef);
     }
+#else
+    SecTrustResultType trustEval = kSecTrustResultInvalid;
+    OSStatus trustError;
+    @synchronized([GTMSessionFetcher class]) {
+      GTMSessionMonitorSynchronized([GTMSessionFetcher class]);
+
+      trustError = SecTrustEvaluate(serverTrust, &trustEval);
+    }
+    if (trustError != errSecSuccess) {
+      GTMSESSION_LOG_DEBUG(@"Error %d evaluating trust for %@",
+                           (int)trustError, request);
+      shouldAllow = NO;
+    } else {
+      // Having a trust level "unspecified" by the user is the usual result, described at
+      //   https://developer.apple.com/library/mac/qa/qa1360
+      if (trustEval == kSecTrustResultUnspecified
+          || trustEval == kSecTrustResultProceed) {
+        shouldAllow = YES;
+      } else {
+        shouldAllow = NO;
+        GTMSESSION_LOG_DEBUG(@"Challenge SecTrustResultType %u for %@, properties: %@",
+                             trustEval, request.URL.host,
+                             CFBridgingRelease(SecTrustCopyProperties(serverTrust)));
+      }
+    }
+#endif  // GTM_SDK_REQUIRES_SECTRUSTEVALUATEWITHERROR
     handler(serverTrust, shouldAllow);
 
     CFRelease(serverTrust);

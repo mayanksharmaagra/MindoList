@@ -19,10 +19,6 @@ private let kFiveMinutes = 5 * 60.0
 
 @available(iOS 13, tvOS 13, macOS 10.15, macCatalyst 13, watchOS 7, *)
 actor SecureTokenServiceInternal {
-  /// Coalescer to deduplicate concurrent token refresh requests.
-  /// When multiple requests arrive at the same time, only one network call is made.
-  private let refreshCoalescer = TokenRefreshCoalescer()
-
   /// Fetch a fresh ephemeral access token for the ID associated with this instance. The token
   ///   received in the callback should be considered short lived and not cached.
   ///
@@ -36,26 +32,13 @@ actor SecureTokenServiceInternal {
       return (service.accessToken, false)
     } else {
       AuthLog.logDebug(code: "I-AUT000017", message: "Fetching new token from backend.")
-
-      // Use coalescer to deduplicate concurrent refresh requests.
-      // If multiple requests arrive while one is in progress, they all wait
-      // for the same network response instead of making redundant calls.
-      let currentToken = service.accessToken
-      return try await refreshCoalescer.coalescedRefresh(
-        currentToken: currentToken
-      ) {
-        try await self.requestAccessToken(
-          retryIfExpired: true,
-          service: service,
-          backend: backend
-        )
-      }
+      return try await requestAccessToken(retryIfExpired: true, service: service, backend: backend)
     }
   }
 
   /// Makes a request to STS for an access token.
   ///
-  /// This handles both the case that the token has not been granted yet and that it just
+  /// This handles both the case that the token has not been granted yet and that it just needs
   /// needs to be refreshed.
   ///
   /// - Returns: Token and Bool indicating if update occurred.
@@ -142,7 +125,7 @@ final class SecureTokenService: NSObject, NSSecureCoding, Sendable {
     set { _requestConfiguration.withLock { $0 = newValue } }
   }
 
-  let _requestConfiguration: UnfairLock<AuthRequestConfiguration?>
+  let _requestConfiguration: FIRAllocatedUnfairLock<AuthRequestConfiguration?>
 
   /// The cached access token.
   ///
@@ -157,7 +140,7 @@ final class SecureTokenService: NSObject, NSSecureCoding, Sendable {
     set { _accessToken.withLock { $0 = newValue } }
   }
 
-  private let _accessToken: UnfairLock<String>
+  private let _accessToken: FIRAllocatedUnfairLock<String>
 
   /// The refresh token for the user, or `nil` if the user has yet completed sign-in flow.
   ///
@@ -167,7 +150,7 @@ final class SecureTokenService: NSObject, NSSecureCoding, Sendable {
     set { _refreshToken.withLock { $0 = newValue } }
   }
 
-  private let _refreshToken: UnfairLock<String?>
+  private let _refreshToken: FIRAllocatedUnfairLock<String?>
 
   /// The expiration date of the cached access token.
   var accessTokenExpirationDate: Date? {
@@ -175,7 +158,7 @@ final class SecureTokenService: NSObject, NSSecureCoding, Sendable {
     set { _accessTokenExpirationDate.withLock { $0 = newValue } }
   }
 
-  private let _accessTokenExpirationDate: UnfairLock<Date?>
+  private let _accessTokenExpirationDate: FIRAllocatedUnfairLock<Date?>
 
   /// Creates a `SecureTokenService` with access and refresh tokens.
   /// - Parameter requestConfiguration: The configuration for making requests to server.
@@ -187,10 +170,10 @@ final class SecureTokenService: NSObject, NSSecureCoding, Sendable {
        accessTokenExpirationDate: Date?,
        refreshToken: String) {
     internalService = SecureTokenServiceInternal()
-    _requestConfiguration = UnfairLock(requestConfiguration)
-    _accessToken = UnfairLock(accessToken)
-    _accessTokenExpirationDate = UnfairLock(accessTokenExpirationDate)
-    _refreshToken = UnfairLock(refreshToken)
+    _requestConfiguration = FIRAllocatedUnfairLock(initialState: requestConfiguration)
+    _accessToken = FIRAllocatedUnfairLock(initialState: accessToken)
+    _accessTokenExpirationDate = FIRAllocatedUnfairLock(initialState: accessTokenExpirationDate)
+    _refreshToken = FIRAllocatedUnfairLock(initialState: refreshToken)
   }
 
   /// Fetch a fresh ephemeral access token for the ID associated with this instance. The token

@@ -13,6 +13,14 @@
   "platforms": {
     "ios": "16.0"
   },
+  "dependencies": {
+    "FirebaseAppCheck": [],
+    "FirebaseAuth": [],
+    "FirebaseCore": [],
+    "FirebaseDatabase": [],
+    "FirebaseStorage": [],
+    "FirebaseVertexAI": []
+  },
   "xcconfig": {
     "ENABLE_USER_SCRIPT_SANDBOXING": "NO"
   },

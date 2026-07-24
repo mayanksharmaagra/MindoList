@@ -29,31 +29,13 @@ extension User: NSSecureCoding {}
 @available(iOS 13, tvOS 13, macOS 10.15, macCatalyst 13, watchOS 7, *)
 @objc(FIRUser) open class User: NSObject, UserInfo {
   /// Indicates the user represents an anonymous user.
-  @objc public internal(set) var isAnonymous: Bool {
-    get {
-      propertyAccessQueue.sync { _isAnonymous }
-    }
-    set {
-      propertyAccessQueue.sync { _isAnonymous = newValue }
-    }
-  }
-
-  private var _isAnonymous: Bool
+  @objc public internal(set) var isAnonymous: Bool
 
   /// Indicates the user represents an anonymous user.
   @objc open func anonymous() -> Bool { return isAnonymous }
 
   /// Indicates the email address associated with this user has been verified.
-  @objc public private(set) var isEmailVerified: Bool {
-    get {
-      propertyAccessQueue.sync { _isEmailVerified }
-    }
-    set {
-      propertyAccessQueue.sync { _isEmailVerified = newValue }
-    }
-  }
-
-  private var _isEmailVerified: Bool
+  @objc public private(set) var isEmailVerified: Bool
 
   /// Indicates the email address associated with this user has been verified.
   @objc open func emailVerified() -> Bool { return isEmailVerified }
@@ -62,16 +44,10 @@ extension User: NSSecureCoding {}
   ///
   /// This data is cached on sign-in and updated when linking or unlinking.
   @objc open var providerData: [UserInfo] {
-    return propertyAccessQueue.sync {
-      Array(_providerData.values)
-    }
+    return Array(providerDataRaw.values)
   }
 
-  private var _providerData: [String: UserInfoImpl]
-
-  /// A serial queue to protect read/write access to all properties.
-  private let propertyAccessQueue =
-    DispatchQueue(label: "com.google.firebase.auth.user.propertyAccessQueue")
+  var providerDataRaw: [String: UserInfoImpl]
 
   /// The backend service for the given instance.
   private(set) var backend: AuthBackend
@@ -82,10 +58,10 @@ extension User: NSSecureCoding {}
   /// The tenant ID of the current user. `nil` if none is available.
   @objc public private(set) var tenantID: String?
 
-  #if os(iOS) || os(macOS)
+  #if os(iOS)
     /// Multi factor object associated with the user.
     ///
-    /// This property is available on iOS and macOS.
+    /// This property is available on iOS only.
     @objc public private(set) var multiFactor: MultiFactor
   #endif
 
@@ -686,10 +662,7 @@ extension User: NSSecureCoding {}
   open func link(with credential: AuthCredential,
                  completion: ((AuthDataResult?, Error?) -> Void)? = nil) {
     kAuthGlobalWorkQueue.async {
-      let shouldLink = self.propertyAccessQueue.sync {
-        self._providerData[credential.provider] == nil
-      }
-      if !shouldLink {
+      if self.providerDataRaw[credential.provider] != nil {
         User.callInMainThreadWithAuthDataResultAndError(
           callback: completion,
           result: nil,
@@ -1086,18 +1059,18 @@ extension User: NSSecureCoding {}
 
   init(withTokenService tokenService: SecureTokenService, backend: AuthBackend) {
     self.backend = backend
-    _providerData = [:]
+    providerDataRaw = [:]
     userProfileUpdate = UserProfileUpdate()
     self.tokenService = tokenService
-    _isAnonymous = false
-    _isEmailVerified = false
+    isAnonymous = false
+    isEmailVerified = false
     metadata = UserMetadata(withCreationDate: nil, lastSignInDate: nil)
     tenantID = nil
-    #if os(iOS) || os(macOS)
+    #if os(iOS)
       multiFactor = MultiFactor(withMFAEnrollments: [])
     #endif
-    _uid = ""
-    _hasEmailPasswordCredential = false
+    uid = ""
+    hasEmailPasswordCredential = false
     requestConfiguration = AuthRequestConfiguration(apiKey: "", appID: "")
   }
 
@@ -1125,7 +1098,7 @@ extension User: NSSecureCoding {}
       requestConfiguration: user.requestConfiguration
     )
     let response = try await auth.backend.call(with: getAccountInfoRequest)
-    user._isAnonymous = anonymous
+    user.isAnonymous = anonymous
     user.update(withGetAccountInfoResponse: response)
     return user
   }
@@ -1135,58 +1108,24 @@ extension User: NSSecureCoding {}
   }
 
   /// The provider's user ID for the user.
-  @objc open var uid: String {
-    propertyAccessQueue.sync { _uid }
-  }
-
-  private var _uid: String
+  @objc open var uid: String
 
   /// The name of the user.
-  @objc open var displayName: String? {
-    get {
-      propertyAccessQueue.sync { _displayName }
-    }
-    set {
-      propertyAccessQueue.sync { _displayName = newValue }
-    }
-  }
-
-  private var _displayName: String?
+  @objc open var displayName: String?
 
   /// The URL of the user's profile photo.
-  @objc open var photoURL: URL? {
-    get {
-      propertyAccessQueue.sync { _photoURL }
-    }
-    set {
-      propertyAccessQueue.sync { _photoURL = newValue }
-    }
-  }
-
-  private var _photoURL: URL?
+  @objc open var photoURL: URL?
 
   /// The user's email address.
-  @objc open var email: String? {
-    propertyAccessQueue.sync { _email }
-  }
-
-  private var _email: String?
+  @objc open var email: String?
 
   /// A phone number associated with the user.
   ///
   /// This property is only available for users authenticated via phone number auth.
-  @objc open var phoneNumber: String? {
-    propertyAccessQueue.sync { _phoneNumber }
-  }
-
-  private var _phoneNumber: String?
+  @objc open var phoneNumber: String?
 
   /// Whether or not the user can be authenticated by using Firebase email and password.
-  var hasEmailPasswordCredential: Bool {
-    propertyAccessQueue.sync { _hasEmailPasswordCredential }
-  }
-
-  private var _hasEmailPasswordCredential: Bool
+  var hasEmailPasswordCredential: Bool
 
   /// Used to serialize the update profile calls.
   private let userProfileUpdate: UserProfileUpdate
@@ -1214,33 +1153,6 @@ extension User: NSSecureCoding {}
     get { return _auth }
   }
 
-  // MARK: Internal setters for thread-safe access
-
-  /// Returns whether the provider is linked.
-  /// - Parameter provider: The provider ID.
-  /// - Returns: Whether the provider is linked.
-  func isProviderLinked(provider: String) -> Bool {
-    return propertyAccessQueue.sync {
-      _providerData[provider] != nil
-    }
-  }
-
-  /// Unlinks the given provider.
-  /// - Parameter provider: The provider ID to unlink.
-  func unlinkProvider(provider: String) {
-    propertyAccessQueue.sync {
-      _ = _providerData.removeValue(forKey: provider)
-      if provider == EmailAuthProvider.id {
-        _hasEmailPasswordCredential = false
-      }
-      #if os(iOS)
-        if provider == PhoneAuthProvider.id {
-          _phoneNumber = nil
-        }
-      #endif
-    }
-  }
-
   // MARK: Private functions
 
   private func updateEmail(email: String?,
@@ -1259,44 +1171,31 @@ extension User: NSSecureCoding {}
         callback(error)
         return
       }
-      let emailIsPresent: Bool
       if let email {
-        self.propertyAccessQueue.sync {
-          self._email = email
-        }
-        emailIsPresent = true
-      } else {
-        emailIsPresent = self.propertyAccessQueue.sync {
-          self._email != nil
-        }
+        self.email = email
       }
-
-      if emailIsPresent {
+      if self.email != nil {
         if !hadEmailPasswordCredential {
           // The list of providers need to be updated for the newly added email-password provider.
           Task {
             do {
               let accessToken = try await self.internalGetTokenAsync(backend: self.backend)
               if let requestConfiguration = self.auth?.requestConfiguration {
-                let getAccountInfoRequest = GetAccountInfoRequest(
-                  accessToken: accessToken,
-                  requestConfiguration: requestConfiguration
-                )
+                let getAccountInfoRequest = GetAccountInfoRequest(accessToken: accessToken,
+                                                                  requestConfiguration: requestConfiguration)
                 do {
                   let accountInfoResponse = try await self.backend.call(with: getAccountInfoRequest)
-                  self.propertyAccessQueue.sync {
-                    if let users = accountInfoResponse.users {
-                      for userAccountInfo in users {
-                        // Set the account to non-anonymous if there are any providers, even if
-                        // they're not email/password ones.
-                        if let providerUsers = userAccountInfo.providerUserInfo {
-                          if providerUsers.count > 0 {
-                            self._isAnonymous = false
-                            for providerUserInfo in providerUsers {
-                              if providerUserInfo.providerID == EmailAuthProvider.id {
-                                self._hasEmailPasswordCredential = true
-                                break
-                              }
+                  if let users = accountInfoResponse.users {
+                    for userAccountInfo in users {
+                      // Set the account to non-anonymous if there are any providers, even if
+                      // they're not email/password ones.
+                      if let providerUsers = userAccountInfo.providerUserInfo {
+                        if providerUsers.count > 0 {
+                          self.isAnonymous = false
+                          for providerUserInfo in providerUsers {
+                            if providerUserInfo.providerID == EmailAuthProvider.id {
+                              self.hasEmailPasswordCredential = true
+                              break
                             }
                           }
                         }
@@ -1377,30 +1276,28 @@ extension User: NSSecureCoding {}
       AuthLog.logWarning(code: "I-AUT000016", message: "Missing user in GetAccountInfoResponse")
       return
     }
-    propertyAccessQueue.sync {
-      _uid = user.localID ?? ""
-      _email = user.email
-      _isEmailVerified = user.emailVerified
-      _displayName = user.displayName
-      _photoURL = user.photoURL
-      _phoneNumber = user.phoneNumber
-      _hasEmailPasswordCredential = user.passwordHash.flatMap { $0.count > 0 } ?? false
-      metadata = UserMetadata(withCreationDate: user.creationDate,
-                              lastSignInDate: user.lastLoginDate)
-      var providerData: [String: UserInfoImpl] = [:]
-      if let providerUserInfos = user.providerUserInfo {
-        for providerUserInfo in providerUserInfos {
-          let userInfo = UserInfoImpl.userInfo(
-            withGetAccountInfoResponseProviderUserInfo: providerUserInfo
-          )
-          if let providerID = providerUserInfo.providerID {
-            providerData[providerID] = userInfo
-          }
+    uid = user.localID ?? ""
+    email = user.email
+    isEmailVerified = user.emailVerified
+    displayName = user.displayName
+    photoURL = user.photoURL
+    phoneNumber = user.phoneNumber
+    hasEmailPasswordCredential = user.passwordHash != nil && user.passwordHash!.count > 0
+    metadata = UserMetadata(withCreationDate: user.creationDate,
+                            lastSignInDate: user.lastLoginDate)
+    var providerData: [String: UserInfoImpl] = [:]
+    if let providerUserInfos = user.providerUserInfo {
+      for providerUserInfo in providerUserInfos {
+        let userInfo = UserInfoImpl.userInfo(
+          withGetAccountInfoResponseProviderUserInfo: providerUserInfo
+        )
+        if let providerID = providerUserInfo.providerID {
+          providerData[providerID] = userInfo
         }
       }
-      _providerData = providerData
     }
-    #if os(iOS) || os(macOS)
+    providerDataRaw = providerData
+    #if os(iOS)
       if let enrollments = user.mfaEnrollments {
         multiFactor = MultiFactor(withMFAEnrollments: enrollments)
       }
@@ -1463,7 +1360,7 @@ extension User: NSSecureCoding {}
                   completion(error)
                   return
                 }
-                self.propertyAccessQueue.sync { self._isAnonymous = false }
+                self.isAnonymous = false
                 if let error = self.updateKeychain() {
                   completion(error)
                   return
@@ -1694,22 +1591,13 @@ extension User: NSSecureCoding {}
   /// on the  global work thread in the future.
   func internalGetToken(forceRefresh: Bool = false,
                         backend: AuthBackend,
-                        callback: @escaping (String?, Error?) -> Void,
-                        callCallbackOnMain: Bool = false) {
+                        callback: @escaping (String?, Error?) -> Void) {
     Task {
       do {
         let token = try await internalGetTokenAsync(forceRefresh: forceRefresh, backend: backend)
-        if callCallbackOnMain {
-          Auth.wrapMainAsync(callback: callback, with: .success(token))
-        } else {
-          callback(token, nil)
-        }
+        callback(token, nil)
       } catch {
-        if callCallbackOnMain {
-          Auth.wrapMainAsync(callback: callback, with: .failure(error))
-        } else {
-          callback(nil, error)
-        }
+        callback(nil, error)
       }
     }
   }
@@ -1805,28 +1693,25 @@ extension User: NSSecureCoding {}
   public static let supportsSecureCoding = true
 
   public func encode(with coder: NSCoder) {
-    propertyAccessQueue.sync {
-      coder.encode(_uid, forKey: kUserIDCodingKey)
-      coder.encode(_isAnonymous, forKey: kAnonymousCodingKey)
-      coder.encode(_hasEmailPasswordCredential, forKey: kHasEmailPasswordCredentialCodingKey)
-      coder.encode(_providerData, forKey: kProviderDataKey)
-      coder.encode(_email, forKey: kEmailCodingKey)
-      coder.encode(_phoneNumber, forKey: kPhoneNumberCodingKey)
-      coder.encode(_isEmailVerified, forKey: kEmailVerifiedCodingKey)
-      coder.encode(_photoURL, forKey: kPhotoURLCodingKey)
-      coder.encode(_displayName, forKey: kDisplayNameCodingKey)
-      coder.encode(metadata, forKey: kMetadataCodingKey)
-      coder.encode(tenantID, forKey: kTenantIDCodingKey)
-
-      if let auth {
-        coder.encode(auth.requestConfiguration.apiKey, forKey: kAPIKeyCodingKey)
-        coder.encode(auth.requestConfiguration.appID, forKey: kFirebaseAppIDCodingKey)
-      }
-      coder.encode(tokenService, forKey: kTokenServiceCodingKey)
-      #if os(iOS) || os(macOS)
-        coder.encode(multiFactor, forKey: kMultiFactorCodingKey)
-      #endif
+    coder.encode(uid, forKey: kUserIDCodingKey)
+    coder.encode(isAnonymous, forKey: kAnonymousCodingKey)
+    coder.encode(hasEmailPasswordCredential, forKey: kHasEmailPasswordCredentialCodingKey)
+    coder.encode(providerDataRaw, forKey: kProviderDataKey)
+    coder.encode(email, forKey: kEmailCodingKey)
+    coder.encode(phoneNumber, forKey: kPhoneNumberCodingKey)
+    coder.encode(isEmailVerified, forKey: kEmailVerifiedCodingKey)
+    coder.encode(photoURL, forKey: kPhotoURLCodingKey)
+    coder.encode(displayName, forKey: kDisplayNameCodingKey)
+    coder.encode(metadata, forKey: kMetadataCodingKey)
+    coder.encode(tenantID, forKey: kTenantIDCodingKey)
+    if let auth {
+      coder.encode(auth.requestConfiguration.apiKey, forKey: kAPIKeyCodingKey)
+      coder.encode(auth.requestConfiguration.appID, forKey: kFirebaseAppIDCodingKey)
     }
+    coder.encode(tokenService, forKey: kTokenServiceCodingKey)
+    #if os(iOS)
+      coder.encode(multiFactor, forKey: kMultiFactorCodingKey)
+    #endif
   }
 
   public required init?(coder: NSCoder) {
@@ -1853,19 +1738,19 @@ extension User: NSSecureCoding {}
       as? [String: UserInfoImpl]
     let metadata = coder.decodeObject(of: UserMetadata.self, forKey: kMetadataCodingKey)
     let tenantID = coder.decodeObject(of: NSString.self, forKey: kTenantIDCodingKey) as? String
-    #if os(iOS) || os(macOS)
+    #if os(iOS)
       let multiFactor = coder.decodeObject(of: MultiFactor.self, forKey: kMultiFactorCodingKey)
     #endif
     self.tokenService = tokenService
-    _uid = userID
-    _isAnonymous = anonymous
-    _hasEmailPasswordCredential = hasEmailPasswordCredential
-    _email = email
-    _isEmailVerified = emailVerified
-    _displayName = displayName
-    _photoURL = photoURL
-    _providerData = providerData ?? [:]
-    _phoneNumber = phoneNumber
+    uid = userID
+    isAnonymous = anonymous
+    self.hasEmailPasswordCredential = hasEmailPasswordCredential
+    self.email = email
+    isEmailVerified = emailVerified
+    self.displayName = displayName
+    self.photoURL = photoURL
+    providerDataRaw = providerData ?? [:]
+    self.phoneNumber = phoneNumber
     self.metadata = metadata ?? UserMetadata(withCreationDate: nil, lastSignInDate: nil)
     self.tenantID = tenantID
 
@@ -1884,7 +1769,7 @@ extension User: NSSecureCoding {}
     backend = AuthBackend(rpcIssuer: AuthBackendRPCIssuer())
 
     userProfileUpdate = UserProfileUpdate()
-    #if os(iOS) || os(macOS)
+    #if os(iOS)
       self.multiFactor = multiFactor ?? MultiFactor()
       super.init()
       multiFactor?.user = self

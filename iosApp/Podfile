@@ -5,13 +5,6 @@ target 'iosApp' do
 
   pod 'shared', :path => '../shared'
 
-  pod 'FirebaseCore'
-  pod 'FirebaseAuth'
-  pod 'FirebaseDatabase'
-  pod 'FirebaseStorage'
-  pod 'FirebaseVertexAI'
-  pod 'FirebaseAI'
-
 end
 post_install do |installer|
   installer.pods_project.targets.each do |target|

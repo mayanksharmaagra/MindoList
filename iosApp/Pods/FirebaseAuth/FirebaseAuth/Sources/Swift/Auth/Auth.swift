@@ -124,12 +124,11 @@ extension Auth: AuthInterop {
       }
       // Call back with current user token.
       currentUser
-        .internalGetToken(
-          forceRefresh: forceRefresh,
-          backend: strongSelf.backend,
-          callback: callback,
-          callCallbackOnMain: true
-        )
+        .internalGetToken(forceRefresh: forceRefresh, backend: strongSelf.backend) { token, error in
+          DispatchQueue.main.async {
+            callback(token, error)
+          }
+        }
     }
   }
 
@@ -1938,30 +1937,30 @@ extension Auth: AuthInterop {
         "for the new token.")
     }
     autoRefreshScheduled = true
-    authDispatcher.dispatch(afterDelay: delay, queue: kAuthGlobalWorkQueue) { [weak self] in
-      guard let self else {
+    weak var weakSelf = self
+    authDispatcher.dispatch(afterDelay: delay, queue: kAuthGlobalWorkQueue) {
+      guard let strongSelf = weakSelf else {
         return
       }
-      guard self._currentUser?.rawAccessToken() == accessToken else {
+      guard strongSelf._currentUser?.rawAccessToken() == accessToken else {
         // Another auto refresh must have been scheduled, so keep _autoRefreshScheduled unchanged.
         return
       }
-      self.autoRefreshScheduled = false
-      if self.isAppInBackground {
+      strongSelf.autoRefreshScheduled = false
+      if strongSelf.isAppInBackground {
         return
       }
-      let uid = self._currentUser?.uid
-      self._currentUser?
-        .internalGetToken(forceRefresh: true, backend: self.backend) { [weak self] token, error in
-          guard let self else { return }
-          if self._currentUser?.uid != uid {
+      let uid = strongSelf._currentUser?.uid
+      strongSelf._currentUser?
+        .internalGetToken(forceRefresh: true, backend: strongSelf.backend) { token, error in
+          if strongSelf._currentUser?.uid != uid {
             return
           }
           if error != nil {
             // Kicks off exponential back off logic to retry failed attempt. Starts with one minute
             // delay (60 seconds) if this is the first failed attempt.
             let rescheduleDelay = retry ? min(delay * 2, 16 * 60) : 60
-            self.scheduleAutoTokenRefresh(withDelay: rescheduleDelay, retry: true)
+            strongSelf.scheduleAutoTokenRefresh(withDelay: rescheduleDelay, retry: true)
           }
         }
     }
