@@ -13,6 +13,7 @@ import com.jrprofessor.mindolist.presentation.dashboard.DashboardEvent
 import com.jrprofessor.mindolist.presentation.dashboard.DashboardState
 import com.jrprofessor.mindolist.utils.Logger
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,6 +41,16 @@ class DashboardViewModel(
     init {
         dispatch(DashboardAction.LoadUserData)
         dispatch(DashboardAction.UpdateDateTime)
+        startDateTimeTimer()
+    }
+    
+    private fun startDateTimeTimer() {
+        viewModelScope.launch {
+            while (true) {
+                delay(60000) // Update every minute
+                updateDateTime()
+            }
+        }
     }
     fun dispatch(action: DashboardAction) {
         when (action) {
@@ -64,13 +75,32 @@ class DashboardViewModel(
 
             is DashboardAction.FilterSelected -> {
                 _state.update { it.copy(selectedFilter = action.filterLabel) }
-                applyFilter(action.filterLabel)
+                applyFilter(_state.value.selectedFilter, _state.value.searchQuery)
+            }
+
+            is DashboardAction.SearchQueryChanged -> {
+                _state.update { it.copy(searchQuery = action.query) }
+                applyFilter(_state.value.selectedFilter, action.query)
+            }
+
+            is DashboardAction.ToggleSearch -> {
+                _state.update { 
+                    val newActive = !it.isSearchActive
+                    it.copy(
+                        isSearchActive = newActive,
+                        searchQuery = if (!newActive) "" else it.searchQuery
+                    )
+                }
+                if (!_state.value.isSearchActive) {
+                    applyFilter(_state.value.selectedFilter, "")
+                }
             }
         }
     }
-    private fun applyFilter(filterLabel: String) {
+    private fun applyFilter(filterLabel: String, query: String = "") {
         val filter = Filter.entries.find { it.name == filterLabel } ?: Filter.ALL
-        val filtered = when (filter) {
+        
+        var filtered = when (filter) {
             Filter.ALL       -> _allTasks.value
             Filter.PENDING   -> _allTasks.value.filter { !it.isCompleted }
             Filter.COMPLETED -> _allTasks.value.filter { it.isCompleted }
@@ -78,6 +108,14 @@ class DashboardViewModel(
                 !it.isCompleted && it.dueDate < Clock.System.now().toEpochMilliseconds()
             }
         }
+
+        if (query.isNotBlank()) {
+            filtered = filtered.filter { 
+                it.title.contains(query, ignoreCase = true) || 
+                it.description.contains(query, ignoreCase = true)
+            }
+        }
+        
         _state.update { it.copy(tasks = filtered) }
     }
 
@@ -99,7 +137,9 @@ class DashboardViewModel(
                             else task
                         }
                     }
-                    _state.update { it.copy(tasks = _allTasks.value, isLoading = false) }
+                    // Apply current filter instead of resetting to _allTasks
+                    applyFilter(_state.value.selectedFilter, _state.value.searchQuery)
+                    _state.update { it.copy(isLoading = false) }
                 }
             }
         }
@@ -120,10 +160,10 @@ class DashboardViewModel(
                             "Loading tasks :${result.data}"
                         }
                         _allTasks.value = result.data as List<TaskModel>
+                        applyFilter(_state.value.selectedFilter, _state.value.searchQuery)
                         _state.update {
                             it.copy(
                                 isLoading = false,
-                                tasks = _allTasks.value,
                                 error = null,
                             )
                         }

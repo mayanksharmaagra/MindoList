@@ -22,7 +22,12 @@ import org.jetbrains.compose.resources.vectorResource
 // HEADER COMPONENTS
 // =====================================================
 @Composable
-fun SignUpHeader(toolbarTitle: String, onBackClick: () -> Unit) {
+fun SignUpHeader(
+    toolbarTitle: String,
+    onBackClick: () -> Unit,
+    textColor: Color = Color.Black,
+    iconTint: Color = Color.Black
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -35,19 +40,13 @@ fun SignUpHeader(toolbarTitle: String, onBackClick: () -> Unit) {
                 imageVector = IvBack,
                 contentDescription = "Back",
                 modifier = Modifier.size(24.dp),
-                tint = Color.Black
+                tint = iconTint
             )
         }
         Text(
             text = toolbarTitle,
             fontSize = 20.sp,
-            /*fontFamily = FontFamily(
-                Font(
-                    Res.font.roboto_condensed_regular,
-                    FontWeight.SemiBold
-                )
-            ),*/
-            color = Color.Black,
+            color = textColor,
             textAlign = TextAlign.Center,
             modifier = Modifier.weight(1f)
         )

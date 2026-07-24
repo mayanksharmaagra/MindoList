@@ -1,0 +1,12 @@
+- `[x]` Implement ViewModels and Dependency Injection
+    - `[x]` Create `ChangePasswordViewModel.kt`
+    - `[x]` Create `DeleteAccountViewModel.kt`
+    - `[x]` Update `AppModule.kt`
+- `[x]` Update Navigation and Integration
+    - `[x]` Update `Screen` class in `AppNavigation.kt`
+    - `[x]` Update `SettingsScreen.kt` with navigation callbacks
+    - `[x]` Update `BottomNavGraph.kt` with new routes
+- `[x]` Implement UI Screens
+    - `[x]` Create `ChangePasswordScreen.kt`
+    - `[x]` Create `DeleteAccountScreen.kt`
+- `[x]` Verify UI and functionality

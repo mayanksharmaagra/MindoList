@@ -80,3 +80,38 @@ val UnselectedTextColor = Color(0xFF64748B)
 val CategoryUnselectedTextColor = Color(0xFF475569)
 val RemindViewBG = Color(0xFFF8FAFC)
 val TextHeadingColor = Color(0xFF9CA3AF)
+
+// MindoList Brand Colors - Dark
+val MindoListBgDark = Color(0xFF12141C)
+val MindoListCardBgDark = Color(0xFF1B1E2A)
+val MindoListCardChildBgDark = Color(0xFF1E2129)
+val MindoListTextPrimaryDark = Color(0xFFF2F0EA)
+val MindoListTextSecondaryDark = Color(0xFF8B90A3)
+val MindoListAccentDark = Color(0xFFE8A94C)
+val MindoListMintDark = Color(0xFF5BD8B3)
+
+// MindoList Brand Colors - Light
+val MindoListBgLight = Color(0xFFF7F4EC)
+val MindoListCardBgLight = Color(0xFFFFFFFF)
+val MindoListCardChildBgLight = Color(0xFFF1F5F9)
+val MindoListTextPrimaryLight = Color(0xFF181A22)
+val MindoListTextSecondaryLight = Color(0xFF767B90)
+val MindoListAccentLight = Color(0xFFB9762A)
+val MindoListMintLight = Color(0xFF1F8C6C)
+
+// Fixed Tones (Same for both themes on filled surfaces)
+val MindoListAccentFixed = Color(0xFFE8A94C)
+val MindoListMintFixed = Color(0xFF5BD8B3)
+
+// Legacy / Global constants (to be gradually replaced or kept for fixed elements)
+val MindoListBg = MindoListBgDark
+val MindoListAccent = MindoListAccentFixed
+val MindoListSecond = Color(0xFFC97A2E)
+val MindoListInputBg = Color(0xFF1C1F26)
+val MindoListTextSecondary = MindoListTextSecondaryDark
+val MindoListTextPrimary = MindoListTextPrimaryDark
+val MindoListCardBg = MindoListCardBgDark
+val MindoListCardChildBg = MindoListCardChildBgDark
+val MindoListGreen = Color(0xFF4ADE80)
+val MindoListYellow = Color(0xFFFBBF24)
+val MindoListOrange = Color(0xFFEA580C)

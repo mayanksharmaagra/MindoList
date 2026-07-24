@@ -1,41 +1,18 @@
 package com.jrprofessor.mindolist.customView
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,29 +23,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.isoDayNumber
-import kotlinx.datetime.minus
-import kotlinx.datetime.number
-import kotlinx.datetime.plus
-import kotlinx.datetime.toLocalDateTime
+import com.jrprofessor.mindolist.theme.*
+import kotlinx.datetime.*
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
-
 // -- helper class for date-------------
-private val PrimaryBlue = Color(0xFF3B82F6)
 data class SimpleDate(
     val year: Int,
     val month: Int,   // 1-12
     val day: Int
-){
+) {
     fun plusDays(days: Int): SimpleDate {
-        var date = LocalDate(year, month, day).plus(days, DateTimeUnit.DAY)
-        return SimpleDate(date.year, date.month.number, date.day)
+        val date = LocalDate(year, month, day).plus(days, DateTimeUnit.DAY)
+        return SimpleDate(date.year, date.month.number, date.dayOfMonth)
     }
 
     fun plusWeeks(weeks: Int): SimpleDate = plusDays(weeks * 7)
@@ -82,10 +50,8 @@ data class SimpleDate(
         .minus(1, DateTimeUnit.DAY)
         .dayOfMonth
 
-    // 0 = Sunday, 1 = Monday ... 6 = Saturday
     fun firstDayOfWeekOffset(): Int {
-        val dayOfWeek = LocalDate(year, month, 1).dayOfWeek.isoDayNumber % 7
-        return dayOfWeek
+        return LocalDate(year, month, 1).dayOfWeek.isoDayNumber % 7
     }
 
     fun monthName(): String = when (month) {
@@ -93,13 +59,6 @@ data class SimpleDate(
         4 -> "April"; 5 -> "May"; 6 -> "June"
         7 -> "July"; 8 -> "August"; 9 -> "September"
         10 -> "October"; 11 -> "November"; else -> "December"
-    }
-
-    fun dayOfWeekName(): String = when (LocalDate(year, month, day).dayOfWeek) {
-        DayOfWeek.MONDAY -> "Monday"; DayOfWeek.TUESDAY -> "Tuesday"
-        DayOfWeek.WEDNESDAY -> "Wednesday"; DayOfWeek.THURSDAY -> "Thursday"
-        DayOfWeek.FRIDAY -> "Friday"; DayOfWeek.SATURDAY -> "Saturday"
-        else -> "Sunday"
     }
 
     fun prevMonth(): SimpleDate {
@@ -112,9 +71,6 @@ data class SimpleDate(
         return SimpleDate(date.year, date.month.number, date.dayOfMonth)
     }
 
-    fun formatted(): String =
-        "${dayOfWeekName()}, ${monthName()} $day/*${getDaySuffix(day)}*/"
-
     fun monthYearFormatted(): String = "${monthName()} $year"
     fun monthYearDayFormatted(): String = "$day/${month.toString().padStart(2, '0')}/$year"
 }
@@ -124,7 +80,6 @@ fun today(): SimpleDate {
     val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
     return SimpleDate(now.year, now.month.number, now.dayOfMonth)
 }
-// ── Date Picker Full Screen Dialog ────────────────────────────────────────────
 
 @Composable
 fun DatePickerDialog(
@@ -133,10 +88,7 @@ fun DatePickerDialog(
 ) {
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            /*decorFitsSystemWindows = false,*/
-        )
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         DatePickerScreen(
             onDateSelected = {
@@ -147,8 +99,6 @@ fun DatePickerDialog(
         )
     }
 }
-
-// ── Date Picker Screen ────────────────────────────────────────────────────────
 
 @Composable
 fun DatePickerScreen(
@@ -162,143 +112,145 @@ fun DatePickerScreen(
     val quickPicks = listOf(
         "Today" to todayDate,
         "Tomorrow" to todayDate.plusDays(1),
-        "Next Week" to todayDate.plusWeeks(1),
+        "Next week" to todayDate.plusWeeks(1),
+        "No date" to null,
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF8F9FE))
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MindoListTheme.colors.background
     ) {
-        // ── Top Bar ───────────────────────────────────────────────────────────
-        Box(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 20.dp)
+                .fillMaxSize()
+                .padding(24.dp)
         ) {
-            IconButton(
-                onClick = onBack,
-                modifier = Modifier.align(Alignment.CenterStart)
+            // ── Header ────────────────────────────────────────────────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color(0xFF1E293B),
+                Text(
+                    text = "Due date",
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MindoListTheme.colors.textPrimary,
+                    style = MaterialTheme.typography.headlineLarge
                 )
+                Spacer(modifier = Modifier.weight(1f))
+                Surface(
+                    onClick = onBack,
+                    modifier = Modifier.size(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MindoListTheme.colors.cardChildBg,
+                    border = BorderStroke(1.dp, MindoListTheme.colors.textSecondary.copy(alpha = 0.1f))
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = MindoListTheme.colors.textPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
             }
-            Text(
-                text = "Pick a Date",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1E293B),
-                modifier = Modifier.align(Alignment.Center),
-            )
-        }
 
-        // ── Quick Pick ────────────────────────────────────────────────────────
-        Text(
-            text = "QUICK PICK",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF94A3B8),
-            letterSpacing = 1.sp,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-        )
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            quickPicks.forEach { (label, date) ->
-                val isSelected = selectedDate == date
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50.dp))
-                        .background(
-                            if (isSelected) PrimaryBlue else Color.White
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = if (isSelected) Color.Transparent else Color(0xFFE2E8F0),
-                            shape = RoundedCornerShape(50.dp)
-                        )
-                        .clickable {
-                            selectedDate = date
-                            currentMonth = SimpleDate(date.year, date.month, 1)
+            // ── Quick Pick ────────────────────────────────────────────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                quickPicks.forEach { (label, date) ->
+                    val isSelected = date != null && selectedDate == date
+                    val chipBg = if (isSelected) MindoListTheme.colors.accent.copy(alpha = 0.1f) else MindoListTheme.colors.cardChildBg
+                    val border = if (isSelected) BorderStroke(1.dp, MindoListTheme.colors.accent) else BorderStroke(1.dp, MindoListTheme.colors.textSecondary.copy(alpha = 0.05f))
+
+                    Surface(
+                        onClick = {
+                            if (date != null) {
+                                selectedDate = date
+                                currentMonth = SimpleDate(date.year, date.month, 1)
+                            }
+                        },
+                        modifier = Modifier.weight(1f).height(56.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        color = chipBg,
+                        border = border
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = label,
+                                fontSize = 14.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) MindoListTheme.colors.accent else MindoListTheme.colors.textSecondary,
+                            )
                         }
-                        .padding(horizontal = 18.dp, vertical = 10.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = label,
-                        fontSize = 14.sp,
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (isSelected) Color.White else Color(0xFF64748B),
-                    )
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-        // ── Calendar Card ─────────────────────────────────────────────────────
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                // Month navigation
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(onClick = { currentMonth = currentMonth.prevMonth() }) {
-                        Icon(
-                            imageVector = Icons.Default.ChevronLeft,
-                            contentDescription = "Prev",
-                            tint = Color(0xFF64748B),
-                        )
+            // ── Calendar Header ───────────────────────────────────────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = currentMonth.monthYearFormatted(),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MindoListTheme.colors.textPrimary,
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Surface(
+                        onClick = { currentMonth = currentMonth.prevMonth() },
+                        modifier = Modifier.size(40.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        color = MindoListTheme.colors.cardChildBg
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.ChevronLeft, "Prev", tint = MindoListTheme.colors.textPrimary)
+                        }
                     }
-                    Text(
-                        text =  currentMonth.monthYearFormatted(),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B),
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                    )
-                    IconButton(onClick = { currentMonth = currentMonth.nextMonth() }) {
-                        Icon(
-                            imageVector = Icons.Default.ChevronRight,
-                            contentDescription = "Next",
-                            tint = Color(0xFF64748B),
-                        )
+                    Surface(
+                        onClick = { currentMonth = currentMonth.nextMonth() },
+                        modifier = Modifier.size(40.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        color = MindoListTheme.colors.cardChildBg
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.ChevronRight, "Next", tint = MindoListTheme.colors.textPrimary)
+                        }
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-                // Day headers
+            // ── Calendar Grid ─────────────────────────────────────────────
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Day names
                 Row(modifier = Modifier.fillMaxWidth()) {
                     listOf("S", "M", "T", "W", "T", "F", "S").forEach { day ->
                         Text(
                             text = day,
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.Center,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF94A3B8),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MindoListTheme.colors.textSecondary.copy(alpha = 0.5f),
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Calendar days
                 val firstDayOffset = currentMonth.firstDayOfWeekOffset()
                 val daysInMonth = currentMonth.daysInMonth()
                 val totalCells = firstDayOffset + daysInMonth
@@ -311,50 +263,40 @@ fun DatePickerScreen(
                             val date = if (dayIndex in 1..daysInMonth)
                                 SimpleDate(currentMonth.year, currentMonth.month, dayIndex) else null
 
-                            val isSelected = date == selectedDate
-                            val isToday = date == todayDate
-                            val isPast = date != null && date.isBefore(todayDate)
+                            val isSelected = date != null && date == selectedDate
+                            val isToday = date != null && date == todayDate
 
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
                                     .aspectRatio(1f)
-                                    .padding(2.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        when {
-                                            isSelected -> PrimaryBlue
-                                            else -> Color.Transparent
-                                        }
-                                    )
-                                    .then(
-                                        if (date != null && !isPast)
-                                            Modifier.clickable {
-                                                selectedDate = date
-                                            } else Modifier
-                                    ),
-                                contentAlignment = Alignment.Center,
+                                    .padding(4.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isSelected) MindoListTheme.colors.accent else Color.Transparent)
+                                    .clickable(enabled = date != null) {
+                                        if (date != null) selectedDate = date
+                                    },
+                                contentAlignment = Alignment.Center
                             ) {
                                 if (date != null) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text(
                                             text = dayIndex.toString(),
-                                            fontSize = 14.sp,
-                                            fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 18.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                             color = when {
-                                                isSelected -> Color.White
-                                                isPast -> Color(0xFFCBD5E1)
-                                                isToday -> PrimaryBlue
-                                                else -> Color(0xFF1E293B)
-                                            },
+                                                isSelected -> MindoListTheme.colors.background
+                                                date.month != currentMonth.month -> MindoListTheme.colors.textSecondary.copy(alpha = 0.3f)
+                                                else -> MindoListTheme.colors.textPrimary
+                                            }
                                         )
-                                        // Today dot
                                         if (isToday && !isSelected) {
+                                            Spacer(modifier = Modifier.height(2.dp))
                                             Box(
                                                 modifier = Modifier
                                                     .size(4.dp)
                                                     .clip(CircleShape)
-                                                    .background(PrimaryBlue)
+                                                    .background(MindoListTheme.colors.success)
                                             )
                                         }
                                     }
@@ -364,79 +306,27 @@ fun DatePickerScreen(
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.weight(1f))
 
-        // ── Selected Date Display ─────────────────────────────────────────────
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0x0D3B82F6))
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Default.CalendarMonth,
-                contentDescription = null,
-                tint = PrimaryBlue,
-                modifier = Modifier.size(22.dp),
-            )
-            Column {
-                Text(
-                    text = "SELECTED DATE",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF94A3B8),
-                    letterSpacing = 1.sp,
+            // ── Confirm Button ────────────────────────────────────────────
+            Button(
+                onClick = { onDateSelected(selectedDate) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MindoListTheme.colors.textPrimary,
+                    contentColor = MindoListTheme.colors.background
                 )
+            ) {
                 Text(
-                    text = selectedDate.monthYearDayFormatted(),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1E293B),
+                    text = "Confirm date",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        // ── Save Button ───────────────────────────────────────────────────────
-        Button(
-            onClick = { onDateSelected(selectedDate) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 20.dp)
-                .height(56.dp),
-            shape = RoundedCornerShape(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-        ) {
-            Text(
-                text = "Save Selection",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White,
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Icon(
-                imageVector = Icons.Default.CheckCircle,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(20.dp),
-            )
-        }
     }
-}
-
-// ── Day suffix helper ─────────────────────────────────────────────────────────
-
-private fun getDaySuffix(day: Int): String = when {
-    day in 11..13 -> "th"
-    day % 10 == 1 -> "st"
-    day % 10 == 2 -> "nd"
-    day % 10 == 3 -> "rd"
-    else -> "th"
 }

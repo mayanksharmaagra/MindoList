@@ -11,4 +11,5 @@ interface TaskRepository {
     suspend fun updateTask(task: TaskModel): com.jrprofessor.mindolist.domain.model.Result<Unit>
     suspend fun markComplete(taskId: String, isCompleted: Boolean): com.jrprofessor.mindolist.domain.model.Result<Unit>
     suspend fun deleteTask(taskId: String): com.jrprofessor.mindolist.domain.model.Result<Unit>
+    fun getTasksInRange(startMillis: Long, endMillis: Long): Flow<com.jrprofessor.mindolist.domain.model.Result<List<TaskModel>>>
 }

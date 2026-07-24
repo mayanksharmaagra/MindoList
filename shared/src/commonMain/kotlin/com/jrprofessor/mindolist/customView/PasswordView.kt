@@ -39,7 +39,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jrprofessor.mindolist.screen.InputLabel
 
 // =====================================================
 // PASSWORD VIEW
@@ -55,6 +54,13 @@ fun PasswordPreview() {
 fun ShowPasswordView(
     password: String,
     passwordError: String?,
+    label: String = "Password",
+    labelColor: Color = Color.Black,
+    textColor: Color = Color.Black,
+    containerColor: Color = Color.Transparent,
+    unfocusedBorderColor: Color = Color(0xFFD1D5DB),
+    focusedBorderColor: Color = Color(0xFF6366F1),
+    placeholderColor: Color = Color.Gray,
     showPasswordRule: Boolean = true,
     onPasswordChange: (String) -> Unit,
 ) {
@@ -83,19 +89,19 @@ fun ShowPasswordView(
     }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        InputLabel(text = "Password")
+        InputLabel(text = label, textColor = labelColor)
         OutlinedTextField(
             value = password,
             onValueChange = onPasswordChange,
-            placeholder = { Text("********", color = Color.Gray) },
+            placeholder = { Text("********", color = placeholderColor) },
             singleLine = true,
             shape = RoundedCornerShape(14.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF6366F1),
-                unfocusedBorderColor = Color(0xFFD1D5DB),
+                focusedBorderColor = focusedBorderColor,
+                unfocusedBorderColor = unfocusedBorderColor,
                 errorBorderColor = Color(0xFFDC2626),
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent
+                focusedContainerColor = containerColor,
+                unfocusedContainerColor = containerColor
             ),
 
             visualTransformation = if (isPasswordVisible)
@@ -117,10 +123,10 @@ fun ShowPasswordView(
                     )
                 }
             },
-            textStyle = LocalTextStyle.current.copy(color = Color.Black),
+            textStyle = LocalTextStyle.current.copy(color = textColor),
             modifier = Modifier
                 .fillMaxWidth(),
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
             isError = passwordError != null
         )
 

@@ -1,0 +1,3 @@
+- [x] Update `SpeechRecognizer.android.kt` with better error handling and `EXTRA_CALLING_PACKAGE`
+- [x] Implement runtime permission request in `AddTaskScreen.kt`
+- [x] Verify that permission request works and resolves "Error 9"

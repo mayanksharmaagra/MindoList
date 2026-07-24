@@ -3,7 +3,6 @@ package com.jrprofessor.mindolist.utils
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import android.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalContext
@@ -34,13 +33,10 @@ actual fun StatusBarDarkMode() {
 
     SideEffect {
         activity?.window?.let { window ->
-            // Status bar background (optional but safe)
-            window.statusBarColor = Color.WHITE
-
-            // DARK icons on LIGHT background
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
             WindowCompat
                 .getInsetsController(window, view)
-                .isAppearanceLightStatusBars = true
+                .isAppearanceLightStatusBars = false // light icons
         }
     }
 }

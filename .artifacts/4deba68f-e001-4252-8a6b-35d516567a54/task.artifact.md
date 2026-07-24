@@ -1,0 +1,5 @@
+- `[x]` Update `Color.kt` with MindoList specific colors
+- `[x]` Update `TaskItem.kt` UI to match the image (Dark theme, rounded checkbox, color dots)
+- `[x]` Redesign `DashboardScreen.kt` (Header, 3-column Summary Cards, Task list header)
+- `[x]` Update `HomeScreen.kt` with Bottom Navigation UI (Dark theme, orange selection, FAB glow)
+- `[x]` Verification of UI changes

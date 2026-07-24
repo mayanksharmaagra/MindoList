@@ -10,6 +10,7 @@ target 'iosApp' do
   pod 'FirebaseDatabase'
   pod 'FirebaseStorage'
   pod 'FirebaseVertexAI'
+  pod 'FirebaseAI'
 
 end
 post_install do |installer|

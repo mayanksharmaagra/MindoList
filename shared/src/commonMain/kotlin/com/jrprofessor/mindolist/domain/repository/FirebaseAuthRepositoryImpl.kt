@@ -48,12 +48,21 @@ open class FirebaseAuthRepositoryImpl(
 
     override suspend fun sendOtpToEmail(email: String): Result<String> {
         return try {
+            // Check if user already exists in Database (alternative to deprecated fetchSignInMethodsForEmail)
+            val userSnapshot = userRef.orderByChild("email").equalTo(email).valueEvents.first()
+            if (userSnapshot.children.any()) {
+                val errorMsg = "An account with this email already exists."
+                return Result.Error(Exception(errorMsg), errorMsg)
+            }
+
             val otp = generateOtp()
 
             val coolDown = getResendCooldownInternal(email)
             if (coolDown > 0) {
+                val errorMsg = "Please wait $coolDown seconds before requesting a new code"
                 return Result.Error(
-                    Exception("Please wait $coolDown seconds before requesting a new code")
+                    Exception(errorMsg),
+                    errorMsg
                 )
             }
 
@@ -83,14 +92,16 @@ open class FirebaseAuthRepositoryImpl(
 
 
             if (!snapShot.exists) {   // ← () lagao
-                return Result.Error(Exception("No OTP found for this email"))
+                val errorMsg = "No OTP found for this email"
+                return Result.Error(Exception(errorMsg), errorMsg)
             }
 
-            val otpData = snapShot.value<OtpVerification>() ?: return Result.Error(Exception("Invalid OTP data"))
+            val otpData = snapShot.value<OtpVerification>() ?: return Result.Error(Exception("Invalid OTP data"), "Invalid OTP data")
 
             when {
                 otpData.isVerified -> {
-                    Result.Error(Exception("This OTP has already been used"))
+                    val errorMsg = "This OTP has already been used"
+                    Result.Error(Exception(errorMsg), errorMsg)
                 }
                 otpData.otp == otp -> {
                     otpRef.child(sanitizeEmail(email))
@@ -100,7 +111,8 @@ open class FirebaseAuthRepositoryImpl(
                     Result.Success(true)
                 }
                 else -> {
-                    Result.Error(Exception("Invalid OTP. Please try again."))
+                    val errorMsg = "Invalid OTP. Please try again."
+                    Result.Error(Exception(errorMsg), errorMsg)
                 }
             }
         } catch (e: Exception) {
@@ -120,13 +132,14 @@ open class FirebaseAuthRepositoryImpl(
             val otpData = otpSnapShot.value<OtpVerification>()
 
             if (otpData == null || !otpData.isVerified) {
-                return Result.Error(Exception("Please verify your email first"))
+                val errorMsg = "Please verify your email first"
+                return Result.Error(Exception(errorMsg), errorMsg)
             }
 
             // ✅ dev.gitlive createUserWithEmailAndPassword — no .await()
             val authResult = firebaseAuth.createUserWithEmailAndPassword(email, password)
             val firebaseUser = authResult.user
-                ?: return Result.Error(Exception("Failed to create user"))
+                ?: return Result.Error(Exception("Failed to create user"), "Failed to create user")
 
             val user = User(
                 uid = firebaseUser.uid,
@@ -287,6 +300,7 @@ open class FirebaseAuthRepositoryImpl(
             Result.Error(e, "Failed to upload image: ${e.message}")
         }
     }
+
     override suspend fun isOtpValid(email: String): Result<Boolean> {
         return try {
             val snapshot = otpRef.child(sanitizeEmail(email)).valueEvents.first()
@@ -412,6 +426,27 @@ open class FirebaseAuthRepositoryImpl(
             Result.Success(Unit)
         } catch (e: Exception) {
             Result.Error(e, parsePasswordResetError(e.message))
+        }
+    }
+
+    override suspend fun deleteAccount(): Result<Unit> {
+        return try {
+            val currentUser = firebaseAuth.currentUser
+                ?: return Result.Error(Exception("No authenticated user"), "No user found")
+
+            val uid = currentUser.uid
+            // Delete from Database
+            userRef.child(uid).removeValue()
+            firebaseDatabase.reference("tasks").child(uid).removeValue()
+
+            // Delete from Auth
+            currentUser.delete()
+            appSettings.clear()
+
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Logger.error(e) { "Error deleting account" }
+            Result.Error(e, "Failed to delete account. ${e.message}")
         }
     }
 

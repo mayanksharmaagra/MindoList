@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -49,6 +50,7 @@ fun ActionButton(
     fontSize: TextUnit = 18.sp,
     textColor: Color = Color.White,
     fontWeight: FontWeight = FontWeight.SemiBold,
+    icon: ImageVector? = null,
     isIconVisible: Boolean = false,
     iconTint: Color = Color.White,
     isEnabled: Boolean = true,
@@ -138,11 +140,11 @@ fun ActionButton(
                     fontWeight = fontWeight
                 )
 
-                if (isIconVisible) {
+                if (isIconVisible || icon != null) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Arrow Forward",
+                        imageVector = icon ?: Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Action Icon",
                         tint = iconTint,
                         modifier = Modifier.size(20.dp)
                     )

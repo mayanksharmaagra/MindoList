@@ -36,6 +36,8 @@ class AndroidSpeechToTextParser(
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageCode)
+            // Add calling package to avoid ERROR_INSUFFICIENT_PERMISSIONS on some devices
+            putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
         }
 
         recognizer.setRecognitionListener(this)
@@ -59,9 +61,21 @@ class AndroidSpeechToTextParser(
     }
 
     override fun onError(error: Int) {
+        val message = when (error) {
+            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Permission denied. Check microphone settings."
+            SpeechRecognizer.ERROR_AUDIO -> "Audio recording error"
+            SpeechRecognizer.ERROR_CLIENT -> "Client-side error"
+            SpeechRecognizer.ERROR_NETWORK -> "Network error"
+            SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Network timeout"
+            SpeechRecognizer.ERROR_NO_MATCH -> "No match found"
+            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Recognizer busy"
+            SpeechRecognizer.ERROR_SERVER -> "Server error"
+            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech input"
+            else -> "Speech recognition error: $error"
+        }
         _state.update {
             it.copy(
-                error = "Error: $error",
+                error = message,
                 isSpeaking = false
             )
         }

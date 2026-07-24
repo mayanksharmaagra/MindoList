@@ -1,43 +1,27 @@
 package com.jrprofessor.mindolist.screen
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -47,590 +31,389 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jrprofessor.mindolist.navGraph.Screen
-import com.jrprofessor.mindolist.theme.btnColor
+import com.jrprofessor.mindolist.customView.ActionButton
+import com.jrprofessor.mindolist.customView.MindoLogo
+import com.jrprofessor.mindolist.customView.ShowEmailView
+import com.jrprofessor.mindolist.customView.ShowNameView
+import com.jrprofessor.mindolist.customView.ShowPasswordView
+import com.jrprofessor.mindolist.icons.AppLogo
+import com.jrprofessor.mindolist.presentation.login.LoginEvent
+import com.jrprofessor.mindolist.presentation.login.LoginIntent
+import com.jrprofessor.mindolist.presentation.signup.SignUpButtonState
+import com.jrprofessor.mindolist.presentation.signup.SignUpEvent
+import com.jrprofessor.mindolist.presentation.signup.SignUpIntent
+import com.jrprofessor.mindolist.theme.*
 import com.jrprofessor.mindolist.utils.StatusBarDarkMode
+import com.jrprofessor.mindolist.utils.showToast
 import com.jrprofessor.mindolist.viewmodels.LoginViewModel
-import kotlinx.coroutines.delay
+import com.jrprofessor.mindolist.viewmodels.SignUpViewModel
+import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun WelcomeScreen(
-    onGetStartedClick: () -> Unit,
-    onLoginClick: () -> Unit
+    loginViewModel: LoginViewModel = koinViewModel(),
+    signUpViewModel: SignUpViewModel = koinViewModel(),
+    onNavigateToHome: () -> Unit,
+    onNavigateToSignUpStep: () -> Unit,
+    onNavigateToForgot: () -> Unit,
 ) {
-
     StatusBarDarkMode()
-    // Animation state
-    var animateIn by remember { mutableStateOf(false) }
 
-    // Feature rotation
-    var currentFeature by remember { mutableStateOf(0) }
+    var isLoginMode by remember { mutableStateOf(value = true) }
+    var confirmPassword by remember { mutableStateOf("") }
+    var isAgreed by remember { mutableStateOf(false) }
 
-    val features = listOf(
-        Feature(Icons.Default.CheckCircle, "Organize tasks effortlessly"),
-        Feature(Icons.Default.Notifications, "Never miss important moments"),
-        Feature(Icons.AutoMirrored.Filled.TrendingUp, "Track your productivity growth")
+    val loginState by loginViewModel.loginState.collectAsState()
+    val signUpState by signUpViewModel.signUpState.collectAsState()
+
+    val ledgerGradient = Brush.linearGradient(
+        colors = listOf(MindoListAccentFixed, MindoListSecond)
     )
 
+    // Collect Login Effects
     LaunchedEffect(Unit) {
-        animateIn = true
-        while (true) {
-            delay(3000)
-            currentFeature = (currentFeature + 1) % features.size
+        loginViewModel.loginEffect.collectLatest { effect ->
+            when (effect) {
+                LoginEvent.NavigateToHome -> onNavigateToHome()
+                LoginEvent.NavigateToForgotPassword -> onNavigateToForgot()
+                is LoginEvent.ShowError -> showToast(effect.error)
+                is LoginEvent.ShowToast -> showToast(effect.message)
+                else -> Unit
+            }
         }
     }
 
-    Box(
+    // Collect SignUp Effects
+    LaunchedEffect(Unit) {
+        signUpViewModel.signUpEffect.collectLatest { effect ->
+            when (effect) {
+                SignUpEvent.NavigateToHome -> onNavigateToHome()
+                SignUpEvent.NavigateToVerifyEmail -> onNavigateToSignUpStep()
+                is SignUpEvent.ShowError -> showToast(effect.error)
+                is SignUpEvent.ShowToast -> showToast(effect.message)
+                else -> Unit
+            }
+        }
+    }
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MindoListTheme.colors.background)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 40.dp),
+        horizontalAlignment = Alignment.Start
     ) {
-//        AnimatedVisibility(
-//            visible = animateIn,
-//            enter = fadeIn(animationSpec = tween(1000)) +
-//                    slideInVertically(
-//                        initialOffsetY = { it / 8 },
-//                        animationSpec = tween(1000)
-//                    )
-//        ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 24.dp)
-                .animateContentSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+        // Branding Header
+        Row(
+            verticalAlignment = Alignment.CenterVertically
         ) {
-
-            // Top section - Logo & Branding
-            Column(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(ledgerGradient),
+                contentAlignment = Alignment.Center
             ) {
-                // Logo with rings
-                LogoWithRings(animateIn)
+                /*Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = Color.Black,
+                    modifier = Modifier.size(24.dp)
+                )*/
+                MindoLogo(modifier = Modifier.size(36.dp))
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "MindoList",
+                color = MindoListTheme.colors.textSecondary,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
-                Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(48.dp))
 
-                // App name
-                Text(
-                    text = "MindoList",
-                    fontSize = 56.sp,
-//                    fontFamily = FontFamily(
-//                        Font(
-//                            Res.font.roboto_condensed_extra_bold,
-//                            FontWeight.Bold
-//                        )
-//                    ),
-                    style = LocalTextStyle.current.copy(
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                Color(0xFF3B82F6),
-                                Color(0xFF3B82F6),
-                                Color(0xFF3B82F6)
-                            )
-                        )
+        // Dynamic Title
+        Text(
+            text = if (isLoginMode) "Welcome back.\nLet's clear today's list." else "Create your account",
+            color = MindoListTheme.colors.textPrimary,
+            fontSize = 32.sp,
+            fontWeight = FontWeight.ExtraBold,
+            lineHeight = 40.sp
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Dynamic Subtitle
+        Text(
+            text = if (isLoginMode) "Sign in to sync your tasks across devices." else "Start your ledger — it takes less than a minute.",
+            color = MindoListTheme.colors.textSecondary,
+            fontSize = 16.sp
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Login/Signup Toggle
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MindoListTheme.colors.inputBg)
+                .padding(4.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(8.dp))
+                    .then(
+                        if (isLoginMode) Modifier.background(ledgerGradient)
+                        else Modifier.background(Color.Transparent)
                     )
-                )
-
-                /*Spacer(modifier = Modifier.height(8.dp))
-
-                SmartProductivityBadge()*/
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Tagline
-                Text(
-                    text = buildAnnotatedString {
-                        append("Plan smart. Get reminded.\n")
-                        withStyle(
-                            style = SpanStyle(
-                                brush = Brush.linearGradient(
-                                    colors = listOf(
-                                        Color(0xFF16A34A),
-                                        Color(0xFF059669)
-                                    )
-                                )
-                            )
-                        ) {
-                            append("Stay productive.")
-                        }
+                    .clickable {
+                        isLoginMode = true
+                        confirmPassword = ""
+                        isAgreed = false
+                        loginViewModel.handleLoginEvent(LoginIntent.ClearState)
+                        signUpViewModel.handleEvent(SignUpIntent.ClearState)
                     },
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF334155),
-                    textAlign = TextAlign.Center,
-                    lineHeight = 32.sp,
-//                    fontFamily = FontFamily(
-//                        Font(
-//                            Res.font.roboto_condensed_regular,
-//                            FontWeight.Normal
-//                        )
-//                    )
-                )
-
-                Spacer(modifier = Modifier.height(48.dp))
-
-                // Features Preview
-                FeaturesPreview()
-
-            }
-
-            // Bottom section - CTA
-            Column(
-                modifier = Modifier.fillMaxWidth()
+                contentAlignment = Alignment.Center
             ) {
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                GetStartedButton(onClick = onGetStartedClick)
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Sign in link
-                SignInLink(onClick = onLoginClick)
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Trust badges
-                TrustBadges()
+                Text(
+                    text = "Log in",
+                    color = if (isLoginMode) Color.Black else MindoListTheme.colors.textSecondary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(8.dp))
+                    .then(
+                        if (!isLoginMode) Modifier.background(ledgerGradient)
+                        else Modifier.background(Color.Transparent)
+                    )
+                    .clickable {
+                        isLoginMode = false
+                        confirmPassword = ""
+                        isAgreed = false
+                        loginViewModel.handleLoginEvent(LoginIntent.ClearState)
+                        signUpViewModel.handleEvent(SignUpIntent.ClearState)
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Sign up",
+                    color = if (!isLoginMode) Color.Black else MindoListTheme.colors.textSecondary,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
-//        }
-    }
-}
 
-@Composable
-fun LogoWithRings(animateIn: Boolean) {
-    val scale by animateFloatAsState(
-        targetValue = if (animateIn) 1f else 0.8f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        )
-    )
+        Spacer(modifier = Modifier.height(24.dp))
 
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier.size(160.dp)
-    ) {
-        // Outer ring
-        Box(
-            modifier = Modifier
-                .size(144.dp)
-                .border(
-                    2.dp,
-                    Color(0xFF9333EA).copy(alpha = 0.2f),
-                    CircleShape
-                )
-        )
+        // Form Fields
+        if (!isLoginMode) {
+            ShowNameView(
+                name = signUpState.name,
+                nameError = signUpState.nameError,
+                labelColor = MindoListTheme.colors.textSecondary,
+                textColor = MindoListTheme.colors.textPrimary,
+                containerColor = MindoListTheme.colors.inputBg,
+                unfocusedBorderColor = Color.Transparent,
+                focusedBorderColor = MindoListTheme.colors.accent,
+                onNameChange = { signUpViewModel.handleEvent(SignUpIntent.NameChanged(it)) }
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+        }
 
-        // Inner ring
-        Box(
-            modifier = Modifier
-                .size(128.dp)
-                .border(
-                    2.dp,
-                    Color(0xFF6366F1).copy(alpha = 0.1f),
-                    CircleShape
-                )
-        )
-
-        // Logo circle
-        Box(
-            modifier = Modifier
-                .size(112.dp)
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
+        ShowEmailView(
+            email = if (isLoginMode) loginState.email else signUpState.email,
+            emailError = if (isLoginMode) loginState.emailError else signUpState.emailError,
+            labelColor = MindoListTheme.colors.textSecondary,
+            textColor = MindoListTheme.colors.textPrimary,
+            containerColor = MindoListTheme.colors.inputBg,
+            unfocusedBorderColor = Color.Transparent,
+            focusedBorderColor = MindoListTheme.colors.accent,
+            onEmailChange = {
+                if (isLoginMode) {
+                    loginViewModel.handleLoginEvent(LoginIntent.EmailChanged(it))
+                } else {
+                    signUpViewModel.handleEvent(SignUpIntent.EmailChanged(it))
                 }
-                .shadow(16.dp, CircleShape)
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF9333EA),
-                            Color(0xFF6366F1),
-                            Color(0xFF3B82F6)
-                        )
-                    ),
-                    CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            // Checklist icon
-            Icon(
-                imageVector = Icons.Default.CheckCircle,
-                contentDescription = "Logo",
-                modifier = Modifier.size(48.dp),
-                tint = Color.White
-            )
-        }
-
-        // Bell badge - Outside logo circle for proper positioning
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)  // Align to top-end of parent Box
-                .offset(x = (-20).dp, y = 20.dp)  // Fine-tune position
-                .size(32.dp)
-                .shadow(8.dp, CircleShape)
-                .background(Color.White, CircleShape)  // White border effect
-                .padding(2.dp)  // Space for white border
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF4ADE80),
-                            Color(0xFF10B981)
-                        )
-                    ),
-                    CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Notifications,
-                contentDescription = "Notifications",
-                modifier = Modifier.size(16.dp),
-                tint = Color.White
-            )
-        }
-    }
-}
-
-@Composable
-fun GetStartedButton(onClick: () -> Unit) {
-    // Get Started Button
-    var isPressed by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.98f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
-    )
-    Button(
-        onClick = {
-            isPressed = true
-            onClick()
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
             }
-            .shadow(
-                elevation = 16.dp,
-                shape = RoundedCornerShape(16.dp),
-                ambientColor = Color(0xFF9333EA).copy(alpha = 0.3f),
-                spotColor = Color(0xFF9333EA).copy(alpha = 0.4f)
-            ),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent
-        ),
-        contentPadding = PaddingValues(0.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    btnColor
-                    /*Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF9333EA),
-                            Color(0xFF6366F1),
-                            Color(0xFF3B82F6)
-                        )
-                    )*/
-                ),
-            contentAlignment = Alignment.Center
-        ) {
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        ShowPasswordView(
+            password = if (isLoginMode) loginState.password else signUpState.password,
+            passwordError = if (isLoginMode) loginState.passwordError else signUpState.passwordError,
+            label = "Password",
+            labelColor = MindoListTheme.colors.textSecondary,
+            textColor = MindoListTheme.colors.textPrimary,
+            containerColor = MindoListTheme.colors.inputBg,
+            unfocusedBorderColor = Color.Transparent,
+            focusedBorderColor = MindoListTheme.colors.accent,
+            placeholderColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.5f),
+            showPasswordRule = !isLoginMode,
+            onPasswordChange = {
+                if (isLoginMode) {
+                    loginViewModel.handleLoginEvent(LoginIntent.PasswordChanged(it))
+                } else {
+                    signUpViewModel.handleEvent(SignUpIntent.PasswordChanged(it))
+                }
+            }
+        )
+
+        if (!isLoginMode) {
+            Spacer(modifier = Modifier.height(24.dp))
+            ShowPasswordView(
+                password = confirmPassword,
+                passwordError = null,
+                label = "Confirm Password",
+                labelColor = MindoListTheme.colors.textSecondary,
+                textColor = MindoListTheme.colors.textPrimary,
+                containerColor = MindoListTheme.colors.inputBg,
+                unfocusedBorderColor = Color.Transparent,
+                focusedBorderColor = MindoListTheme.colors.accent,
+                placeholderColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.5f),
+                showPasswordRule = false,
+                onPasswordChange = { confirmPassword = it }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (isLoginMode) {
             Row(
-                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Get Started",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White
+                    text = "Remember me",
+                    color = MindoListTheme.colors.textSecondary,
+                    fontSize = 14.sp
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.Default.ArrowForward,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = Color.White
+                Text(
+                    text = "Forgot password?",
+                    color = MindoListTheme.colors.accent,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable {
+                        loginViewModel.handleLoginEvent(LoginIntent.ForgotPasswordClicked)
+                    }
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = isAgreed,
+                    onCheckedChange = { isAgreed = it },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = MindoListTheme.colors.accent,
+                        uncheckedColor = MindoListTheme.colors.textSecondary,
+                        checkmarkColor = Color.Black
+                    )
+                )
+                Text(
+                    text = buildAnnotatedString {
+                        append("I agree to the ")
+                        withStyle(
+                            style = SpanStyle(
+                                color = MindoListTheme.colors.accent,
+                                fontWeight = FontWeight.Bold
+                            )
+                        ) {
+                            append("Terms of Service")
+                        }
+                        append(" and ")
+                        withStyle(
+                            style = SpanStyle(
+                                color = MindoListTheme.colors.accent,
+                                fontWeight = FontWeight.Bold
+                            )
+                        ) {
+                            append("Privacy Policy")
+                        }
+                    },
+                    color = MindoListTheme.colors.textPrimary,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(start = 4.dp)
                 )
             }
         }
-    }
-}
 
-@Composable
-fun SmartProductivityBadge() {
-    // Smart Productivity badge
-    Row(
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Default.Star,
-            contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = Color(0xFF9333EA)
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text = "Smart Productivity",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF9333EA),
-//            fontFamily = FontFamily(
-//                Font(
-//                    Res.font.roboto_condensed_regular,
-//                    FontWeight.Normal
-//                )
-//            )
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-        Icon(
-            imageVector = Icons.Default.Star,
-            contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = Color(0xFF9333EA)
-        )
-    }
-}
+        Spacer(modifier = Modifier.height(32.dp))
 
-@Composable
-fun TrustBadges() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        TrustBadge(Icons.Default.CheckCircle, "Secure", Color(0xFF22C55E))
+        val isLoading = if (isLoginMode) loginState.isLoading else signUpState.isLoading
+        val isEnabled = if (isLoginMode) {
+            loginState.isEmailValid && loginState.isPasswordValid && !isLoading
+        } else {
+            (signUpState.isNameValid && signUpState.isEmailValid && signUpState.isPasswordValid && isAgreed && confirmPassword == signUpState.password && !isLoading)
+        }
 
-        Spacer(modifier = Modifier.width(8.dp))
-        Box(
+        ActionButton(
+            text = if (isLoginMode) "Log in" else "Create account",
+            isLoading = isLoading,
+            isEnabled = isEnabled,
+            containerColor = MindoListAccentFixed,
+            textColor = Color.Black,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier
-                .size(4.dp)
-                .background(Color(0xFFCBD5E1), CircleShape)
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(12.dp),
+            onClick = {
+                if (isLoginMode) {
+                    loginViewModel.handleLoginEvent(LoginIntent.LoginClicked)
+                } else {
+                    signUpViewModel.handleEvent(SignUpIntent.SendVerificationCode)
+                }
+            }
         )
-        Spacer(modifier = Modifier.width(8.dp))
 
-        TrustBadge(Icons.Default.Lock, "Private", Color(0xFF3B82F6))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        Spacer(modifier = Modifier.width(8.dp))
-        Box(
-            modifier = Modifier
-                .size(4.dp)
-                .background(Color(0xFFCBD5E1), CircleShape)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-
-        // Ad-free
-        TrustBadge(
-            icon = Icons.Default.Email,
-            text = "Ad-free",
-            iconColor = Color(0xFF3B82F6)
-        )
-    }
-}
-
-@Composable
-fun TrustBadge(icon: ImageVector, text: String, iconColor: Color) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(14.dp),
-            tint = iconColor
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text = text,
-            fontSize = 12.sp,
-            /*fontFamily = FontFamily(
-                Font(
-                    Res.font.roboto_condensed_bold,
-                    FontWeight.Normal
-                )
-            ),*/
-            color = Color(0xFF64748B)
-        )
-    }
-}
-
-@Composable
-fun SignInLink(onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "Already have an account?",
-            fontSize = 14.sp,
-//            fontFamily = FontFamily(
-//                Font(
-//                    Res.font.roboto_condensed_regular,
-//                    FontWeight.Normal
-//                )
-//            ),
-            color = Color(0xFF64748B)
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-        TextButton(
-            onClick = onClick,
-            contentPadding = PaddingValues(0.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Sign In",
+                text = if (isLoginMode) "Don't have an account? " else "Already have an account? ",
+                color = MindoListTheme.colors.textSecondary,
+                fontSize = 14.sp
+            )
+            Text(
+                text = if (isLoginMode) "Sign up free" else "Log in",
+                color = MindoListTheme.colors.accent,
                 fontSize = 14.sp,
-//                fontFamily = FontFamily(
-//                    Font(
-//                        Res.font.roboto_condensed_regular,
-//                        FontWeight.Normal
-//                    )
-//                ),
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF9333EA)
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable {
+                    isLoginMode = !isLoginMode
+                    confirmPassword = ""
+                    isAgreed = false
+                    loginViewModel.handleLoginEvent(LoginIntent.ClearState)
+                    signUpViewModel.handleEvent(SignUpIntent.ClearState)
+                }
             )
         }
     }
 }
-
-@Composable
-fun FeaturesPreview() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        // Smart Tasks
-        FeatureCard(
-            icon = Icons.Default.CheckCircle,
-            label = "Smart Tasks",
-            backgroundColor = Color.White.copy(alpha = 0.5f),
-            borderColor = Color(0xFFE9D5FF),
-            iconBackgroundStart = Color(0xFFF3E8FF),
-            iconBackgroundEnd = Color(0xFFDDD6FE),
-            iconColor = Color(0xFF9333EA),
-            modifier = Modifier.weight(1f)
-        )
-
-        // Reminders
-        FeatureCard(
-            icon = Icons.Default.Notifications,
-            label = "Reminders",
-            backgroundColor = Color.White.copy(alpha = 0.5f),
-            borderColor = Color(0xFFC7D2FE),
-            iconBackgroundStart = Color(0xFFE0E7FF),
-            iconBackgroundEnd = Color(0xFFC7D2FE),
-            iconColor = Color(0xFF6366F1),
-            modifier = Modifier.weight(1f)
-        )
-
-        // Progress
-        FeatureCard(
-            icon = Icons.Default.CheckCircle,
-            label = "Progress",
-            backgroundColor = Color.White.copy(alpha = 0.5f),
-            borderColor = Color(0xFFBBF7D0),
-            iconBackgroundStart = Color(0xFFDCFCE7),
-            iconBackgroundEnd = Color(0xFFBBF7D0),
-            iconColor = Color(0xFF16A34A),
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-@Composable
-fun FeatureCard(
-    icon: ImageVector,
-    label: String,
-    backgroundColor: Color,
-    borderColor: Color,
-    iconBackgroundStart: Color,
-    iconBackgroundEnd: Color,
-    iconColor: Color,
-    modifier: Modifier = Modifier
-) {
-    var isHovered by remember { mutableStateOf(false) }
-    val borderColorAnimated by animateColorAsState(
-        targetValue = if (isHovered) iconColor.copy(alpha = 0.3f) else borderColor,
-        animationSpec = tween(300)
-    )
-    val elevation by animateDpAsState(
-        targetValue = if (isHovered) 12.dp else 0.dp,
-        animationSpec = tween(300)
-    )
-
-    Column(
-        modifier = modifier
-            .shadow(elevation, RoundedCornerShape(16.dp))
-            .background(backgroundColor, RoundedCornerShape(16.dp))
-            .border(1.dp, borderColorAnimated, RoundedCornerShape(16.dp))
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        // Icon background
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(iconBackgroundStart, iconBackgroundEnd)
-                    ),
-                    RoundedCornerShape(12.dp)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                modifier = Modifier.size(24.dp),
-                tint = iconColor
-            )
-        }
-
-        // Label
-        Text(
-            text = label,
-            fontSize = 12.sp,
-//            fontFamily = FontFamily(
-//                Font(
-//                    Res.font.roboto_condensed_regular,
-//                    FontWeight.SemiBold
-//                )
-//            ),
-            color = Color(0xFF334155),
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-data class Feature(
-    val icon: ImageVector,
-    val text: String
-)

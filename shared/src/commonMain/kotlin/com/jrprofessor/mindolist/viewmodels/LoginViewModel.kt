@@ -38,7 +38,12 @@ class LoginViewModel (
             is LoginIntent.ForgotPasswordClicked -> onForgotPassword()
             is LoginIntent.BackPressed -> onBackPressed()
             is LoginIntent.ErrorDismissed -> onErrorDismissed()
+            is LoginIntent.ClearState -> onClearState()
         }
+    }
+
+    private fun onClearState() {
+        _loginState.update { LoginState() }
     }
 
     private fun onLogin() {

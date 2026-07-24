@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		06F34DDC301255FF00443425 /* FirebaseAI in Frameworks */ = {isa = PBXBuildFile; productRef = 06F34DDB301255FF00443425 /* FirebaseAI */; };
+		06F34DDE301255FF00443425 /* FirebaseAILogic in Frameworks */ = {isa = PBXBuildFile; productRef = 06F34DDD301255FF00443425 /* FirebaseAILogic */; };
 		98DF85ACC12420A85D88A5DF /* Pods_iosApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FE1EF5E8905BCA981DA5C982 /* Pods_iosApp.framework */; };
 /* End PBXBuildFile section */
 
@@ -18,7 +20,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		8A58BBF68064E2EDE1E51612 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		8A58BBF68064E2EDE1E51612 /* Exceptions for "iosApp" folder in "iosApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -31,15 +33,13 @@
 		17A52AE007AE503E7FDED785 /* iosApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				8A58BBF68064E2EDE1E51612 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+				8A58BBF68064E2EDE1E51612 /* Exceptions for "iosApp" folder in "iosApp" target */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
 		};
 		D80682756F6F27FA90FB4132 /* Configuration */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = Configuration;
 			sourceTree = "<group>";
 		};
@@ -50,7 +50,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				06F34DDE301255FF00443425 /* FirebaseAILogic in Frameworks */,
 				98DF85ACC12420A85D88A5DF /* Pods_iosApp.framework in Frameworks */,
+				06F34DDC301255FF00443425 /* FirebaseAI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -143,6 +145,9 @@
 			);
 			mainGroup = 19C925DC0B57095F0B1B2704;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				06F34DDA301255FF00443425 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = ADE79C2EEE5A108AD8523065 /* Products */;
 			projectDirPath = "";
@@ -172,9 +177,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -211,9 +220,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -454,6 +467,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		06F34DDA301255FF00443425 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.16.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		06F34DDB301255FF00443425 /* FirebaseAI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 06F34DDA301255FF00443425 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAI;
+		};
+		06F34DDD301255FF00443425 /* FirebaseAILogic */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 06F34DDA301255FF00443425 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAILogic;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 801F27A11076D145B4AB5E75 /* Project object */;
 }

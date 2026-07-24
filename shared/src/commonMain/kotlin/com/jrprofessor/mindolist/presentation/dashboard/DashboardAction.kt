@@ -12,4 +12,6 @@ sealed class DashboardAction {
     data class MarkComplete(val taskId: String, val isCompleted: Boolean) : DashboardAction()
     data class FilterSelected(val filterLabel: String) : DashboardAction()
     data class DeleteTask(val taskId: String) : DashboardAction()
+    data class SearchQueryChanged(val query: String) : DashboardAction()
+    data object ToggleSearch : DashboardAction()
 }

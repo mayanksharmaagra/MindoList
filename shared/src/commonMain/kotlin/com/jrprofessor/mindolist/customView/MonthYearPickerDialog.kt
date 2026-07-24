@@ -20,9 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.jrprofessor.mindolist.theme.TextDark
-import com.jrprofessor.mindolist.theme.PrimaryBlue
-import com.jrprofessor.mindolist.theme.RemindViewBG
+import com.jrprofessor.mindolist.theme.MindoListTheme
 
 @Composable
 fun MonthYearPickerDialog(
@@ -31,6 +29,7 @@ fun MonthYearPickerDialog(
     onDismiss: () -> Unit,
     onMonthYearSelected: (Int, Int) -> Unit
 ) {
+    val colors = MindoListTheme.colors
     var selectedYear by remember { mutableIntStateOf(initialYear) }
     var tempSelectedMonth by remember { mutableIntStateOf(initialMonth) }
     
@@ -45,7 +44,7 @@ fun MonthYearPickerDialog(
                 .fillMaxWidth()
                 .padding(16.dp),
             shape = RoundedCornerShape(32.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
+            colors = CardDefaults.cardColors(containerColor = colors.cardBg)
         ) {
             Column(
                 modifier = Modifier
@@ -57,7 +56,7 @@ fun MonthYearPickerDialog(
                     text = "Choose Month",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextDark
+                    color = colors.textPrimary
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -67,7 +66,7 @@ fun MonthYearPickerDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(20.dp))
-                        .background(Color(0xFFF0EFFF)) // Light purple/blue background
+                        .background(colors.cardChildBg)
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
@@ -79,7 +78,7 @@ fun MonthYearPickerDialog(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                             contentDescription = "Previous Year",
-                            tint = PrimaryBlue,
+                            tint = colors.accent,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -88,7 +87,7 @@ fun MonthYearPickerDialog(
                         text = selectedYear.toString(),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextDark
+                        color = colors.textPrimary
                     )
 
                     IconButton(
@@ -98,7 +97,7 @@ fun MonthYearPickerDialog(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             contentDescription = "Next Year",
-                            tint = PrimaryBlue,
+                            tint = colors.accent,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -118,7 +117,7 @@ fun MonthYearPickerDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(24.dp))
-                                .background(if (isSelected) PrimaryBlue else RemindViewBG)
+                                .background(if (isSelected) colors.accent else colors.cardChildBg)
                                 .clickable {
                                     tempSelectedMonth = index + 1
                                 }
@@ -133,14 +132,14 @@ fun MonthYearPickerDialog(
                                     text = month,
                                     fontSize = 16.sp,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                                    color = if (isSelected) Color.White else TextDark
+                                    color = if (isSelected) Color.Black else colors.textPrimary
                                 )
                                 
                                 if (isSelected) {
                                     Icon(
                                         imageVector = Icons.Default.CheckCircle,
                                         contentDescription = null,
-                                        tint = Color.White,
+                                        tint = Color.Black,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -163,7 +162,7 @@ fun MonthYearPickerDialog(
                     ) {
                         Text(
                             text = "Cancel",
-                            color = PrimaryBlue,
+                            color = colors.accent,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
                         )
@@ -172,12 +171,12 @@ fun MonthYearPickerDialog(
                     Button(
                         onClick = { onMonthYearSelected(selectedYear, tempSelectedMonth) },
                         shape = RoundedCornerShape(24.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                        colors = ButtonDefaults.buttonColors(containerColor = colors.accent),
                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
                     ) {
                         Text(
                             text = "Confirm",
-                            color = Color.White,
+                            color = Color.Black,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
                         )

@@ -71,5 +71,6 @@ interface FirebaseAuthRepository {
      * */
     suspend fun uploadProfileImage(imageBytes: ByteArray,email: String? = null): Result<String>
     suspend fun sendPasswordResetEmail(email: String): Result<Unit>
+    suspend fun deleteAccount(): Result<Unit>
 
 }

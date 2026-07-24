@@ -48,17 +48,21 @@ class SignUpViewModel (
             is SignUpIntent.OtpChanged -> onOtpChanged(intent.otp)
             is SignUpIntent.PasswordChanged -> onPasswordChanged(intent.password)
             is SignUpIntent.NameChanged -> onNameChanged(intent.name)
-            SignUpIntent.ContinueWithEmailClicked -> continueWithEmail()
-            SignUpIntent.CreateAccountClicked -> onCreateAccount()
-            SignUpIntent.BackPressed -> onBackPressed()
-            SignUpIntent.CreatePasswordClicked -> onCreatePassword()
-            SignUpIntent.ErrorDismissed -> onErrorDismissed()
-            SignUpIntent.ResendOtpClicked -> onResendOtp()
+            SignUpIntent.SendVerificationCode -> onSendVerificationCode()
             SignUpIntent.VerifyEmailClicked -> onVerifyEmail()
+            SignUpIntent.ResendOtpClicked -> onResendOtp()
+            SignUpIntent.BackPressed -> onBackPressed()
+            SignUpIntent.ErrorDismissed -> onErrorDismissed()
+            SignUpIntent.ClearState -> onClearState()
             is SignUpIntent.UserProfileUrl -> uploadUserProfile(intent.url,intent.email
             )
         }
 
+    }
+
+    private fun onClearState() {
+        stopResendCountdown()
+        _signUpState.update { SignUpState() }
     }
 
     private fun uploadUserProfile(bytes: ByteArray, email: String) {
@@ -99,27 +103,27 @@ class SignUpViewModel (
             _signUpState.update { it.copy(isLoading = true, error = null) }
             when (val result = verifyOtpUseCase(currentEmail, currentOtp)) {
                 is Result.Success -> {
+                    stopResendCountdown()
+                    // Keep isLoading = true for onCreateAccount
                     _signUpState.update {
                         it.copy(
-                            isLoading = false,
-                            currentStep = SignUpButtonState.CREATE_PASSWORD
+                            currentStep = SignUpButtonState.CREATE_ACCOUNT
                         )
                     }
-                    stopResendCountdown()
+                    onCreateAccount()
                     sendEffect(SignUpEvent.ShowToast("Email verified successfully"))
                 }
 
                 is Result.Error -> {
+                    val errorMessage = result.message ?: result.exception.message ?: "Invalid verification code"
                     _signUpState.update {
                         it.copy(
                             isLoading = false,
-                            otpError = result.message ?: "Invalid verification code"
+                            otpError = errorMessage
                         )
                     }
                     sendEffect(
-                        SignUpEvent.ShowError(
-                            result.message ?: "Invalid verification code"
-                        )
+                        SignUpEvent.ShowError(errorMessage)
                     )
                 }
 
@@ -131,7 +135,7 @@ class SignUpViewModel (
     }
 
     @OptIn(ExperimentalTime::class)
-    private fun onCreateAccount() {
+    private fun onSendVerificationCode() {
         val currentEmail = _signUpState.value.email
         if (!Validators.validateEmail(currentEmail)) {
             _signUpState.update { it.copy(emailError = "Please enter a valid email address") }
@@ -143,14 +147,15 @@ class SignUpViewModel (
 
             when (val result = sendOtpUseCase(currentEmail)) {
                 is Result.Error -> {
+                    val errorMessage = result.message ?: result.exception.message ?: "Failed to send verification code"
                     _signUpState.update {
                         it.copy(
                             isLoading = false,
-                            error = result.message ?: "Failed to send verification code"
+                            error = errorMessage
                         )
                     }
                     sendEffect(
-                        SignUpEvent.ShowError(result.message ?: "Failed to send verification code")
+                        SignUpEvent.ShowError(errorMessage)
                     )
                 }
 
@@ -168,13 +173,14 @@ class SignUpViewModel (
                     }
                     startResendCountdown()
                     sendEffect(SignUpEvent.ShowToast("Verification code sent to $currentEmail"))
+                    sendEffect(SignUpEvent.NavigateToVerifyEmail)
                 }
             }
         }
 
     }
 
-    private fun onCreatePassword() {
+    private fun onCreateAccount() {
         val currentName = _signUpState.value.name
         val currentEmail = _signUpState.value.email
         val currentPassword = _signUpState.value.password
@@ -200,16 +206,15 @@ class SignUpViewModel (
                 }
 
                 is Result.Error -> {
+                    val errorMessage = result.message ?: result.exception.message ?: "Failed to create account"
                     _signUpState.update {
                         it.copy(
                             isLoading = false,
-                            error = result.message ?: "Failed to create account"
+                            error = errorMessage
                         )
                     }
                     sendEffect(
-                        SignUpEvent.ShowError(
-                            result.message ?: "Failed to create account"
-                        )
+                        SignUpEvent.ShowError(errorMessage)
                     )
                 }
 
@@ -248,11 +253,10 @@ class SignUpViewModel (
                 }
 
                 is Result.Error -> {
+                    val errorMessage = result.message ?: result.exception.message ?: "Failed to resend code"
                     _signUpState.update { it.copy(isLoading = false) }
                     sendEffect(
-                        SignUpEvent.ShowError(
-                            result.message ?: "Failed to resend code"
-                        )
+                        SignUpEvent.ShowError(errorMessage)
                     )
                 }
 
@@ -269,30 +273,19 @@ class SignUpViewModel (
                 }
             }
 
-            SignUpButtonState.CREATE_ACCOUNT -> {
-                _signUpState.update { it.copy(currentStep = SignUpButtonState.CONTINUE_WITH_EMAIL) }
-            }
-
             SignUpButtonState.VERIFY_EMAIL -> {
                 stopResendCountdown()
                 _signUpState.update {
                     it.copy(
-                        currentStep = SignUpButtonState.CREATE_ACCOUNT,
+                        currentStep = SignUpButtonState.CONTINUE_WITH_EMAIL,
                         otp = "",
                         otpError = null
                     )
                 }
+                sendEffect(SignUpEvent.NavigateBack)
             }
-
-            SignUpButtonState.CREATE_PASSWORD -> {
-                _signUpState.update {
-                    it.copy(
-                        currentStep = SignUpButtonState.VERIFY_EMAIL,
-                        password = "",
-                        passwordError = null
-                    )
-                }
-                startResendCountdown()
+            SignUpButtonState.CREATE_ACCOUNT -> {
+                stopResendCountdown()
             }
         }
     }
@@ -354,22 +347,14 @@ class SignUpViewModel (
         }
     }
 
-    private fun continueWithEmail() {
-        _signUpState.update {
-            it.copy(currentStep = SignUpButtonState.CREATE_ACCOUNT)//move to next screen on enter email field
-        }
-    }
-
     private fun onPasswordChanged(password: String) {
-        if (password.length <= 12) {
-            val isValid = Validators.validatePassword(password)
-            _signUpState.update {
-                it.copy(
-                    password = password,
-                    isPasswordValid = isValid,
-                    passwordError = null
-                )
-            }
+        val isValid = Validators.validatePassword(password)
+        _signUpState.update {
+            it.copy(
+                password = password,
+                isPasswordValid = isValid,
+                passwordError = null
+            )
         }
     }
 
@@ -395,14 +380,14 @@ class SignUpViewModel (
     }
 
     private fun onOtpChanged(otp: String) {
-        if (otp.length == 5 && otp.all { it.isDigit() }) {
+        if (otp.length <= 5 && otp.all { it.isDigit() }) {
             val valid = Validators.validateOtp(otp)
             _signUpState.update {
                 it.copy(
                     otp = otp,
                     isOtpValid = valid,
                     otpError = null,
-                    error = if (!valid) "Invalid OTP" else null
+                    error = if (otp.length == 5 && !valid) "Invalid OTP" else null
                 )
             }
         }

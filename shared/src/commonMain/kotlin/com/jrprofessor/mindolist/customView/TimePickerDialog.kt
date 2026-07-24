@@ -1,40 +1,16 @@
 package com.jrprofessor.mindolist.customView
 
-
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,9 +19,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.jrprofessor.mindolist.theme.*
 
-// ── Time Picker Dialog ────────────────────────────────────────────────────────
-private val PrimaryBlue = Color(0xFF3B82F6)
 @Composable
 fun TimePickerDialog(
     initialHour: Int,
@@ -55,161 +31,166 @@ fun TimePickerDialog(
     onDismiss: () -> Unit,
 ) {
     val hours = (1..12).toList()
-    val minutes = (0..59).toList()
-    val periods = listOf("AM", "PM")
-
+    val minutes = (0..59).step(5).toList() 
+    
     var selectedHour by remember { mutableIntStateOf(initialHour) }
     var selectedMinute by remember { mutableIntStateOf(initialMinute) }
-    var selectedPeriod by remember { mutableStateOf(period)}
+    var selectedPeriod by remember { mutableStateOf(period) }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MindoListTheme.colors.background
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                    .fillMaxSize()
+                    .padding(24.dp)
             ) {
                 // ── Header ────────────────────────────────────────────────────
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.align(Alignment.CenterStart)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = Color(0xFF1E293B),
-                        )
-                    }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = "Choose Time",
-                        fontSize = 18.sp,
+                        text = "Due time",
+                        fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B),
-                        modifier = Modifier.align(Alignment.Center),
+                        color = MindoListTheme.colors.textPrimary,
+                        style = MaterialTheme.typography.headlineLarge
                     )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Surface(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(44.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = MindoListTheme.colors.cardChildBg,
+                        border = BorderStroke(1.dp, MindoListTheme.colors.textSecondary.copy(alpha = 0.1f))
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = MindoListTheme.colors.textPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // ── Scroll Picker ─────────────────────────────────────────────
-                Box(
+                // ── Quick Pick ────────────────────────────────────────────────
+                val quickPicks = listOf("Now", "Morning", "Afternoon", "No time")
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    // Selected highlight pill
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp)
-                            .clip(RoundedCornerShape(50.dp))
-                            .background(Color(0xFFEDE9FE)),
-                    )
+                    quickPicks.forEach { label ->
+                        val isSelected = label == "Morning" 
+                        val chipBg = if (isSelected) MindoListTheme.colors.accent.copy(alpha = 0.1f) else MindoListTheme.colors.cardChildBg
+                        val border = if (isSelected) BorderStroke(1.dp, MindoListTheme.colors.accent) else BorderStroke(1.dp, MindoListTheme.colors.textSecondary.copy(alpha = 0.05f))
 
+                        Surface(
+                            onClick = { /* Handle quick pick */ },
+                            modifier = Modifier.weight(1f).height(56.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            color = chipBg,
+                            border = border
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = label,
+                                    fontSize = 14.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) MindoListTheme.colors.accent else MindoListTheme.colors.textSecondary,
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(48.dp))
+
+                // ── Time Selection ─────────────────────────────────────────────
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Hour picker
-                        ScrollPicker(
+                        // Hour Picker
+                        TimeScrollPicker(
                             items = hours,
                             selectedItem = selectedHour,
                             onItemSelected = { selectedHour = it },
-                            label = { it.toString().padStart(2, '0') },
-                            modifier = Modifier.width(80.dp),
+                            label = { it.toString().padStart(2, '0') }
                         )
 
                         Text(
-                            text = ":",
+                            ":",
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Bold,
-                            color = PrimaryBlue,
-                            modifier = Modifier.padding(bottom = 4.dp),
+                            color = MindoListTheme.colors.textPrimary
                         )
 
-                        // Minute picker
-                        ScrollPicker(
+                        // Minute Picker
+                        TimeScrollPicker(
                             items = minutes,
                             selectedItem = selectedMinute,
                             onItemSelected = { selectedMinute = it },
-                            label = { it.toString().padStart(2, '0') },
-                            modifier = Modifier.width(80.dp),
+                            label = { it.toString().padStart(2, '0') }
                         )
 
                         Spacer(modifier = Modifier.width(8.dp))
 
-                        // AM/PM picker
-                        ScrollPicker(
-                            items = periods,
-                            selectedItem = selectedPeriod,
-                            onItemSelected = { selectedPeriod = it },
-                            label = { it },
-                            modifier = Modifier.width(64.dp),
-                        )
+                        // AM/PM Vertical Stack
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            AmPmButton(
+                                label = "AM",
+                                isSelected = selectedPeriod == "AM",
+                                onClick = { selectedPeriod = "AM" }
+                            )
+                            AmPmButton(
+                                label = "PM",
+                                isSelected = selectedPeriod == "PM",
+                                onClick = { selectedPeriod = "PM" }
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(40.dp))
 
-                // Hint text
-                Text(
-                    text = "Scroll to select the reminder time",
-                    fontSize = 13.sp,
-                    color = Color(0xFF94A3B8),
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // ── Set Time Button ───────────────────────────────────────────
+                // ── Confirm Button ────────────────────────────────────────────
                 Button(
                     onClick = {
-                        onTimeSelected(selectedHour.toString().padStart(2, '0'), selectedMinute.toString().padStart(2, '0'), selectedPeriod)
-                        onDismiss()
+                        onTimeSelected(
+                            selectedHour.toString().padStart(2, '0'),
+                            selectedMinute.toString().padStart(2, '0'),
+                            selectedPeriod
+                        )
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp),
+                        .height(64.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MindoListTheme.colors.textPrimary,
+                        contentColor = MindoListTheme.colors.background
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Set Time",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White,
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // ── Cancel Button ─────────────────────────────────────────────
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF1F5F9)),
-                    elevation = ButtonDefaults.buttonElevation(0.dp),
                 ) {
                     Text(
-                        text = "Cancel",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF64748B),
+                        text = "Confirm time — ${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')} $selectedPeriod",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -217,31 +198,46 @@ fun TimePickerDialog(
     }
 }
 
-// ── Generic Scroll Picker ─────────────────────────────────────────────────────
+@Composable
+fun AmPmButton(label: String, isSelected: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.size(width = 64.dp, height = 48.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = if (isSelected) MindoListTheme.colors.accent else MindoListTheme.colors.cardChildBg,
+        border = if (isSelected) null else BorderStroke(1.dp, MindoListTheme.colors.textSecondary.copy(alpha = 0.05f))
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = label,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) Color.Black else MindoListTheme.colors.textPrimary
+            )
+        }
+    }
+}
 
 @Composable
-fun <T> ScrollPicker(
+fun <T> TimeScrollPicker(
     items: List<T>,
     selectedItem: T,
     onItemSelected: (T) -> Unit,
-    label: (T) -> String,
-    modifier: Modifier = Modifier,
+    label: (T) -> String
 ) {
+    val itemHeight = 64.dp
     val visibleCount = 5
-    val itemHeightDp = 52.dp
-    val scope = rememberCoroutineScope()
-
-    // Infinite scroll — repeat list many times
+    
+    // Infinite scroll
     val repeatCount = 100
     val infiniteItems = List(repeatCount) { items }.flatten()
-    val startIndex = repeatCount / 2 * items.size + items.indexOf(selectedItem)
-
-    val listState = rememberLazyListState(initialFirstVisibleItemIndex = startIndex - 2)
+    val startIndex = (repeatCount / 2) * items.size + items.indexOf(selectedItem)
+    
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = startIndex - (visibleCount / 2))
     val snapBehavior = rememberSnapFlingBehavior(lazyListState = listState)
 
-    // Detect selected item on scroll
     LaunchedEffect(listState.firstVisibleItemIndex) {
-        val centerIndex = listState.firstVisibleItemIndex + 2
+        val centerIndex = listState.firstVisibleItemIndex + (visibleCount / 2)
         val item = infiniteItems.getOrNull(centerIndex)
         if (item != null && item != selectedItem) {
             onItemSelected(item)
@@ -249,30 +245,43 @@ fun <T> ScrollPicker(
     }
 
     Box(
-        modifier = modifier.height(itemHeightDp * visibleCount),
-        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .width(100.dp)
+            .height(itemHeight * visibleCount),
+        contentAlignment = Alignment.Center
     ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(itemHeight),
+            shape = RoundedCornerShape(16.dp),
+            color = Color.Transparent,
+            border = BorderStroke(1.dp, MindoListTheme.colors.accent)
+        ) {}
+
         LazyColumn(
             state = listState,
             flingBehavior = snapBehavior,
-            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            contentPadding = PaddingValues(vertical = 0.dp)
         ) {
             items(infiniteItems.size) { index ->
-                val centerIndex = listState.firstVisibleItemIndex + 2
+                val centerIndex = listState.firstVisibleItemIndex + (visibleCount / 2)
                 val isSelected = index == centerIndex
-
+                
                 Box(
                     modifier = Modifier
-                        .height(itemHeightDp)
+                        .height(itemHeight)
                         .fillMaxWidth(),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = label(infiniteItems[index]),
-                        fontSize = if (isSelected) 26.sp else 18.sp,
+                        fontSize = if (isSelected) 32.sp else 24.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) PrimaryBlue else Color(0xFFCBD5E1),
+                        color = if (isSelected) MindoListTheme.colors.textPrimary else MindoListTheme.colors.textSecondary.copy(alpha = 0.5f),
+                        style = if (isSelected) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.titleMedium
                     )
                 }
             }

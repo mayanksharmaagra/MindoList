@@ -21,5 +21,7 @@ data class DashboardState (
     val currentDate:String="",
     val greeting: String="",
     val selectedDate: LocalDate = today(),
-    val selectedFilter: String= Filter.ALL.name
+    val selectedFilter: String= Filter.ALL.name,
+    val searchQuery: String = "",
+    val isSearchActive: Boolean = false
 )

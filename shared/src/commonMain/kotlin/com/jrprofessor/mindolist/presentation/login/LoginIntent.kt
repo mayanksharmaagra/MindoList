@@ -16,4 +16,6 @@ sealed class LoginIntent {
 
     // Error
     object ErrorDismissed : LoginIntent()
+
+    object ClearState : LoginIntent()
 }

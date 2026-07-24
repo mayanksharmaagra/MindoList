@@ -1,12 +1,13 @@
+// iosApp/iosApp/iOSApp.swift
 import SwiftUI
-import Shared
 import FirebaseCore
+import FirebaseAppCheck
 
 @main
 struct iOSApp: App {
-
     init() {
-        // ✅ Firebase configure
+        let providerFactory = AppCheckDebugProviderFactory()
+        AppCheck.setAppCheckProviderFactory(providerFactory)
         FirebaseApp.configure()
     }
 

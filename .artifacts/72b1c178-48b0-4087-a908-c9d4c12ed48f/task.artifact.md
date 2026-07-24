@@ -1,0 +1,5 @@
+- [x] Fix platform-specific status bar logic in Android
+- [x] Centralize status bar control in `AppTheme`
+- [x] Remove manual status bar calls from screens
+- [x] Clean up `LoginActivity` setup
+- [ ] Verify changes

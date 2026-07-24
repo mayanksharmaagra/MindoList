@@ -1,617 +1,489 @@
 package com.jrprofessor.mindolist.screen
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.outlined.Alarm
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.jrprofessor.mindolist.customView.ProfileImageSection
-import com.jrprofessor.mindolist.customView.TopBar
+import com.jrprofessor.mindolist.customView.ActionButton
 import com.jrprofessor.mindolist.presentation.dashboard.DashboardAction
 import com.jrprofessor.mindolist.presentation.settings.SettingsAction
 import com.jrprofessor.mindolist.presentation.settings.SettingsEvent
-import com.jrprofessor.mindolist.theme.PrimaryBlue
-import com.jrprofessor.mindolist.theme.backgroundColor
+import com.jrprofessor.mindolist.theme.*
 import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
 import com.jrprofessor.mindolist.viewmodels.SettingsViewmodel
 import org.koin.compose.viewmodel.koinViewModel
-
-// ── Colors ────────────────────────────────────────────────────────────────────
-
-private val CardBg = Color(0xFFFFFFFF)
-private val TextPrimary = Color(0xFF1E293B)
-private val TextSecondary = Color(0xFF94A3B8)
-private val DividerColor = Color(0xFFF1F5F9)
-private val DangerRed = Color(0xFFEF4444)
-
-// ── Settings Screen ───────────────────────────────────────────────────────────
 
 @Composable
 fun SettingsScreen(
     viewModelDashboard: DashboardViewModel = koinViewModel(),
     viewModelSettings: SettingsViewmodel = koinViewModel(),
-    isReminderEnabled: Boolean = true,
-    onReminderToggle: (Boolean) -> Unit = {},
-    onNavigateToSignUp: () -> Unit,
-    onEditProfileClick: () -> Unit,
+    onNavigateToSignUp: () -> Unit = {},
+    onEditProfileClick: () -> Unit = {},
+    onChangePasswordClick: () -> Unit = {},
+    onDeleteAccountClick: () -> Unit = {},
 ) {
     val stateDashboard by viewModelDashboard.state.collectAsState()
     val stateSettings by viewModelSettings.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    var showThemeDialog by remember { mutableStateOf(false) }
 
-    // Collect one-time events
     LaunchedEffect(Unit) {
-        viewModelDashboard.dispatch(DashboardAction.LoadTasks)
+        viewModelDashboard.dispatch(DashboardAction.LoadUserData)
         viewModelSettings.event.collect { event ->
             when (event) {
-                is SettingsEvent.Message -> {
-                    snackbarHostState.showSnackbar(event.message)
-                }
-
-                is SettingsEvent.NavigateToSignUp -> {
-                    onNavigateToSignUp()
-                }
+                is SettingsEvent.Message -> snackbarHostState.showSnackbar(event.message)
+                is SettingsEvent.NavigateToSignUp -> onNavigateToSignUp()
             }
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopBar(name = "Settings")
-        },
-        containerColor = backgroundColor,
-    ) { paddingValues ->
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MindoListTheme.colors.background
+    ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(bottom = 32.dp),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-
-            // ── Profile section ───────────────────────────────────────────────
             item {
-                ProfileSection(
-                    userName = stateDashboard.user?.displayName,
-                    userEmail = stateDashboard.user?.email,
-                    avatarUrl = stateDashboard.user?.profileUrl,
-                    tasksDone = stateDashboard.user?.completedTasks?.toString() ?: "0",
-                    allTasks = stateDashboard.user?.totalTasks ?: 0,
-                    streak = stateDashboard.user?.currentStreak ?: 0,
-                    onEditProfileClick = onEditProfileClick
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = "Settings",
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MindoListTheme.colors.textPrimary,
+                    style = MaterialTheme.typography.headlineLarge
                 )
             }
 
-            // ── Preferences section ───────────────────────────────────────────
+            // ── Profile Card ───────────────────────────────────────────────
             item {
-                SectionHeader(title = "PREFERENCES")
-                SettingsCard {
-//                    SettingsToggleItem(
-//                        icon = Icons.Outlined.DarkMode,
-//                        label = "Dark Mode",
-//                        checked = isDarkMode,
-//                        onCheckedChange = onDarkModeToggle,
-//                    )
-//                    SettingsDivider()
-                    SettingsToggleItem(
-                        icon = Icons.Outlined.Alarm,
-                        label = "Reminder Alerts",
-                        checked = isReminderEnabled,
-                        onCheckedChange = onReminderToggle,
-                    )
-                    SettingsDivider()
+                ProfileCard(
+                    userName = stateDashboard.user?.displayName ?: "User Name",
+                    userEmail = stateDashboard.user?.email ?: "user@email.com",
+                    onClick = onEditProfileClick
+                )
+            }
 
+            // ── Preferences ────────────────────────────────────────────────
+            item {
+                SettingsSection(title = "PREFERENCES") {
                     SettingsMenuItem(
+                        icon = if (stateSettings.themeMode == ThemeMode.LIGHT) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+                        label = "Theme",
+                        value = stateSettings.themeMode.name.lowercase().replaceFirstChar { it.uppercase() }
+                    ) {
+                        showThemeDialog = true
+                    }
+                    SettingsDivider()
+                    SettingsToggleItem(
                         icon = Icons.Outlined.Notifications,
                         label = "Notifications",
-                        onClick = {
-
-                        },
+                        checked = stateSettings.notificationsEnabled,
+                        onCheckedChange = {
+                            viewModelSettings.dispatch(SettingsAction.SetNotificationsEnabled(it))
+                        }
                     )
-                }
-            }
-
-            // ── About section ─────────────────────────────────────────────────
-            item {
-                SectionHeader(title = "ABOUT")
-                SettingsCard {
+                    SettingsDivider()
                     SettingsMenuItem(
-                        icon = Icons.Outlined.Info,
-                        label = "App Version",
-                        value = "1.0.0",
-                        showArrow = false,
-                        onClick = {},
+                        icon = Icons.Outlined.GridView,
+                        label = "Default view",
+                        value = "Grouped"
+                    ) {}
+                    SettingsDivider()
+                    SettingsToggleItem(
+                        icon = Icons.Default.AutoAwesome,
+                        label = "AI extraction",
+                        checked = stateSettings.aiExtractionEnabled,
+                        onCheckedChange = {
+                            viewModelSettings.dispatch(SettingsAction.SetAiExtractionEnabled(it))
+                        }
                     )
                 }
             }
 
-            // ── Logout button ─────────────────────────────────────────────────
+            // ── Account ───────────────────────────────────────────────────
             item {
-                Spacer(modifier = Modifier.height(16.dp))
-                LogoutButton(onClick = { viewModelSettings.dispatch(SettingsAction.Logout) })
-                Spacer(modifier = Modifier.height(30.dp))
+                SettingsSection(title = "ACCOUNT") {
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.Lock,
+                        label = "Change password"
+                    ) { onChangePasswordClick() }
+                    SettingsDivider()
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.Delete,
+                        label = "Delete account",
+                        labelColor = MindoListTheme.colors.error,
+                        iconTint = MindoListTheme.colors.error.copy(alpha = 0.5f),
+                        showArrow = false
+                    ) { onDeleteAccountClick() }
+                    SettingsDivider()
+                    SettingsMenuItem(
+                        icon = Icons.AutoMirrored.Outlined.Logout,
+                        label = "Log out",
+                        showArrow = false
+                    ) { viewModelSettings.dispatch(SettingsAction.Logout) }
+                }
             }
-        }
-    }
 
-    // ── Logout confirmation dialog ────────────────────────────────────────────
-    if (stateSettings.showLogoutConfirmDialog) {
-        LogoutDialog(
-            onConfirm = {
-                viewModelSettings.confirmLogout()
-            },
-            onDismiss = { viewModelSettings.dismissLogoutDialog() },
-        )
-    }
-}
-
-@Composable
-fun ProfileSection(
-    userName: String?,
-    userEmail: String?,
-    avatarUrl: String?,
-    tasksDone: String = "0",
-    allTasks: Int = 0,
-    streak: Int = 0,
-    onEditProfileClick: () -> Unit
-) {
-    SettingsCard {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 24.dp, horizontal = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // PRO MEMBER Badge
-            /*Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = BadgeBg),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            item {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "PRO MEMBER",
-                        color = BadgeText,
-                        fontSize = 11.sp,
+                        text = "MindoList v1.0.0",
+                        color = MindoListTheme.colors.textSecondary.copy(alpha = 0.5f),
+                        fontSize = 14.sp,
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                    )
+                }
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+        }
+    }
+
+    if (stateSettings.showLogoutConfirmDialog) {
+        LogoutDialog(
+            onConfirm = { viewModelSettings.confirmLogout() },
+            onDismiss = { viewModelSettings.dismissLogoutDialog() }
+        )
+    }
+
+    if (showThemeDialog) {
+        ThemeSelectionDialog(
+            currentMode = stateSettings.themeMode,
+            onModeSelected = {
+                viewModelSettings.dispatch(SettingsAction.SetThemeMode(it))
+                showThemeDialog = false
+            },
+            onDismiss = { showThemeDialog = false }
+        )
+    }
+}
+
+@Composable
+fun ProfileCard(
+    userName: String,
+    userEmail: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MindoListTheme.colors.cardBg),
+        border = BorderStroke(1.dp, MindoListTheme.colors.textSecondary.copy(alpha = 0.1f)),
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Avatar
+            Surface(
+                modifier = Modifier.size(64.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = MindoListAccentFixed
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = userName.firstOrNull()?.toString()?.uppercase() ?: "A",
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        color = Color.Black
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))*/
+            Spacer(modifier = Modifier.width(20.dp))
 
-            // Avatar Section
-            ProfileImageSection(
-                userName = userName,
-                avatarUrl = avatarUrl,
-                onAvatarEditClick = { },
-                isEdit = false
-            )
-
-            // Name and Email
-            Text(
-                text = userName ?: "User Name",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary,
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = userEmail ?: "email@example.com",
-                fontSize = 15.sp,
-                color = TextSecondary,
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            val focusRate = if (allTasks > 0) {
-                (tasksDone.toInt().toFloat() / allTasks.toFloat() * 100).toInt()
-            } else {
-                0
-            }
-
-            // Stats Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                StatItem(value = tasksDone, label = "TASKS DONE")
-                VerticalDivider(modifier = Modifier.height(40.dp).width(1.dp), color = DividerColor)
-                StatItem(value = streak.toString(), label = "DAY STREAK")
-                VerticalDivider(modifier = Modifier.height(40.dp).width(1.dp), color = DividerColor)
-                StatItem(value = "$focusRate%", label = "FOCUS RATE")
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Button(
-                onClick = onEditProfileClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .height(44.dp),
-                shape = RoundedCornerShape(50.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryBlue,
-                ),
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Edit Profile",
+                    text = userName,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MindoListTheme.colors.textPrimary
+                )
+                Text(
+                    text = userEmail,
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
+                    color = MindoListTheme.colors.textSecondary
                 )
             }
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MindoListTheme.colors.textSecondary.copy(alpha = 0.5f)
+            )
         }
     }
 }
 
 @Composable
-private fun StatItem(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Column {
         Text(
-            text = value,
-            fontSize = 20.sp,
+            text = title,
+            fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
-            color = PrimaryBlue
+            color = MindoListTheme.colors.textSecondary,
+            letterSpacing = 1.sp,
+            modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
         )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = label,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = TextSecondary
-        )
-    }
-}
-
-@Composable
-fun ProfileDetailsSection(
-    userName: String?,
-    userEmail: String?,
-    onEditProfileClick: () -> Unit
-) {
-    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        userName?.let {
-            Text(
-                text = it,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary,
-            )
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        userEmail?.let {
-            Text(
-                text = it,
-                fontSize = 13.sp,
-                color = TextSecondary,
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Edit Profile button
-        Button(
-            onClick = onEditProfileClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 48.dp)
-                .height(44.dp),
-            shape = RoundedCornerShape(50.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = PrimaryBlue,
-            ),
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MindoListTheme.colors.cardBg),
+            border = BorderStroke(1.dp, MindoListTheme.colors.textSecondary.copy(alpha = 0.1f))
         ) {
-            Text(
-                text = "Edit Profile",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White,
-            )
+            Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                content()
+            }
         }
     }
 }
 
-// ── Section Header ────────────────────────────────────────────────────────────
-
 @Composable
-private fun SectionHeader(title: String) {
-    Text(
-        text = title,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = TextSecondary,
-        letterSpacing = 1.sp,
-        modifier = Modifier.padding(
-            start = 16.dp,
-            end = 16.dp,
-            top = 20.dp,
-            bottom = 8.dp,
-        ),
-    )
-}
-
-// ── Settings Card ─────────────────────────────────────────────────────────────
-
-@Composable
-private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBg),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-    ) {
-        Column(content = content)
-    }
-}
-
-// ── Menu Item ─────────────────────────────────────────────────────────────────
-
-@Composable
-private fun SettingsMenuItem(
+fun SettingsMenuItem(
     icon: ImageVector,
     label: String,
     value: String? = null,
+    labelColor: Color = MindoListTheme.colors.textPrimary,
+    iconTint: Color = MindoListTheme.colors.textSecondary,
     showArrow: Boolean = true,
-    trailingIcon: ImageVector? = null,
-    onClick: () -> Unit,
+    onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp)
+            .height(64.dp)
             .clickable { onClick() }
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = PrimaryBlue,
-            modifier = Modifier.size(22.dp),
+            tint = iconTint,
+            modifier = Modifier.size(20.dp)
         )
-        Spacer(modifier = Modifier.width(14.dp))
+        Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = label,
-            fontSize = 15.sp,
-            color = TextPrimary,
-            modifier = Modifier.weight(1f),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = labelColor,
+            modifier = Modifier.weight(1f)
         )
         if (value != null) {
             Text(
                 text = value,
-                fontSize = 13.sp,
-                color = TextSecondary,
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-        }
-        if (trailingIcon != null) {
-            Icon(
-                imageVector = trailingIcon,
-                contentDescription = null,
-                tint = TextSecondary,
-                modifier = Modifier.size(18.dp),
+                fontSize = 15.sp,
+                color = MindoListTheme.colors.textSecondary
             )
         } else if (showArrow) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint = TextSecondary,
-                modifier = Modifier.size(20.dp),
+                tint = MindoListTheme.colors.textSecondary.copy(alpha = 0.5f),
+                modifier = Modifier.size(20.dp)
             )
         }
     }
 }
 
-// ── Toggle Item ───────────────────────────────────────────────────────────────
-
 @Composable
-private fun SettingsToggleItem(
+fun SettingsToggleItem(
     icon: ImageVector,
     label: String,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
+    onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp)
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .height(64.dp)
+            .padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = PrimaryBlue,
-            modifier = Modifier.size(22.dp),
+            tint = MindoListTheme.colors.textSecondary,
+            modifier = Modifier.size(20.dp)
         )
-        Spacer(modifier = Modifier.width(14.dp))
+        Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = label,
-            fontSize = 15.sp,
-            color = TextPrimary,
-            modifier = Modifier.weight(1f),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MindoListTheme.colors.textPrimary,
+            modifier = Modifier.weight(1f)
         )
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
-                checkedTrackColor = PrimaryBlue,
-                uncheckedThumbColor = Color.White,
-                uncheckedTrackColor = Color(0xFFCBD5E1),
-            ),
+                checkedTrackColor = MindoListAccentFixed,
+                uncheckedThumbColor = MindoListTheme.colors.textSecondary,
+                uncheckedTrackColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.1f)
+            )
         )
     }
 }
 
-// ── Divider ───────────────────────────────────────────────────────────────────
-
 @Composable
-private fun SettingsDivider() {
+fun SettingsDivider() {
     HorizontalDivider(
-        modifier = Modifier.padding(horizontal = 16.dp),
+        modifier = Modifier.padding(horizontal = 20.dp),
         thickness = 0.5.dp,
-        color = DividerColor,
+        color = MindoListTheme.colors.textSecondary.copy(alpha = 0.1f)
     )
 }
 
-// ── Logout Button ─────────────────────────────────────────────────────────────
-
 @Composable
-private fun LogoutButton(onClick: () -> Unit) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .height(52.dp),
-        shape = RoundedCornerShape(50.dp),
-        border = androidx.compose.foundation.BorderStroke(1.5.dp, DangerRed),
-        colors = ButtonDefaults.outlinedButtonColors(
-            contentColor = DangerRed,
-        ),
-    ) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.Logout,
-            contentDescription = null,
-            tint = DangerRed,
-            modifier = Modifier.size(20.dp),
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = "Logout Account",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = DangerRed,
-        )
-    }
-}
-
-// ── Logout Dialog ─────────────────────────────────────────────────────────────
-
-@Composable
-private fun LogoutDialog(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
+fun LogoutDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MindoListTheme.colors.cardBg),
+            border = BorderStroke(1.dp, MindoListTheme.colors.textSecondary.copy(alpha = 0.1f))
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Log Out",
-                    fontSize = 18.sp,
+                    text = "Log out",
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color = MindoListTheme.colors.textPrimary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Are you sure you want to log out?",
+                    text = "Are you sure you want to log out from MindoList?",
                     fontSize = 14.sp,
-                    color = TextSecondary,
+                    color = MindoListTheme.colors.textSecondary,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    OutlinedButton(
+                    ActionButton(
+                        text = "Cancel",
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f).height(44.dp),
-                        shape = RoundedCornerShape(50.dp),
-                    ) {
-                        Text("Cancel", color = TextSecondary)
-                    }
-                    Button(
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        containerColor = MindoListTheme.colors.cardChildBg,
+                        textColor = MindoListTheme.colors.textPrimary,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        elevation = 0.dp
+                    )
+                    ActionButton(
+                        text = "Log out",
                         onClick = onConfirm,
-                        modifier = Modifier.weight(1f).height(44.dp),
-                        shape = RoundedCornerShape(50.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = DangerRed
-                        ),
-                    ) {
-                        Text("Log Out", color = Color.White)
-                    }
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        containerColor = MindoListTheme.colors.error,
+                        textColor = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        elevation = 0.dp
+                    )
                 }
             }
         }
     }
 }
 
-// ── Usage ─────────────────────────────────────────────────────────────────────
-//
-// SettingsScreen(
-//     userName = state.userName,
-//     userEmail = state.userEmail,
-//     userAvatarUrl = state.avatarUrl,
-//     isDarkMode = state.isDarkMode,
-//     isReminderEnabled = state.isReminderEnabled,
-//     onEditProfileClick = { navController.navigate("edit_profile") },
-//     onAvatarEditClick = { /* image picker */ },
-//     onDarkModeToggle = { viewModel.dispatch(SettingsAction.DarkModeToggle(it)) },
-//     onReminderToggle = { viewModel.dispatch(SettingsAction.ReminderToggle(it)) },
-//     onLogoutClick = { viewModel.dispatch(SettingsAction.Logout) },
-//     onBackClick = { navController.popBackStack() },
-//     onNavigate = { dest -> navController.navigate(dest) },
-// )
+@Composable
+fun ThemeSelectionDialog(
+    currentMode: ThemeMode,
+    onModeSelected: (ThemeMode) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MindoListTheme.colors.cardBg),
+            border = BorderStroke(1.dp, MindoListTheme.colors.textSecondary.copy(alpha = 0.1f))
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Choose Theme",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MindoListTheme.colors.textPrimary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                
+                ThemeOptionItem("System Default", ThemeMode.SYSTEM, currentMode == ThemeMode.SYSTEM) { onModeSelected(ThemeMode.SYSTEM) }
+                ThemeOptionItem("Light", ThemeMode.LIGHT, currentMode == ThemeMode.LIGHT) { onModeSelected(ThemeMode.LIGHT) }
+                ThemeOptionItem("Dark", ThemeMode.DARK, currentMode == ThemeMode.DARK) { onModeSelected(ThemeMode.DARK) }
+            }
+        }
+    }
+}
+
+@Composable
+fun ThemeOptionItem(
+    label: String,
+    mode: ThemeMode,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (isSelected) MindoListTheme.colors.accent.copy(alpha = 0.1f) else Color.Transparent)
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(
+            selected = isSelected,
+            onClick = onClick,
+            colors = RadioButtonDefaults.colors(
+                selectedColor = MindoListTheme.colors.accent,
+                unselectedColor = MindoListTheme.colors.textSecondary
+            )
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = label,
+            fontSize = 16.sp,
+            color = if (isSelected) MindoListTheme.colors.accent else MindoListTheme.colors.textPrimary,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+        )
+    }
+}

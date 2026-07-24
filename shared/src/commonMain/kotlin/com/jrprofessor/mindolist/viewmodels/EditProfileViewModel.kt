@@ -42,7 +42,8 @@ class EditProfileViewModel(
                         currentState.copy(
                             fullName = it.displayName ?: "",
                             email = it.email,
-                            avatarUrl = it.profileUrl
+                            avatarUrl = it.profileUrl,
+                            isVerified = it.emailVerified
                         )
                     }
                 }
@@ -58,20 +59,29 @@ class EditProfileViewModel(
             is EditProfileAction.OnEmailChange -> {
                 _state.update { it.copy(email = action.email) }
             }
-            is EditProfileAction.OnCurrentPasswordChange -> {
-                _state.update { it.copy(currentPassword = action.password) }
+            is EditProfileAction.OnPhoneNumberChange -> {
+                _state.update { it.copy(phoneNumber = action.phoneNumber) }
             }
-            is EditProfileAction.OnNewPasswordChange -> {
-                _state.update { it.copy(newPassword = action.password) }
-            }
-            is EditProfileAction.OnConfirmPasswordChange -> {
-                _state.update { it.copy(confirmPassword = action.password) }
+            is EditProfileAction.OnAboutChange -> {
+                _state.update { it.copy(about = action.about) }
             }
             is EditProfileAction.OnAvatarChange -> {
-                _state.update { it.copy(avatarBytes = action.bytes) }
+                _state.update { it.copy(avatarBytes = action.bytes, avatarUrl = null) }
+            }
+            EditProfileAction.OnRemovePhoto -> {
+                _state.update { it.copy(avatarBytes = null, avatarUrl = null) }
             }
             EditProfileAction.OnSaveClick -> {
                 saveChanges()
+            }
+            EditProfileAction.OnChangePasswordClick -> {
+                // Handle change password navigation or logic
+            }
+            EditProfileAction.OnTwoFactorClick -> {
+                // Handle 2FA logic
+            }
+            EditProfileAction.OnDeleteAccountClick -> {
+                // Handle delete account logic
             }
         }
     }
@@ -106,29 +116,8 @@ class EditProfileViewModel(
 
             when (val result = firebaseAuthRepository.saveUserToDatabase(updatedUser)) {
                 is Result.Success -> {
-                    // 3. Update Password if provided
-                    if (currentState.newPassword.isNotEmpty()) {
-                        if (currentState.newPassword != currentState.confirmPassword) {
-                            _state.update { it.copy(isLoading = false, error = "Passwords do not match") }
-                            return@launch
-                        }
-                        
-                        // We might need to re-authenticate or check current password here 
-                        // but for now using resetPassword which updates it for the current user in repo
-                        when (val pwResult = firebaseAuthRepository.resetPassword(currentState.email, currentState.newPassword)) {
-                            is Result.Success -> {
-                                _state.update { it.copy(isLoading = false, success = true, currentPassword = "", newPassword = "", confirmPassword = "") }
-                                _event.emit(EditProfileEvent.ShowToast("Profile updated successfully"))
-                            }
-                            is Result.Error -> {
-                                _state.update { it.copy(isLoading = false, error = pwResult.message) }
-                            }
-                            is Result.Loading -> { /* Handle if needed */ }
-                        }
-                    } else {
-                        _state.update { it.copy(isLoading = false, success = true) }
-                        _event.emit(EditProfileEvent.ShowToast("Profile updated successfully"))
-                    }
+                    _state.update { it.copy(isLoading = false, success = true) }
+                    _event.emit(EditProfileEvent.ShowToast("Profile updated successfully"))
                 }
                 is Result.Error -> {
                     _state.update { it.copy(isLoading = false, error = result.message) }

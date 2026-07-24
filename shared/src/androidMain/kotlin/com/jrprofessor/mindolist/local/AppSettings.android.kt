@@ -14,6 +14,12 @@ actual class SettingsDelegate(context: Context) {
     actual fun putBoolean(key: String, value: Boolean) =
         prefs.edit { putBoolean(key, value) }
 
+    actual fun getString(key: String, defaultValue: String): String =
+        prefs.getString(key, defaultValue) ?: defaultValue
+
+    actual fun putString(key: String, value: String) =
+        prefs.edit { putString(key, value) }
+
     actual fun clear() =
         prefs.edit { clear() }
 }

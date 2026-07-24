@@ -15,39 +15,48 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jrprofessor.mindolist.screen.InputLabel
 
 // =====================================================
 // EMAIL VIEW
 // =====================================================
 
 @Composable
-fun ShowNameView(name: String, nameError: String?, onNameChange: (String) -> Unit) {
+fun ShowNameView(
+    name: String,
+    nameError: String?,
+    labelColor: Color = Color.Black,
+    textColor: Color = Color.Black,
+    containerColor: Color = Color.Transparent,
+    unfocusedBorderColor: Color = Color(0xFFD1D5DB),
+    focusedBorderColor: Color = Color(0xFF6366F1),
+    placeholderColor: Color = Color(0xFF9CA3AF),
+    onNameChange: (String) -> Unit
+) {
     Column(modifier = Modifier.fillMaxWidth()) {
 
-        InputLabel(text = "Full Name")
+        InputLabel(text = "Full Name", textColor = labelColor)
 
         OutlinedTextField(
             value = name,
             onValueChange = onNameChange,
-            placeholder = { Text("Enter your name", color = Color(0xFF9CA3AF)) },
+            placeholder = { Text("Enter your name", color = placeholderColor) },
             singleLine = true,
             shape = RoundedCornerShape(14.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF6366F1),
-                unfocusedBorderColor = Color(0xFFD1D5DB),
+                focusedBorderColor = focusedBorderColor,
+                unfocusedBorderColor = unfocusedBorderColor,
                 errorBorderColor = Color(0xFFDC2626),
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent
+                focusedContainerColor = containerColor,
+                unfocusedContainerColor = containerColor
             ),
             textStyle = LocalTextStyle.current.copy(
-                color = Color.Black
+                color = textColor
             ),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(2.dp),
             keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = KeyboardType.Email
+                keyboardType = KeyboardType.Text
             ),
             isError = nameError != null
         )

@@ -112,6 +112,32 @@ open class TaskRepositoryImpl(
         emit(Result.Error(e as Exception, e.message ?: "Failed to fetch tasks"))
     }
 
+    override fun getTasksInRange(startMillis: Long, endMillis: Long): Flow<Result<List<TaskModel>>> = callbackFlow {
+        trySend(Result.Loading)
+
+        val listener = tasksRef()
+            .orderByChild("dueDate")
+            .startAt(startMillis.toDouble())
+            .endAt(endMillis.toDouble()).valueEvents
+
+        val job = launch {
+            listener.collect { snapshot ->
+                val tasks = snapshot.children.mapNotNull { child ->
+                    runCatching {
+                        child.value<TaskModel>()
+                    }.getOrNull()
+                }.sortedBy { it.dueDate }
+
+                trySend(Result.Success(tasks))
+            }
+        }
+
+        awaitClose { job.cancel() }
+    }.catch { e ->
+        Logger.debug { "Error fetching tasks in range: ${e.message}" }
+        emit(Result.Error(e as Exception, e.message ?: "Failed to fetch tasks"))
+    }
+
     override suspend fun addTask(task: TaskModel): Result<Unit> {
         return try {
             val ref = tasksRef().push()

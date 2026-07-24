@@ -1,0 +1,6 @@
+- [x] Update `IosAiTaskRepositoryImpl.swift`
+    - [x] Update model name to `gemini-3.1-flash-lite`
+    - [x] Synchronize prompt rules with Android version
+    - [x] Integrate `Logger` from `Shared` module
+    - [x] Improve error handling and logging
+- [x] Verify changes

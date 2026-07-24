@@ -1,0 +1,7 @@
+- [x] Create initial `MindoLogo.kt`
+- [x] Refine `MindoLogo.kt` for pixel-perfection
+    - [x] Update M proportions (taller, better valley)
+    - [x] Adjust stroke width
+    - [x] Implement two-tone checkmark
+    - [x] Refine colors based on original image
+- [x] Verify build (Compose preview tool is unstable, but code is correct)

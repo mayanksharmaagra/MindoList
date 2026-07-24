@@ -1,5 +1,6 @@
 package com.jrprofessor.mindolist.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -12,8 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import com.jrprofessor.mindolist.navGraph.Screen
+import com.jrprofessor.mindolist.theme.MindoListTheme
 import com.jrprofessor.mindolist.viewmodels.AuthViewModel
-import com.jrprofessor.mindolist.viewmodels.LoginViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -34,9 +35,11 @@ fun SplashScreen(navController: NavController) {
     }
 
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MindoListTheme.colors.background),
         contentAlignment = Alignment.Center,
     ) {
-        CircularProgressIndicator(color = Color(0xFF6C3FC7))
+        CircularProgressIndicator(color = MindoListTheme.colors.accent)
     }
 }

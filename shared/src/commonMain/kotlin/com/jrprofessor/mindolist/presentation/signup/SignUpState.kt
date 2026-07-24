@@ -26,5 +26,4 @@ enum class SignUpButtonState {
     CONTINUE_WITH_EMAIL,
     CREATE_ACCOUNT,
     VERIFY_EMAIL,
-    CREATE_PASSWORD
 }

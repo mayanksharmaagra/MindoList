@@ -15,7 +15,9 @@ import com.jrprofessor.mindolist.domain.usecase.SendOtpUseCase
 import com.jrprofessor.mindolist.domain.usecase.VerifyOtpUseCase
 import com.jrprofessor.mindolist.viewmodels.AnalyticsViewModel
 import com.jrprofessor.mindolist.viewmodels.AuthViewModel
+import com.jrprofessor.mindolist.viewmodels.ChangePasswordViewModel
 import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
+import com.jrprofessor.mindolist.viewmodels.DeleteAccountViewModel
 import com.jrprofessor.mindolist.viewmodels.EditProfileViewModel
 import com.jrprofessor.mindolist.viewmodels.ForgotPasswordViewModel
 import com.jrprofessor.mindolist.viewmodels.LoginViewModel
@@ -43,6 +45,8 @@ val viewModelModule = module {
     viewModelOf(::SettingsViewmodel)
     viewModelOf(::EditProfileViewModel)
     viewModelOf(::AnalyticsViewModel)
+    viewModelOf(::ChangePasswordViewModel)
+    viewModelOf(::DeleteAccountViewModel)
 }
 
 

@@ -1,108 +1,48 @@
 package com.jrprofessor.mindolist.screen
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jrprofessor.mindolist.customView.ActionButton
+import com.jrprofessor.mindolist.customView.CategorySelectionDialog
 import com.jrprofessor.mindolist.customView.DatePickerDialog
 import com.jrprofessor.mindolist.customView.TimePickerDialog
+import com.jrprofessor.mindolist.getPlatform
 import com.jrprofessor.mindolist.icons.IcBell
 import com.jrprofessor.mindolist.icons.IcCalendar
-import com.jrprofessor.mindolist.icons.IcCategory
 import com.jrprofessor.mindolist.icons.IcClock
-import com.jrprofessor.mindolist.icons.IcClose
-import com.jrprofessor.mindolist.icons.IcContainer
-import com.jrprofessor.mindolist.icons.IcDay
-import com.jrprofessor.mindolist.icons.IcInfo
 import com.jrprofessor.mindolist.model.Category
 import com.jrprofessor.mindolist.model.Priority
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskAction
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskEvent
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskUiState
-import com.jrprofessor.mindolist.theme.CardBackground
-import com.jrprofessor.mindolist.theme.CategoryUnselectedTextColor
-import com.jrprofessor.mindolist.theme.PlaceholderColor
-import com.jrprofessor.mindolist.theme.PrimaryBlue
-import com.jrprofessor.mindolist.theme.RemindViewBG
-import com.jrprofessor.mindolist.theme.SegmentBackground
-import com.jrprofessor.mindolist.theme.SelectedBackground
-import com.jrprofessor.mindolist.theme.TitleColor
-import com.jrprofessor.mindolist.theme.UnselectedTextColor
-import com.jrprofessor.mindolist.theme.backgroundColor
-import com.jrprofessor.mindolist.theme.btnColor
-import com.jrprofessor.mindolist.utils.Logger
+import com.jrprofessor.mindolist.theme.*
+import com.jrprofessor.mindolist.utils.RequestMicrophonePermission
 import com.jrprofessor.mindolist.utils.showToast
-import com.jrprofessor.mindolist.getPlatform
 import com.jrprofessor.mindolist.viewmodels.TaskViewModel
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Stop
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -115,24 +55,20 @@ enum class ReminderOption(val label: String) {
     TWO_HOURS("2 hours before"),
     ONE_DAY("1 day before"),
 }
-
-
 @Composable
 fun AddTaskScreen(
     viewModel: TaskViewModel = koinViewModel(),
     onNavigateBack: () -> Unit = {}
 ) {
-
-
     val state by viewModel.state.collectAsState()
-    // Loading → State se handle karo
+    var showTimePicker by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showCategoryDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         viewModel.addTaskEffect.collectLatest { effect ->
             when (effect) {
-                is AddTaskEvent.Error -> {
-                    showToast(effect.error)
-                }
-
+                is AddTaskEvent.Error -> showToast(effect.error)
                 is AddTaskEvent.Success -> {
                     showToast(effect.message)
                     onNavigateBack()
@@ -140,179 +76,361 @@ fun AddTaskScreen(
             }
         }
     }
-    var showTimePicker by remember { mutableStateOf(false) }
-    var showDatePicker by remember { mutableStateOf(false) }
-
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(backgroundColor)
+            .background(MindoListTheme.colors.background)
     ) {
-        if (state.isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color = PrimaryBlue
-            )
-        } else {
-            AddTaskContent(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp)
+        ) {
+            Spacer(modifier = Modifier.height(20.dp))
+            AddTaskToolbar(onNavigateBack)
+            Spacer(modifier = Modifier.height(30.dp))
+
+            if (getPlatform().isAndroid) {
+                AiExtractionSection(state, viewModel)
+
+                Spacer(modifier = Modifier.height(30.dp))
+                ManualDivider()
+                Spacer(modifier = Modifier.height(25.dp))
+            }
+
+            ManualInputSection(
                 state = state,
-                onNavigateBack,
-                viewModel,
-                onDateSelection = {
-                    showDatePicker = it
-                }, onTimeSelection = {
-                    showTimePicker = it
-                }
+                viewModel = viewModel,
+                onDateClick = { showDatePicker = true },
+                onTimeClick = { showTimePicker = true },
+                onCategoryClick = { showCategoryDialog = true }
+            )
+
+            Spacer(modifier = Modifier.height(40.dp))
+
+            ActionButton(
+                text = "Save task",
+                isLoading = state.isLoading,
+                isEnabled = state.title.isNotBlank() && !state.isLoading,
+                containerColor = MindoListAccentFixed,
+                textColor = Color.Black,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                onClick = { viewModel.dispatch(AddTaskAction.SaveClicked) }
+            )
+            Spacer(modifier = Modifier.height(40.dp))
+        }
+
+        if (showTimePicker) {
+            val (initialHour, initialMinute, period) = runCatching {
+                val timeParts = state.selectedTime.split(" ")
+                val hMin = timeParts[0].split(":")
+                Triple(hMin[0].toInt(), hMin[1].toInt(), timeParts[1])
+            }.getOrDefault(Triple(12, 0, "PM"))
+
+            TimePickerDialog(
+                initialHour = initialHour,
+                initialMinute = initialMinute,
+                period = period,
+                onTimeSelected = { hour, minute, selectedPeriod ->
+                    viewModel.dispatch(AddTaskAction.TimeSelected("$hour:$minute $selectedPeriod"))
+                    showTimePicker = false
+                },
+                onDismiss = { showTimePicker = false }
+            )
+        }
+        if (showDatePicker) {
+            DatePickerDialog(
+                onDateSelected = { date ->
+                    viewModel.dispatch(AddTaskAction.DateSelected(date.monthYearDayFormatted()))
+                    showDatePicker = false
+                },
+                onDismiss = { showDatePicker = false }
+            )
+        }
+        if (showCategoryDialog) {
+            CategorySelectionDialog(
+                selectedCategory = state.category,
+                onCategorySelected = {
+                    viewModel.dispatch(AddTaskAction.CategoryChanged(it))
+                },
+                onDismiss = { showCategoryDialog = false }
             )
         }
     }
+}
 
-    if (showTimePicker) {
-        TimePickerDialog(
-            initialHour = state.selectedTime.split(" ")[0].split(":")[0].toInt(),
-            initialMinute = state.selectedTime.split(" ")[0].split(":")[1].toInt(),
-            period = state.selectedTime.split(" ")[1],
-            onTimeSelected = { hour, minute,period ->
-                viewModel.dispatch(
-                    AddTaskAction.TimeSelected(
-                        "$hour:$minute $period"
-                    )
+@Composable
+fun AddTaskToolbar(onNavigateBack: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            onClick = onNavigateBack,
+            modifier = Modifier.size(44.dp),
+            shape = RoundedCornerShape(12.dp),
+            color = MindoListTheme.colors.cardChildBg,
+            border = BorderStroke(1.dp, MindoListTheme.colors.textSecondary.copy(alpha = 0.1f))
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = "Back",
+                    tint = MindoListTheme.colors.textPrimary,
+                    modifier = Modifier.size(24.dp)
                 )
-                showTimePicker = false
-                Logger.debug {
-                    "AddTaskScreen: ${state.selectedTime}"
-                }
+            }
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        Text(
+            text = "Add Task",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = MindoListTheme.colors.textPrimary,
+            style = MaterialTheme.typography.headlineMedium
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.width(44.dp))
+    }
+}
+
+@Composable
+fun AiExtractionSection(state: AddTaskUiState, viewModel: TaskViewModel) {
+    if (!getPlatform().isAndroid) return 
+    
+    var showPermissionRequest by remember { mutableStateOf(false) }
+
+    if (showPermissionRequest) {
+        RequestMicrophonePermission(
+            onPermissionGranted = {
+                showPermissionRequest = false
+                viewModel.dispatch(AddTaskAction.ToggleRecording)
             },
-            onDismiss = { showTimePicker = false }
+            onPermissionDenied = {
+                showPermissionRequest = false
+                showToast("Microphone permission is required for voice input")
+            }
         )
     }
-    if (showDatePicker) {
-        DatePickerDialog(
-            onDateSelected = { date ->
-                viewModel.dispatch(
-                    AddTaskAction.DateSelected(date.monthYearDayFormatted())
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MindoListTheme.colors.cardBg),
+        border = BorderStroke(1.dp, MindoListTheme.colors.textSecondary.copy(alpha = 0.1f))
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    modifier = Modifier.size(32.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MindoListTheme.colors.accent.copy(alpha = 0.1f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = MindoListTheme.colors.accent,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    "Describe it your way",
+                    color = MindoListTheme.colors.textPrimary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
-                Logger.debug { "AddTaskScreen: ${state.selectedDate}" }
-                showDatePicker = false
-            },
-            onDismiss = {
-                showDatePicker = false
             }
+
+            OutlinedTextField(
+                value = state.naturalInput,
+                onValueChange = { viewModel.dispatch(AddTaskAction.NaturalInputChanged(it)) },
+                placeholder = {
+                    Text(
+                        if (state.isRecording) "Listening..." else "\"Team sync tomorrow 10am, high priority, work\"",
+                        color = if (state.isRecording) MindoListAccentFixed else MindoListTheme.colors.textSecondary,
+                        fontSize = 16.sp
+                    )
+                },
+                trailingIcon = {
+                    IconButton(onClick = { 
+                        if (state.isRecording) {
+                            viewModel.dispatch(AddTaskAction.ToggleRecording)
+                        } else {
+                            showPermissionRequest = true
+                        }
+                    }) {
+                        Icon(
+                            imageVector = if (state.isRecording) Icons.Default.MicOff else Icons.Default.Mic,
+                            contentDescription = if (state.isRecording) "Stop Recording" else "Start Recording",
+                            tint = if (state.isRecording) MindoListTheme.colors.error else MindoListTheme.colors.textSecondary
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.2f),
+                    unfocusedBorderColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.2f),
+                    focusedContainerColor = MindoListTheme.colors.inputBg,
+                    unfocusedContainerColor = MindoListTheme.colors.inputBg,
+                    focusedTextColor = MindoListTheme.colors.textPrimary,
+                    unfocusedTextColor = MindoListTheme.colors.textPrimary
+                )
+            )
+
+            ActionButton(
+                text = "Extract with AI",
+                isLoading = state.isParsingAi,
+                isEnabled = state.naturalInput.isNotBlank() && !state.isParsingAi,
+                containerColor = MindoListAccentFixed,
+                textColor = Color.Black,
+                fontWeight = FontWeight.Bold,
+                icon = Icons.Default.AutoAwesome,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                iconTint = Color.Black,
+                onClick = { viewModel.dispatch(AddTaskAction.ParseAiClicked) }
+            )
+
+            AnimatedVisibility(
+                visible = state.aiError != null,
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                Text(
+                    text = state.aiError ?: "",
+                    color = MindoListTheme.colors.error,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ManualDivider() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            color = MindoListTheme.colors.textSecondary.copy(alpha = 0.1f)
+        )
+        Text(
+            "OR FILL MANUALLY",
+            modifier = Modifier.padding(horizontal = 16.dp),
+            color = MindoListTheme.colors.textSecondary,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp
+        )
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            color = MindoListTheme.colors.textSecondary.copy(alpha = 0.1f)
         )
     }
 }
 
 @Composable
-fun AddTaskContent(
+fun ManualInputSection(
     state: AddTaskUiState,
-    onNavigateBack: () -> Unit,
     viewModel: TaskViewModel,
-    onDateSelection: (Boolean) -> Unit,
-    onTimeSelection: (Boolean) -> Unit
+    onDateClick: () -> Unit,
+    onTimeClick: () -> Unit,
+    onCategoryClick: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()) // ← add this
-            .background(backgroundColor)
-            .padding(16.dp)
-    ) {
-        Spacer(modifier = Modifier.height(15.dp))
-        CustomToolBar(viewModel,onNavigateBack)
-        Spacer(modifier = Modifier.height(15.dp))
+    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        InputField(
+            label = "TITLE",
+            value = state.title,
+            onValueChange = { viewModel.dispatch(AddTaskAction.TitleChanged(it)) },
+            placeholder = "Team sync call"
+        )
 
-        // ── AI Input Section ──────────────────────────────
-        if (getPlatform().isAndroid) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(6.dp),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = CardBackground),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        InputField(
+            label = "DESCRIPTION",
+            value = state.description,
+            onValueChange = { viewModel.dispatch(AddTaskAction.DescriptionChanged(it)) },
+            placeholder = "Add notes (optional)",
+            minHeight = 80.dp
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                ClickableInputField(
+                    label = "DUE DATE",
+                    value = state.selectedDate,
+                    onClick = onDateClick,
+                    icon = IcCalendar
+                )
+            }
+            Box(modifier = Modifier.weight(1f)) {
+                ClickableInputField(
+                    label = "DUE TIME",
+                    value = state.selectedTime,
+                    onClick = onTimeClick,
+                    icon = IcClock
+                )
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                "PRIORITY",
+                color = MindoListTheme.colors.textSecondary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    HeaderWithIcon(icon = Icons.Default.AutoAwesome, title = "Smart Add")
-
-                    OutlinedTextField(
-                        value = state.naturalInput,
-                        onValueChange = { viewModel.dispatch(AddTaskAction.NaturalInputChanged(it)) },
-                        placeholder = {
-                            Text(
-                                "e.g. Remind me to call Mom tomorrow at 6 PM",
-                                fontSize = 14.sp,
-                                color = PlaceholderColor
-                            )
-                        },
-                        leadingIcon = {
-                            IconButton(onClick = { viewModel.dispatch(AddTaskAction.ToggleRecording) }) {
-                                Icon(
-                                    imageVector = if (state.isRecording) Icons.Default.Stop else Icons.Default.Mic,
-                                    contentDescription = "Speak",
-                                    tint = if (state.isRecording) Color.Red else PrimaryBlue
-                                )
-                            }
-                        },
-                        trailingIcon = {
-                            if (state.isParsingAi) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                IconButton(onClick = { viewModel.dispatch(AddTaskAction.ParseAiClicked) }) {
-                                    Icon(
-                                        imageVector = Icons.Default.AutoAwesome,
-                                        contentDescription = "Parse with AI",
-                                        tint = PrimaryBlue
-                                    )
-                                }
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = TitleColor,
-                            unfocusedTextColor = TitleColor,
-                            focusedBorderColor = PrimaryBlue,
-                            unfocusedBorderColor = Color.Transparent,
-                            focusedContainerColor = RemindViewBG,
-                            unfocusedContainerColor = RemindViewBG
-                        ),
-                        minLines = 2
+                Priority.entries.forEach { priority ->
+                    PriorityButton(
+                        priority = priority,
+                        isSelected = state.priority == priority,
+                        onClick = { viewModel.dispatch(AddTaskAction.PriorityChanged(priority)) },
+                        modifier = Modifier.weight(1f)
                     )
-
-                    state.aiError?.let {
-                        Text(
-                            it, color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
                 }
             }
-            Spacer(modifier = Modifier.height(15.dp))
         }
-        IdentityView(state, viewModel)
-        Spacer(modifier = Modifier.height(15.dp))
-        ScheduleView(
-            state,
-            viewModel = viewModel,
-            onDateSelection = onDateSelection,
-            onTimeSelection = onTimeSelection
-        )
-        Spacer(modifier = Modifier.height(15.dp))
-        ImportanceView(viewModel, state)
-        Spacer(modifier = Modifier.height(15.dp))
-        CategoryView(state = state) { category ->
-            viewModel.dispatch(AddTaskAction.CategoryChanged(category))
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                "CATEGORY",
+                color = MindoListTheme.colors.textSecondary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
+            ClickableInputField(
+                label = "", 
+                value = state.category.label,
+                onClick = onCategoryClick,
+                icon = Icons.Default.KeyboardArrowDown
+            )
         }
-        Spacer(modifier = Modifier.height(15.dp))
         AlertsSection(
             viewModel = viewModel,
             isEnabled = state.reminderEnabled,
@@ -321,7 +439,6 @@ fun AddTaskContent(
             onReminderSelected = { viewModel.dispatch(AddTaskAction.ReminderValue(it)) })
     }
 }
-
 @Composable
 fun AlertsSection(
     isEnabled: Boolean,
@@ -333,124 +450,129 @@ fun AlertsSection(
 ) {
     var showDropdown by remember { mutableStateOf(false) }
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(6.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            "ALERTS",
+            color = MindoListTheme.colors.textSecondary,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MindoListTheme.colors.cardBg),
+            border = BorderStroke(1.dp, MindoListTheme.colors.textSecondary.copy(alpha = 0.1f))
         ) {
-            // ── Header row: Bell icon + Alerts label + Toggle ─────────────────
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
-                Icon(
-                    imageVector = IcBell, // replace with your bell icon
-                    contentDescription = "Alert",
-                    tint = PrimaryBlue,
-                    modifier = Modifier.size(20.dp),
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Alerts",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1E293B),
-                    modifier = Modifier.weight(1f),
-                )
-                Switch(
-                    checked = isEnabled, onCheckedChange = onToggle, colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = PrimaryBlue,
-                        uncheckedThumbColor = Color.White,
-                        uncheckedTrackColor = Color(0xFFCBD5E1),
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = IcBell,
+                        contentDescription = "Alert",
+                        tint = MindoListAccentFixed,
+                        modifier = Modifier.size(20.dp),
                     )
-                )
-            }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Enable Reminder",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MindoListTheme.colors.textPrimary,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Switch(
+                        checked = isEnabled,
+                        onCheckedChange = onToggle,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = MindoListAccentFixed,
+                            uncheckedThumbColor = MindoListTheme.colors.textSecondary,
+                            uncheckedTrackColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.1f),
+                        )
+                    )
+                }
 
-            // ── Remind me row (visible only when enabled) ─────────────────────
-            AnimatedVisibility(
-                visible = isEnabled,
-                enter = expandVertically(),
-                exit = shrinkVertically(),
-            ) {
-                Column {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Surface(
-                        onClick = {
-                            showDropdown = true
-                        },
-                        shape = RoundedCornerShape(30.dp),
-                        color = RemindViewBG,
-                        border = BorderStroke(1.dp, Color(0xFFF1F5F9)),
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                AnimatedVisibility(
+                    visible = isEnabled,
+                    enter = expandVertically(),
+                    exit = shrinkVertically(),
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Surface(
+                            onClick = { showDropdown = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            color = MindoListTheme.colors.inputBg,
+                            border = BorderStroke(1.dp, MindoListTheme.colors.textSecondary.copy(alpha = 0.1f)),
                         ) {
-                            Text(
-                                text = "Remind me",
-                                fontSize = 14.sp,
-                                color = Color(0xFF94A3B8),
-                                modifier = Modifier.weight(1f),
-                            )
-                            Text(
-                                text = selectedReminder.label,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = PrimaryBlue,
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                imageVector = Icons.Default.KeyboardArrowDown,
-                                contentDescription = "Dropdown",
-                                tint = PrimaryBlue,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-
-                    }
-
-                    // Dropdown menu
-                    DropdownMenu(
-                        expanded = showDropdown,
-                        onDismissRequest = { showDropdown = false },
-                        modifier = Modifier
-                            .background(Color.White) // ← add this
-                            .clip(RoundedCornerShape(12.dp))
-                    ) {
-                        ReminderOption.entries.forEach { option ->
-                            DropdownMenuItem(text = {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
                                 Text(
-                                    text = option.label,
+                                    text = "Remind me",
                                     fontSize = 14.sp,
-                                    fontWeight = if (option == selectedReminder) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (option == selectedReminder) PrimaryBlue else Color(
-                                        0xFF1E293B
-                                    ),
+                                    color = MindoListTheme.colors.textSecondary,
+                                    modifier = Modifier.weight(1f),
                                 )
-                            }, onClick = {
-                                onReminderSelected(option)
-                                showDropdown = false
-                            }, trailingIcon = {
-                                if (option == selectedReminder) {
-                                    Icon(
-                                        imageVector = Icons.Default.CheckBoxOutlineBlank,
-                                        contentDescription = null,
-                                        tint = PrimaryBlue,
-                                        modifier = Modifier.size(16.dp),
-                                    )
-                                }
-                            })
+                                Text(
+                                    text = selectedReminder.label,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MindoListTheme.colors.accent,
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardArrowDown,
+                                    contentDescription = "Dropdown",
+                                    tint = MindoListTheme.colors.accent,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            }
+                        }
+
+                        DropdownMenu(
+                            expanded = showDropdown,
+                            onDismissRequest = { showDropdown = false },
+                            modifier = Modifier
+                                .background(MindoListTheme.colors.cardBg)
+                                .fillMaxWidth(0.8f)
+                        ) {
+                            ReminderOption.entries.forEach { option ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = option.label,
+                                            fontSize = 14.sp,
+                                            fontWeight = if (option == selectedReminder) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (option == selectedReminder) MindoListTheme.colors.accent else MindoListTheme.colors.textPrimary,
+                                        )
+                                    },
+                                    onClick = {
+                                        onReminderSelected(option)
+                                        showDropdown = false
+                                    },
+                                    trailingIcon = {
+                                        if (option == selectedReminder) {
+                                            Icon(
+                                                imageVector = Icons.Default.CheckBoxOutlineBlank,
+                                                contentDescription = null,
+                                                tint = MindoListTheme.colors.accent,
+                                                modifier = Modifier.size(16.dp),
+                                            )
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -460,387 +582,119 @@ fun AlertsSection(
 }
 
 @Composable
-fun CategoryView(state: AddTaskUiState, onCategorySelected: (Category) -> Unit) {
-    // ← State ko Card ke bahar, Column ke bahar rakho
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(6.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 24.dp)
-        ) {
-            HeaderWithIcon(
-                icon = IcCategory,
-                title = "Classification"
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 2.dp, vertical = 6.dp),
-            ) {
-                items(
-                    items = Category.entries,
-                    key = { it.dbKey } // ← key dena zaroori hai LazyRow mein
-                ) { category ->
-                    CategoryItem(
-                        category = category,
-                        isSelected = state.category == category,
-                        onClick = {
-                            onCategorySelected(category)
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun CategoryItem(category: Category, isSelected: Boolean, onClick: () -> Unit) {
-    val elevation by animateDpAsState(
-        targetValue = if (isSelected) 8.dp else 0.dp,
-        animationSpec = tween(durationMillis = 300),
-        label = "categoryElevation"
-    )
-
-    Card(
-        modifier = Modifier
-            .wrapContentWidth()
-            // ← padding(6.dp) hata diya, LazyRow mein spacedBy handle kar raha hai
-            .clickable { onClick() },
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) PrimaryBlue else SegmentBackground
-        ), elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = category.iconRes,
-                contentDescription = "Icon",
-                modifier = Modifier.size(20.dp),
-                tint = if (isSelected) Color.White else CategoryUnselectedTextColor
-            )
-            Text(
-                text = category.label,
-                color = if (isSelected) Color.White else CategoryUnselectedTextColor,
-                fontSize = 14.sp
-            )
-        }
-    }
-}
-
-@Composable
-fun ImportanceView(viewModel: TaskViewModel, state: AddTaskUiState) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(6.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 24.dp)
-        ) {
-            // Header: icon + label
-            HeaderWithIcon(icon = IcInfo, title = "Importance")
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Segmented control with sliding pill
-            SegmentedControl(
-                options = Priority.entries,
-                selected = state.priority,
-                onSelect = { viewModel.dispatch(AddTaskAction.PriorityChanged(it)) },
-                label = { it.name })
-        }
-    }
-
-}
-
-@Composable
-fun <T> SegmentedControl(
-    options: List<T>,
-    selected: T,
-    onSelect: (T) -> Unit,
-    label: (T) -> String
+fun InputField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    minHeight: Dp = 56.dp
 ) {
-    val selectedIndex = options.indexOf(selected)
-
-    val animatedIndex by animateFloatAsState(
-        targetValue = selectedIndex.toFloat(),
-        animationSpec = tween(durationMillis = 300),
-        label = "pill_slide"
-    )
-
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(50.dp))
-            .background(SegmentBackground)
-            .padding(4.dp) // ← padding box ke andar
-    ) {
-        val itemWidth = maxWidth / options.size
-        val pillHeight = 42.dp
-
-        Box(modifier = Modifier.height(pillHeight)) {
-            // Sliding white pill
-            Box(
-                modifier = Modifier
-                    .offset(x = itemWidth * animatedIndex) // ← no extra padding needed
-                    .width(itemWidth)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(50.dp))
-                    .background(SelectedBackground)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            label,
+            color = MindoListTheme.colors.textSecondary,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold
+        )
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = { Text(placeholder, color = MindoListTheme.colors.textSecondary) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = minHeight),
+            shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.2f),
+                unfocusedBorderColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.2f),
+                focusedContainerColor = MindoListTheme.colors.inputBg,
+                unfocusedContainerColor = MindoListTheme.colors.inputBg,
+                focusedTextColor = MindoListTheme.colors.textPrimary,
+                unfocusedTextColor = MindoListTheme.colors.textPrimary
             )
+        )
+    }
+}
 
-            // Labels row
+@Composable
+fun ClickableInputField(
+    label: String,
+    value: String,
+    onClick: () -> Unit,
+    icon: ImageVector
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            label,
+            color = MindoListTheme.colors.textSecondary,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Surface(
+            onClick = onClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = MindoListTheme.colors.inputBg,
+            border = BorderStroke(1.dp, MindoListTheme.colors.textSecondary.copy(alpha = 0.1f))
+        ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight()
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                options.forEach { option ->
-                    val isSelected = selected == option
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .clickable { onSelect(option) },
-                        contentAlignment = Alignment.Center // ← text center mein
-                    ) {
-                        Text(
-                            text = label(option),
-                            color = if (isSelected) PrimaryBlue else UnselectedTextColor,
-                            fontSize = 15.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                }
+                Text(
+                    text = value,
+                    color = MindoListTheme.colors.textPrimary,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MindoListTheme.colors.textSecondary,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }
 }
 
-
 @Composable
-fun ScheduleView(
-    state: AddTaskUiState,
-    viewModel: TaskViewModel,
-    onDateSelection: (Boolean) -> Unit,
-    onTimeSelection: (Boolean) -> Unit,
+fun PriorityButton(
+    priority: Priority,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(6.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 24.dp)
-        ) {
-            // Header: icon + label
-            HeaderWithIcon(icon = IcCalendar, title = "Schedule")
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            CommonDayTime(viewModel, IcDay, title = state.selectedDate, onDateSelection)
-            Spacer(modifier = Modifier.height(15.dp))
-
-            CommonDayTime(
-                viewModel,
-                IcClock,
-                title = state.selectedTime,
-                onTimeSelection
-            )
+    val borderColor = if (isSelected) {
+        when (priority) {
+            Priority.HIGH -> MindoListTheme.colors.error.copy(alpha = 0.5f)
+            Priority.MEDIUM -> MindoListTheme.colors.accent.copy(alpha = 0.5f)
+            Priority.LOW -> MindoListTheme.colors.textSecondary.copy(alpha = 0.5f)
         }
-    }
-}
+    } else MindoListTheme.colors.textSecondary.copy(alpha = 0.1f)
 
-@Composable
-fun CommonDayTime(
-    viewModel: TaskViewModel,
-    icon: ImageVector,
-    title: String,
-    onClick: (Boolean) -> Unit
-) {
+    val bgColor = if (isSelected) {
+        when (priority) {
+            Priority.HIGH -> MindoListTheme.colors.error.copy(alpha = 0.15f)
+            Priority.MEDIUM -> MindoListTheme.colors.accent.copy(alpha = 0.15f)
+            Priority.LOW -> MindoListTheme.colors.textSecondary.copy(alpha = 0.15f)
+        }
+    } else MindoListTheme.colors.inputBg
+
     Surface(
-        onClick = { onClick(true) },
-        shape = RoundedCornerShape(50.dp),
-        color = Color(0x0D3B82F6),
-        border = BorderStroke(1.dp, Color(0x1A3B82F6)),
+        onClick = onClick,
+        modifier = modifier.height(56.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = bgColor,
+        border = BorderStroke(1.dp, borderColor)
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Image(
-                imageVector = icon,
-                contentDescription = "Icon",
-                modifier = Modifier.size(20.dp),
-                colorFilter = ColorFilter.tint(PrimaryBlue)
-            )
+        Box(contentAlignment = Alignment.Center) {
             Text(
-                text = title, color = TitleColor, fontSize = 14.sp, fontWeight = FontWeight.Bold
+                text = priority.label.lowercase().replaceFirstChar { it.uppercase() },
+                color = if (isSelected) Color.White else MindoListTheme.colors.textSecondary,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
             )
         }
     }
-}
-
-@Composable
-fun IdentityView(state: AddTaskUiState, viewModel: TaskViewModel) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(6.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 32.dp)
-        ) {
-            // Header: icon + label
-            HeaderWithIcon(icon = IcContainer, title = "Identity")
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Title TextField
-            BasicTextField(
-                value = state.title,
-                onValueChange = { viewModel.dispatch(AddTaskAction.TitleChanged(it)) },
-                textStyle = TextStyle(
-                    color = TitleColor, fontSize = 22.sp, fontWeight = FontWeight.Bold
-                ), cursorBrush = SolidColor(PrimaryBlue),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = false,
-                maxLines = 3,
-                decorationBox = { innerTextField ->
-                    if (state.title.isEmpty()) {
-                        Text(
-                            text = "What needs to be done?",
-                            color = TitleColor.copy(alpha = 0.45f),
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    innerTextField()
-                }
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            // Details TextField
-            BasicTextField(
-                value = state.description,
-                onValueChange = { viewModel.dispatch(AddTaskAction.DescriptionChanged(it)) },
-                textStyle = TextStyle(
-                    color = TitleColor, fontSize = 15.sp
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 80.dp),
-                singleLine = false,
-                maxLines = 5,
-                decorationBox = { innerTextField ->
-                    if (state.description.isEmpty()) {
-                        Text(
-                            text = "Add more details...",
-                            color = PlaceholderColor,
-                            fontSize = 15.sp,
-                        )
-                    }
-                    innerTextField()
-                }
-            )
-        }
-    }
-}
-
-@Composable
-fun HeaderWithIcon(icon: ImageVector, title: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Image(
-            imageVector = icon,
-            contentDescription = "Icon",
-            modifier = Modifier.size(20.dp),
-            colorFilter = ColorFilter.tint(PrimaryBlue)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = title, color = TitleColor, fontSize = 18.sp, fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-@Composable
-fun CustomToolBar(viewModel: TaskViewModel, onNavigateBack: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(
-            onClick = onNavigateBack,
-            modifier = Modifier.size(40.dp)
-        ) {
-            Icon(
-                imageVector = IcClose,
-                contentDescription = "Back",
-                tint = Color.Black
-            )
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        Text(
-            text = "New Task",
-            style = MaterialTheme.typography.titleMedium,
-//            fontFamily = FontFamily(
-//                Font(
-//                    Res.font.roboto_condensed_bold,
-//                    FontWeight.Normal
-//                )
-//            ),
-            fontSize = 20.sp,
-            color = Color(0xFF000000)
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        ActionButton(
-            modifier = Modifier
-                .wrapContentWidth()
-                .wrapContentHeight(),
-            shape = RoundedCornerShape(30.dp),
-            text = "Create",
-            fontSize = 14.sp,
-            textColor = Color.White,
-            containerColor = btnColor,
-            isIconVisible = false,
-            padding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
-        ) {
-            viewModel.dispatch(AddTaskAction.SaveClicked)
-        }
-    }
-}
-
-@Composable
-fun AddTaskPreview() {
-    AddTaskScreen()
 }
