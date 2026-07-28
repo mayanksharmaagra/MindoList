@@ -1,0 +1,4 @@
+- `[x]` Implement `AppDelegate` in `iOSApp.swift`
+- `[x]` Refactor `FirebaseAuthRepositoryImpl` to use `lazy` properties for Firebase references
+- `[x]` Refactor `TaskRepositoryImpl` to use `lazy` properties for Firebase references
+- `[x]` Verify Kotlin build
