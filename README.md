@@ -1,142 +1,96 @@
+# MindoList - Intelligent Mind + To-do List
 
-### MindoList - Mind + To-do List
+MindoList is a modern Kotlin Multiplatform (KMP) application designed to help you organize your thoughts and tasks efficiently. It leverages AI for smart task parsing and integrates seamlessly with Google Calendar.
 
+## 🚀 Key Features
 
-your-kmp-project/
+### 🔐 Authentication & Security
+- **Email & Password Auth**: Secure sign-in and sign-up powered by Firebase.
+- **OTP Verification**: Email-based OTP for account verification.
+- **Google Sign-In**: Quick access using your Google account.
+- **Forgot Password**: Secure password recovery flow.
+- **Profile Management**: Update your details and profile picture.
+
+### 📝 Smart Task Management
+- **AI Task Parsing**: Automatically extract dates, times, and priorities from natural language input (e.g., "Remind me to buy groceries tomorrow at 5 PM").
+- **Task Categories**: Organize tasks into Work, Personal, Education, Finance, etc.
+- **Priority Levels**: Set Low, Medium, or High priority for your tasks.
+- **Reminders**: Built-in reminder system to keep you on track.
+- **Flexible Views**: View tasks by date or in a comprehensive dashboard.
+
+### 📊 Dashboard & Analytics
+- **Visual Progress**: Circular and linear progress bars to track completion.
+- **Task Analytics**: Insightful visualizations of your productivity.
+- **Interactive Dashboard**: Quick access to today's tasks and overall status.
+
+### 🌐 Integrations
+- **Google Calendar**: Sync your tasks with Google Calendar for a unified schedule.
+
+## 🛠 Tech Stack
+
+- **Kotlin Multiplatform (KMP)**: Shared logic across Android and iOS.
+- **Compose Multiplatform**: Declarative UI for both platforms.
+- **Koin**: Dependency injection for a modular architecture.
+- **Firebase**:
+    - **Auth**: User management.
+    - **Realtime Database**: Persistent storage for tasks.
+    - **Storage**: Profile image hosting.
+    - **AI (Vertex AI/Gemini)**: Smart parsing logic.
+- **Coil**: Efficient image loading.
+- **Ktor**: Networking for API interactions.
+- **Multiplatform Settings**: Persistent local key-value storage.
+- **Napier**: Multiplatform logging.
+
+## 📂 Project Structure
+
+The project is organized following a Clean Architecture approach within the `shared` module to maximize code reuse.
+
+```
+MindoList/
+├── shared/                                     # 🏗️ CORE SHARED MODULE (Logic + UI)
+│   ├── src/commonMain/kotlin/com/jrprofessor/mindolist/
+│   │   ├── domain/                            # 💼 Business Logic & Repositories
+│   │   │   ├── model/                         # Data entities (User, Result, TaskModel)
+│   │   │   ├── repository/                    # Interfaces & Implementations (Auth, Task, AI)
+│   │   │   └── usecase/                       # Single-purpose business rules
+│   │   ├── presentation/                      # 🎨 MVI Contracts (State, Event, Action)
+│   │   ├── viewmodels/                        # 🧠 KMP-compatible ViewModels (Koin)
+│   │   ├── screen/                            # 📱 Compose Multiplatform Screens
+│   │   ├── customView/                        # 🧩 Reusable UI Components
+│   │   ├── navGraph/                          # 🧭 App Navigation & Routing
+│   │   ├── theme/                             # 🎨 Design System (Colors, Typography)
+│   │   ├── utils/                             # 🛠️ Helpers (Auth, Voice, Permissions)
+│   │   └── local/                             # 💾 Local Data (AppSettings)
+│   └── src/androidMain/                       # 🤖 Android-specific implementations
 │
-├── composeApp/                                    # Main shared module
-│   ├── src/
-│   │   │
-│   │   ├── commonMain/                           # ✅ SHARED CODE (Android + iOS)
-│   │   │   └── kotlin/com/jrprofessor/mindolist/
-│   │   │       │
-│   │   │       ├── domain/                       # Pure Kotlin - Business Logic
-│   │   │       │   │
-│   │   │       │   ├── model/                    -Implemented
-│   │   │       │   │   ├── User.kt
-│   │   │       │   │   ├── Result.kt
-│   │   │       │   │   └── OtpVerification.kt
-│   │   │       │   │
-│   │   │       │   ├── repository/
-│   │   │       │   │   └── AuthRepository.kt     # Interface only-Implemented
-│   │   │       │   │
-│   │   │       │   └── usecase/                    Implemented
-│   │   │       │       ├── SendOtpUseCase.kt
-│   │   │       │       ├── VerifyOtpUseCase.kt
-│   │   │       │       ├── CreateUserAccountUseCase.kt
-│   │   │       │       └── GetResendCooldownUseCase.kt
-│   │   │       │
-│   │   │       └── presentation/                 # MVI Contract (State/Events)-Implemented
-│   │   │           └── signup/
-│   │   │               ├── SignUpState.kt
-│   │   │               ├── SignUpIntent.kt
-│   │   │               └── SignUpEvent.kt
-│   │   │
-│   │   ├── androidMain/                          # ❌ ANDROID SPECIFIC
-│   │   │   └── kotlin/com/jrprofessor/mindolist/
-│   │   │       │
-│   │   │       ├── data/                         # Firebase Implementation   Implemented
-│   │   │       │   └── repository/
-│   │   │       │       └── FirebaseAuthRepositoryImpl.kt  
-│   │   │       │
-│   │   │       ├── di/                           # Hilt Modules-Implemented
-│   │   │       │   ├── AppModule.kt
-│   │   │       │   └── FirebaseModule.kt
-│   │   │       │
-│   │   │       └── presentation/                 # Android UI
-│   │   │           └── signup/
-│   │   │               ├── SignUpViewModel.kt
-│   │   │               └── SignUpScreen.kt       # Compose UI
-│   │   │
-│   │   ├── iosMain/                              # ❌ iOS SPECIFIC (Future)
-│   │   │   └── kotlin/com/yourapp/
-│   │   │       │
-│   │   │       ├── data/
-│   │   │       │   └── repository/
-│   │   │       │       └── IOSAuthRepositoryImpl.kt
-│   │   │       │
-│   │   │       └── di/
-│   │   │           └── IOSModule.kt
-│   │   │
-│   │   ├── androidUnitTest/                      # Android Tests
-│   │   │   └── kotlin/
-│   │   │
-│   │   └── commonTest/                           # Shared Tests
-│   │       └── kotlin/
-│   │
-│   └── build.gradle.kts                          # Shared module build
+├── composeApp/                                 # 📱 ANDROID APPLICATION WRAPPER
+│   ├── src/androidMain/                       # Android Entry Point & Hilt/Koin Setup
+│   │   ├── ToDoApplication.kt                 # Application Class (Global Init)
+│   │   └── LoginActivity.kt                   # Main Activity
+│   └── google-services.json                   # Firebase Configuration
 │
-├── androidApp/                                    # Android Application
-│   ├── src/
-│   │   └── main/
-│   │       ├── kotlin/com/jrprofessor/mindolist/
-│   │       │   ├── MyApplication.kt              # Hilt Application
-│   │       │   └── MainActivity.kt               # Entry Point
-│   │       │
-│   │       ├── res/
-│   │       │   ├── values/
-│   │       │   │   ├── strings.xml
-│   │       │   │   ├── colors.xml
-│   │       │   │   └── themes.xml
-│   │       │   └── drawable/
-│   │       │
-│   │       └── AndroidManifest.xml
-│   │
-│   ├── google-services.json                      # Firebase Config
-│   └── build.gradle.kts                          # Android app build
-│
-├── iosApp/                                        # iOS Application (Future)
-│   ├── iosApp/
-│   │   ├── ContentView.swift                     # SwiftUI
-│   │   ├── SignUpView.swift                      # Sign up screen
-│   │   └── iOSApp.swift
-│   └── iosApp.xcodeproj/
-│
-├── gradle/
-│   └── wrapper/
-│
-├── build.gradle.kts                              # Project level
-├── settings.gradle.kts                           # Project settings
-├── gradle.properties                             # Gradle config
-└── README.md                                     # Documentation
+├── iosApp/                                     # 🍎 iOS APPLICATION (SwiftUI)
+└── build.gradle.kts                            # Multiplatform Build Configuration
+```
 
+## 📝 Understanding the Codebase
 
-This is a Kotlin Multiplatform project targeting Android, iOS.
+- **`shared/domain`**: This is the "brain" of the app. It defines what the app *does* without caring about UI or platform details.
+- **`shared/viewmodels`**: Manages the UI state for each screen. We use Koin's `viewModelOf` for easy dependency management.
+- **`shared/screen`**: All UI is built here using Compose. This allows us to write the UI once and run it on both Android and iOS.
+- **`shared/navGraph`**: Centralized navigation using `navigation-compose`.
+- **`shared/utils`**: Contains bridge logic for platform-specific features like Google Sign-In and Voice Recognition.
 
-* [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./composeApp/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./composeApp/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./composeApp/src/jvmMain/kotlin)
-    folder is the appropriate location.
+## 🏗️ Getting Started
 
-* [/iosApp](./iosApp/iosApp) contains iOS applications. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+### Prerequisites
+- Android Studio (latest version recommended)
+- Xcode (for iOS development)
+- A Firebase project with `google-services.json` added to `composeApp/`.
 
-* [/shared](./shared/src) is for the code that will be shared between all targets in the project.
-  The most important subfolder is [commonMain](./shared/src/commonMain/kotlin). If preferred, you
-  can add code to the platform-specific folders here too.
-
-### Build and Run Android Application
-
-To build and run the development version of the Android app, use the run configuration from the run widget
-in your IDE’s toolbar or build it directly from the terminal:
-- on macOS/Linux
-  ```shell
-  ./gradlew :composeApp:assembleDebug
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:assembleDebug
-  ```
-
-### Build and Run iOS Application
-
-To build and run the development version of the iOS app, use the run configuration from the run widget
-in your IDE’s toolbar or open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+### Building the Project
+- **Android**: Run the `:composeApp` module from Android Studio.
+- **iOS**: Open the `iosApp` folder in Xcode and run the project.
 
 ---
-
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+*Created by [JR Professor](https://github.com/jrprofessor)*

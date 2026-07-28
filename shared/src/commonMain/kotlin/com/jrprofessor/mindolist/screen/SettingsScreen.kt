@@ -24,10 +24,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.jrprofessor.mindolist.customView.ActionButton
+import com.jrprofessor.mindolist.icons.GoogleLogo
 import com.jrprofessor.mindolist.presentation.dashboard.DashboardAction
 import com.jrprofessor.mindolist.presentation.settings.SettingsAction
 import com.jrprofessor.mindolist.presentation.settings.SettingsEvent
 import com.jrprofessor.mindolist.theme.*
+import com.jrprofessor.mindolist.theme.MindoListTheme
 import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
 import com.jrprofessor.mindolist.viewmodels.SettingsViewmodel
 import org.koin.compose.viewmodel.koinViewModel
@@ -38,6 +40,7 @@ fun SettingsScreen(
     viewModelSettings: SettingsViewmodel = koinViewModel(),
     onNavigateToSignUp: () -> Unit = {},
     onEditProfileClick: () -> Unit = {},
+    onIntegrationClick: () -> Unit = {},
     onChangePasswordClick: () -> Unit = {},
     onDeleteAccountClick: () -> Unit = {},
 ) {
@@ -83,6 +86,19 @@ fun SettingsScreen(
                     userEmail = stateDashboard.user?.email ?: "user@email.com",
                     onClick = onEditProfileClick
                 )
+            }
+            // ── CONNECTIONS ────────────────────────────────────────────────
+            item {
+                SettingsSection(title = "CONNECTIONS") {
+                    SettingsMenuItem(
+                        icon = GoogleLogo,
+                        label = "Integrations",
+                        value = "Not Connected",
+                        iconTint = GoogleColor,
+                    ) {
+                        onIntegrationClick()
+                    }
+                }
             }
 
             // ── Preferences ────────────────────────────────────────────────

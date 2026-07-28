@@ -1,0 +1,5 @@
+- `[x]` Add `Integration` route to `AppNavigation.kt`
+- `[x]` Update `BottomNavGraph.kt` with `Integration` route
+- `[x]` Update `SettingsScreen.kt` to trigger navigation
+- `[x]` Create `IntegrationsScreen.kt` with custom illustration and UI
+- `[ ]` Verify navigation and UI

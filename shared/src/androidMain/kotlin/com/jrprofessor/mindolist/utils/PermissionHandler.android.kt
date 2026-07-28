@@ -2,6 +2,7 @@ package com.jrprofessor.mindolist.utils
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -11,6 +12,49 @@ import androidx.core.content.ContextCompat
 
 @Composable
 actual fun RequestMicrophonePermission(
+    onPermissionGranted: () -> Unit,
+    onPermissionDenied: () -> Unit
+) {
+    RequestPermissionInternal(
+        permission = Manifest.permission.RECORD_AUDIO,
+        onPermissionGranted = onPermissionGranted,
+        onPermissionDenied = onPermissionDenied
+    )
+}
+
+@Composable
+actual fun RequestCameraPermission(
+    onPermissionGranted: () -> Unit,
+    onPermissionDenied: () -> Unit
+) {
+    RequestPermissionInternal(
+        permission = Manifest.permission.CAMERA,
+        onPermissionGranted = onPermissionGranted,
+        onPermissionDenied = onPermissionDenied
+    )
+}
+
+@Composable
+actual fun RequestStoragePermission(
+    onPermissionGranted: () -> Unit,
+    onPermissionDenied: () -> Unit
+) {
+    val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        Manifest.permission.READ_MEDIA_IMAGES
+    } else {
+        Manifest.permission.READ_EXTERNAL_STORAGE
+    }
+
+    RequestPermissionInternal(
+        permission = permission,
+        onPermissionGranted = onPermissionGranted,
+        onPermissionDenied = onPermissionDenied
+    )
+}
+
+@Composable
+private fun RequestPermissionInternal(
+    permission: String,
     onPermissionGranted: () -> Unit,
     onPermissionDenied: () -> Unit
 ) {
@@ -25,15 +69,12 @@ actual fun RequestMicrophonePermission(
         }
     }
 
-    LaunchedEffect(Unit) {
-        val permissionCheck = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.RECORD_AUDIO
-        )
+    LaunchedEffect(permission) {
+        val permissionCheck = ContextCompat.checkSelfPermission(context, permission)
         if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
             onPermissionGranted()
         } else {
-            launcher.launch(Manifest.permission.RECORD_AUDIO)
+            launcher.launch(permission)
         }
     }
 }

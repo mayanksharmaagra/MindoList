@@ -1,6 +1,7 @@
 package com.jrprofessor.mindolist.screen
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,22 +22,30 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,11 +62,15 @@ import com.jrprofessor.mindolist.presentation.editProfile.EditProfileEvent
 import com.jrprofessor.mindolist.presentation.editProfile.EditProfileState
 import com.jrprofessor.mindolist.theme.MindoListAccentFixed
 import com.jrprofessor.mindolist.theme.MindoListTheme
+import com.jrprofessor.mindolist.utils.RequestCameraPermission
+import com.jrprofessor.mindolist.utils.RequestStoragePermission
 import com.jrprofessor.mindolist.utils.showToast
 import com.jrprofessor.mindolist.viewmodels.EditProfileViewModel
 import com.preat.peekaboo.image.picker.FilterOptions
 import com.preat.peekaboo.image.picker.ResizeOptions
 import com.preat.peekaboo.image.picker.rememberImagePickerLauncher
+import com.preat.peekaboo.ui.camera.PeekabooCamera
+import com.preat.peekaboo.ui.camera.rememberPeekabooCameraState
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -91,6 +104,12 @@ fun EditProfileContent(
     onBackClick: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    var showCamera by remember { mutableStateOf(false) }
+    var showImageSourceOption by remember { mutableStateOf(false) }
+
+    var requestCameraPermission by remember { mutableStateOf(false) }
+    var requestStoragePermission by remember { mutableStateOf(false) }
+
     val launcher = rememberImagePickerLauncher(
         resizeOptions = ResizeOptions(width = 512, height = 512),
         scope = scope,
@@ -100,57 +119,209 @@ fun EditProfileContent(
         }
     )
 
+    if (requestCameraPermission) {
+        RequestCameraPermission(
+            onPermissionGranted = {
+                requestCameraPermission = false
+                showCamera = true
+            },
+            onPermissionDenied = {
+                requestCameraPermission = false
+                showToast("Camera permission is required to take photos")
+            }
+        )
+    }
+
+    if (requestStoragePermission) {
+        RequestStoragePermission(
+            onPermissionGranted = {
+                requestStoragePermission = false
+                launcher.launch()
+            },
+            onPermissionDenied = {
+                requestStoragePermission = false
+                showToast("Storage permission is required to pick photos")
+            }
+        )
+    }
+
+    if (showImageSourceOption) {
+        ImageSourceOptionDialog(
+            onDismissRequest = { showImageSourceOption = false },
+            onGalleryClick = {
+                showImageSourceOption = false
+                requestStoragePermission = true
+            },
+            onCameraClick = {
+                showImageSourceOption = false
+                requestCameraPermission = true
+            }
+        )
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MindoListTheme.colors.background
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(20.dp)
-        ) {
-            Spacer(modifier = Modifier.height(20.dp))
-            EditProfileHeader(
-                onBackClick = onBackClick,
-            )
-            Spacer(modifier = Modifier.height(32.dp))
-
-            ProfilePhotoSection(
-                state = state,
-                onChangePhotoClick = { launcher.launch() },
-                onRemovePhotoClick = { onAction(EditProfileAction.OnRemovePhoto) }
-            )
-
-            Spacer(modifier = Modifier.height(40.dp))
-
-            BasicInfoSection(state, onAction)
-
-            Spacer(modifier = Modifier.height(40.dp))
-
-            Button(
-                onClick = { onAction(EditProfileAction.OnSaveClick) },
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MindoListAccentFixed)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp)
             ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.Black)
-                } else {
-                    Text(
-                        "Save changes",
-                        color = Color.Black,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
+                Spacer(modifier = Modifier.height(20.dp))
+                EditProfileHeader(
+                    onBackClick = onBackClick,
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+
+                ProfilePhotoSection(
+                    state = state,
+                    onChangePhotoClick = { showImageSourceOption = true },
+                    onRemovePhotoClick = { onAction(EditProfileAction.OnRemovePhoto) }
+                )
+
+                Spacer(modifier = Modifier.height(40.dp))
+
+                BasicInfoSection(state, onAction)
+
+                Spacer(modifier = Modifier.height(40.dp))
+
+                Button(
+                    onClick = { onAction(EditProfileAction.OnSaveClick) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MindoListAccentFixed)
+                ) {
+                    if (state.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.Black
+                        )
+                    } else {
+                        Text(
+                            "Save changes",
+                            color = Color.Black,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+
+            if (showCamera) {
+                val cameraState = rememberPeekabooCameraState(onCapture = { byteArrays ->
+                    byteArrays?.let { onAction(EditProfileAction.OnAvatarChange(it)) }
+                    showCamera = false
+                })
+                Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+                    PeekabooCamera(
+                        state = cameraState,
+                        modifier = Modifier.fillMaxSize(),
+                        permissionDeniedContent = {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("Camera permission denied", color = Color.White)
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Button(onClick = { showCamera = false }) {
+                                        Text("Go Back")
+                                    }
+                                }
+                            }
+                        }
                     )
+
+                    IconButton(
+                        onClick = { showCamera = false },
+                        modifier = Modifier.align(Alignment.TopStart).padding(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close Camera",
+                            tint = Color.White
+                        )
+                    }
+
+                    // Capture Button
+                    Surface(
+                        onClick = { cameraState.capture() },
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 40.dp)
+                            .size(70.dp),
+                        shape = RoundedCornerShape(35.dp),
+                        color = Color.White,
+                        border = BorderStroke(4.dp, Color.Gray)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Surface(
+                                modifier = Modifier.size(54.dp),
+                                shape = RoundedCornerShape(27.dp),
+                                color = Color.White,
+                                border = BorderStroke(2.dp, Color.Black)
+                            ) {}
+                        }
+                    }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(100.dp))
         }
     }
+}
+
+@Composable
+fun ImageSourceOptionDialog(
+    onDismissRequest: () -> Unit,
+    onGalleryClick: () -> Unit,
+    onCameraClick: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text("Choose Profile Photo") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { onGalleryClick() }.padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PhotoLibrary,
+                        contentDescription = null,
+                        tint = MindoListTheme.colors.textPrimary
+                    )
+                    Text("Gallery", color = MindoListTheme.colors.textPrimary)
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { onCameraClick() }.padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = null,
+                        tint = MindoListTheme.colors.textPrimary
+                    )
+                    Text("Camera", color = MindoListTheme.colors.textPrimary)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text("Cancel")
+            }
+        },
+        containerColor = MindoListTheme.colors.cardBg,
+        titleContentColor = MindoListTheme.colors.textPrimary,
+        textContentColor = MindoListTheme.colors.textPrimary
+    )
 }
 
 @Composable
@@ -197,16 +368,20 @@ fun ProfilePhotoSection(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(contentAlignment = Alignment.BottomEnd) {
+        Box(
+            contentAlignment = Alignment.BottomEnd,
+            modifier = Modifier.clickable { onChangePhotoClick() }
+        ) {
             Surface(
                 modifier = Modifier.size(140.dp),
                 shape = RoundedCornerShape(40.dp),
                 color = MindoListAccentFixed
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    if (state.avatarUrl != null) {
+                    val imageSource: Any? = state.avatarBytes ?: state.avatarUrl
+                    if (imageSource != null) {
                         AsyncImage(
-                            model = state.avatarUrl,
+                            model = imageSource,
                             contentDescription = "Profile",
                             modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(40.dp)),
                             contentScale = ContentScale.Crop

@@ -1,10 +1,13 @@
 import Foundation
 import Shared
-import FirebaseVertexAI
+import FirebaseAI
+// import FirebaseVertexAI
 
 class IosAiTaskRepositoryImpl: AiTaskRepository {
     
-    private lazy var model = VertexAI.vertexAI().generativeModel(modelName: "gemini-3.1-flash-lite")
+    // private lazy var model = VertexAI.vertexAI().generativeModel(modelName: "gemini-3.1-flash-lite")
+    // Make sure this says .googleAI(), not .vertexAI()
+    private let model = FirebaseAI.firebaseAI(backend: .googleAI()).generativeModel(modelName: "gemini-3.1-flash-lite")
     
     func parseReminderText(userInput: String) async throws -> ParsedTask {
         let now = Date()

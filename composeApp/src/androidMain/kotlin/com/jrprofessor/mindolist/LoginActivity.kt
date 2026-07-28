@@ -4,27 +4,37 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.jrprofessor.mindolist.customView.MindoLogo
-import com.jrprofessor.mindolist.customView.NoTasksEmptyState
-import com.jrprofessor.mindolist.customView.TodayEmptyState
+import com.jrprofessor.mindolist.domain.GoogleCalendarRepository
 import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.domain.model.User
 import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepository
 import com.jrprofessor.mindolist.domain.repository.TaskRepository
-import com.jrprofessor.mindolist.domain.usecase.*
+import com.jrprofessor.mindolist.domain.usecase.AddTaskUseCase
+import com.jrprofessor.mindolist.domain.usecase.CreateUserAccountUseCase
+import com.jrprofessor.mindolist.domain.usecase.GetResendCooldownUseCase
+import com.jrprofessor.mindolist.domain.usecase.GetTasksUseCase
+import com.jrprofessor.mindolist.domain.usecase.LoginWithEmailUseCase
+import com.jrprofessor.mindolist.domain.usecase.SendForgotPasswordResetLink
+import com.jrprofessor.mindolist.domain.usecase.SendOtpUseCase
+import com.jrprofessor.mindolist.domain.usecase.VerifyOtpUseCase
 import com.jrprofessor.mindolist.model.TaskModel
-import com.jrprofessor.mindolist.screen.AddTaskScreen
-import com.jrprofessor.mindolist.screen.WelcomeScreen
+import com.jrprofessor.mindolist.screen.IntegrationsScreen
 import com.jrprofessor.mindolist.theme.AppTheme
-import com.jrprofessor.mindolist.viewmodels.*
+import com.jrprofessor.mindolist.utils.GoogleAuthManager
+import com.jrprofessor.mindolist.utils.GoogleUserData
+import com.jrprofessor.mindolist.viewmodels.AnalyticsViewModel
+import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
+import com.jrprofessor.mindolist.viewmodels.ForgotPasswordViewModel
+import com.jrprofessor.mindolist.viewmodels.GoogleCalendarViewModel
+import com.jrprofessor.mindolist.viewmodels.LoginViewModel
+import com.jrprofessor.mindolist.viewmodels.SignUpViewModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.LocalDate
 import org.koin.compose.KoinApplication
@@ -105,6 +115,14 @@ fun ScreenPreview(content: @Composable () -> Unit) {
             single<FirebaseAuthRepository> { mockAuthRepo }
             single<TaskRepository> { mockTaskRepo }
 
+            single { GoogleCalendarRepository() }
+            single<GoogleAuthManager> {
+                object : GoogleAuthManager {
+                    override val userData: StateFlow<GoogleUserData?> = MutableStateFlow(null).asStateFlow()
+                    override fun signOut() {}
+                }
+            }
+
             // UseCases
             factoryOf(::SendOtpUseCase)
             factoryOf(::VerifyOtpUseCase)
@@ -121,6 +139,7 @@ fun ScreenPreview(content: @Composable () -> Unit) {
             viewModelOf(::ForgotPasswordViewModel)
             viewModelOf(::DashboardViewModel)
             viewModelOf(::AnalyticsViewModel)
+            viewModelOf(::GoogleCalendarViewModel)
         })
     }) {
         AppTheme {
@@ -143,6 +162,9 @@ fun WelcomePreview() {
 //            onNavigateToSignUpStep = {
 //
 //            })
-        MindoLogo(modifier = Modifier.size(200.dp))
+//        MindoLogo(modifier = Modifier.size(200.dp))
+        IntegrationsScreen(onBackClick = {
+
+        })
     }
 }

@@ -148,6 +148,9 @@ private fun EmptyClipboardIllustration(modifier: Modifier = Modifier) {
 fun NoTasksEmptyState(
     onAddTaskClick: () -> Unit,
     modifier: Modifier = Modifier,
+    title: String = "No tasks here yet",
+    description: String = "Your list is clear. Add something you need to get done, or just type it naturally and let AI fill it in.",
+    showAddButton: Boolean = true,
     aiHintExample: String = "Remind me to call mom tomorrow",
     onAiHintClick: (() -> Unit)? = null
 ) {
@@ -172,7 +175,7 @@ fun NoTasksEmptyState(
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text = "No tasks here yet",
+            text = title,
             color = colors.textPrimary,
             fontSize = 22.sp,
             fontWeight = FontWeight.SemiBold
@@ -181,7 +184,7 @@ fun NoTasksEmptyState(
         Spacer(Modifier.height(10.dp))
 
         Text(
-            text = "Your list is clear. Add something you need to get done, or just type it naturally and let AI fill it in.",
+            text = description,
             color = colors.textSecondary,
             fontSize = 13.sp,
             lineHeight = 19.sp,
@@ -189,48 +192,50 @@ fun NoTasksEmptyState(
             modifier = Modifier.widthIn(max = 260.dp)
         )
 
-        Spacer(Modifier.height(22.dp))
+        if (showAddButton) {
+            Spacer(Modifier.height(22.dp))
 
-        Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = colors.accent,
-            onClick = onAddTaskClick,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 15.dp)
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = colors.accent,
+                onClick = onAddTaskClick,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                PlusGlyph(color = Color.Black)
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "Add your first task",
-                    color = Color.Black,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 15.dp)
+                ) {
+                    PlusGlyph(color = Color.Black)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Add your first task",
+                        color = Color.Black,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
-        }
 
-        Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(14.dp))
 
-        val hintText = buildAnnotatedString {
-            append("or try ")
-            withStyle(SpanStyle(color = colors.accent, fontWeight = FontWeight.Bold)) {
-                append("\"$aiHintExample\"")
+            val hintText = buildAnnotatedString {
+                append("or try ")
+                withStyle(SpanStyle(color = colors.accent, fontWeight = FontWeight.Bold)) {
+                    append("\"$aiHintExample\"")
+                }
             }
+            Text(
+                text = hintText,
+                fontSize = 12.5.sp,
+                color = colors.textSecondary,
+                textAlign = TextAlign.Center,
+                modifier = if (onAiHintClick != null) {
+                    Modifier.padding(bottom = 4.dp)
+                        .clickable { onAiHintClick() }
+                } else Modifier
+            )
         }
-        Text(
-            text = hintText,
-            fontSize = 12.5.sp,
-            color = colors.textSecondary,
-            textAlign = TextAlign.Center,
-            modifier = if (onAiHintClick != null) {
-                Modifier.padding(bottom = 4.dp)
-                    .clickable { onAiHintClick() }
-            } else Modifier
-        )
     }
 }
 

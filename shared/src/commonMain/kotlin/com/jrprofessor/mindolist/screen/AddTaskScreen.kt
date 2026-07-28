@@ -92,13 +92,13 @@ fun AddTaskScreen(
             AddTaskToolbar(onNavigateBack)
             Spacer(modifier = Modifier.height(30.dp))
 
-            if (getPlatform().isAndroid) {
+//            if (getPlatform().isAndroid) {
                 AiExtractionSection(state, viewModel)
 
                 Spacer(modifier = Modifier.height(30.dp))
                 ManualDivider()
                 Spacer(modifier = Modifier.height(25.dp))
-            }
+//            }
 
             ManualInputSection(
                 state = state,
@@ -202,7 +202,7 @@ fun AddTaskToolbar(onNavigateBack: () -> Unit) {
 
 @Composable
 fun AiExtractionSection(state: AddTaskUiState, viewModel: TaskViewModel) {
-    if (!getPlatform().isAndroid) return 
+//    if (!getPlatform().isAndroid) return
     
     var showPermissionRequest by remember { mutableStateOf(false) }
 

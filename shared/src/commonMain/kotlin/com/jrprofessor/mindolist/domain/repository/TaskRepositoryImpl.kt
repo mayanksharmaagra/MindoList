@@ -39,7 +39,7 @@ open class TaskRepositoryImpl(
     private val firebaseDatabase: FirebaseDatabase,
 ) : TaskRepository {
 
-    private val userRef: DatabaseReference = firebaseDatabase.reference("users")
+    private val userRef: DatabaseReference by lazy { firebaseDatabase.reference("users") }
     private val uid get() = firebaseAuth.currentUser?.uid ?: error("User not logged in")
 
     // tasks/{uid}/{taskId}

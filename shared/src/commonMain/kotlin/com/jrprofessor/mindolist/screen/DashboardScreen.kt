@@ -22,7 +22,7 @@ import com.jrprofessor.mindolist.customView.TaskItem
 import com.jrprofessor.mindolist.customView.TodayEmptyState
 import com.jrprofessor.mindolist.domain.model.User
 import com.jrprofessor.mindolist.extension.today
-import com.jrprofessor.mindolist.model.TaskModel
+import com.jrprofessor.mindolist.model.TaskUIModel
 import com.jrprofessor.mindolist.presentation.dashboard.DashboardAction
 import com.jrprofessor.mindolist.presentation.dashboard.DashboardEvent
 import com.jrprofessor.mindolist.presentation.dashboard.DashboardState
@@ -151,7 +151,7 @@ fun UserProfileSection(
 }
 
 @Composable
-fun SummaryCardsRow(tasks: List<TaskModel>) {
+fun SummaryCardsRow(tasks: List<TaskUIModel>) {
     val todayTasks = tasks // Assuming filtered in VM
     val pendingTasks = tasks.filter { !it.isCompleted }
     val completedCount = tasks.count { it.isCompleted }
@@ -220,7 +220,7 @@ fun SummaryCard(
 
 @Composable
 fun TodayTask(
-    todayTasks: List<TaskModel> = emptyList(),
+    todayTasks: List<TaskUIModel> = emptyList(),
     markCompleted: (String, Boolean) -> Unit,
     onAddTaskClick: () -> Unit,
     navigateToAllTasks: () -> Unit

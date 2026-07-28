@@ -9,7 +9,26 @@ actual fun RequestMicrophonePermission(
     onPermissionDenied: () -> Unit
 ) {
     LaunchedEffect(Unit) {
-        // AI is disabled for iOS, so we just "grant" it conceptually or do nothing.
+        onPermissionGranted()
+    }
+}
+
+@Composable
+actual fun RequestCameraPermission(
+    onPermissionGranted: () -> Unit,
+    onPermissionDenied: () -> Unit
+) {
+    LaunchedEffect(Unit) {
+        onPermissionGranted()
+    }
+}
+
+@Composable
+actual fun RequestStoragePermission(
+    onPermissionGranted: () -> Unit,
+    onPermissionDenied: () -> Unit
+) {
+    LaunchedEffect(Unit) {
         onPermissionGranted()
     }
 }

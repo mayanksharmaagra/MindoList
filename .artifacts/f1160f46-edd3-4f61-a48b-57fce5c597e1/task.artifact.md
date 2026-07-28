@@ -1,3 +1,3 @@
-- `[ ]` Refactor `Koinios.kt` to use a class-based initialization for better Swift compatibility
-- `[ ]` Update `iOSApp.swift` to use the new initialization method
-- `[ ]` Verify the changes
+- `[x]` Refactor `Koinios.kt` to use a class-based initialization for better Swift compatibility
+- `[x]` Update `iOSApp.swift` to use the new initialization method
+- `[x]` Verify the changes

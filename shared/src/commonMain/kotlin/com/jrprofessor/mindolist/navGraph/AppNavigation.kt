@@ -43,6 +43,7 @@ sealed class Screen(val route: String) {
     object Analytics : Screen("analytics")
     object Settings : Screen("settings")
 
+    object Integration : Screen("Integration")
     object EditProfile : Screen("EditProfile")
     object ChangePassword : Screen("ChangePassword")
     object DeleteAccount : Screen("DeleteAccount")

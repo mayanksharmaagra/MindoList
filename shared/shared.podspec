@@ -9,6 +9,15 @@ Pod::Spec.new do |spec|
     spec.vendored_frameworks      = 'build/cocoapods/framework/Shared.framework'
     spec.libraries                = 'c++'
     spec.ios.deployment_target    = '16.0'
+    spec.dependency 'FirebaseAI', '11.15.0'
+    spec.dependency 'FirebaseAppCheck', '11.15.0'
+    spec.dependency 'FirebaseAuth', '11.15.0'
+    spec.dependency 'FirebaseCore', '11.15.0'
+    spec.dependency 'FirebaseCrashlytics', '11.15.0'
+    spec.dependency 'FirebaseDatabase', '11.15.0'
+    spec.dependency 'FirebaseStorage', '11.15.0'
+    spec.dependency 'GoogleSignIn'
+    spec.dependency 'GoogleUtilities', '8.1.2'
     if !Dir.exist?('build/cocoapods/framework/Shared.framework') || Dir.empty?('build/cocoapods/framework/Shared.framework')
         raise "
         Kotlin framework 'Shared' doesn't exist yet, so a proper Xcode project can't be generated.

@@ -115,3 +115,15 @@ val MindoListCardChildBg = MindoListCardChildBgDark
 val MindoListGreen = Color(0xFF4ADE80)
 val MindoListYellow = Color(0xFFFBBF24)
 val MindoListOrange = Color(0xFFEA580C)
+val GoogleColor = Color(0xFF4285F4)
+ val Panel = Color(0xFF1B1E2A)
+ val Panel2 = Color(0x0DF2F0EA)   // rgba(242,240,234,0.05)
+ val LineColor = Color(0x17F2F0EA)
+// val TextColor = Color(0xFFF2F0EA)
+
+val MindoListAccentSoftDark = Color(0x26E8A94C)   // MindoListAccentDark @ ~15% alpha
+val MindoListMintSoftDark = Color(0x265BD8B3)     // MindoListMintDark @ ~15% alpha
+val MindoListMintBorderDark = Color(0x4D5BD8B3)   // MindoListMintDark @ ~30% alpha, for the connected card's border
+val ErrorRedSoftDark = Color(0x26F87171)          // ErrorRedMuted @ ~15% alpha, for the Disconnect button border
+
+val MindoListMintKnobDark = Color(0xFF0D2A22)

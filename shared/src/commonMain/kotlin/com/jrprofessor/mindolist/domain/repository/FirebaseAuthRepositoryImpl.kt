@@ -37,8 +37,8 @@ open class FirebaseAuthRepositoryImpl(
     private val appSettings: AppSettings,
 ) : FirebaseAuthRepository {
 
-    private val userRef: DatabaseReference = firebaseDatabase.reference("users")
-    private val otpRef: DatabaseReference = firebaseDatabase.reference("otpVerifications")
+    private val userRef: DatabaseReference by lazy { firebaseDatabase.reference("users") }
+    private val otpRef: DatabaseReference by lazy { firebaseDatabase.reference("otpVerifications") }
 
 
     companion object {

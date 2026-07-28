@@ -1,11 +1,11 @@
 package com.jrprofessor.mindolist.di
 
+import com.jrprofessor.mindolist.domain.GoogleCalendarRepository
 import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepository
 import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepositoryImpl
 import com.jrprofessor.mindolist.domain.repository.TaskRepository
 import com.jrprofessor.mindolist.domain.repository.TaskRepositoryImpl
 import com.jrprofessor.mindolist.domain.usecase.AddTaskUseCase
-//import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepositoryImpl
 import com.jrprofessor.mindolist.domain.usecase.CreateUserAccountUseCase
 import com.jrprofessor.mindolist.domain.usecase.GetResendCooldownUseCase
 import com.jrprofessor.mindolist.domain.usecase.GetTasksUseCase
@@ -20,6 +20,7 @@ import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
 import com.jrprofessor.mindolist.viewmodels.DeleteAccountViewModel
 import com.jrprofessor.mindolist.viewmodels.EditProfileViewModel
 import com.jrprofessor.mindolist.viewmodels.ForgotPasswordViewModel
+import com.jrprofessor.mindolist.viewmodels.GoogleCalendarViewModel
 import com.jrprofessor.mindolist.viewmodels.LoginViewModel
 import com.jrprofessor.mindolist.viewmodels.SettingsViewmodel
 import com.jrprofessor.mindolist.viewmodels.SignUpViewModel
@@ -47,6 +48,7 @@ val viewModelModule = module {
     viewModelOf(::AnalyticsViewModel)
     viewModelOf(::ChangePasswordViewModel)
     viewModelOf(::DeleteAccountViewModel)
+    viewModelOf(::GoogleCalendarViewModel)
 }
 
 
@@ -95,6 +97,7 @@ val firebaseModule = module {
             firebaseDatabase = get()
         )
     }
+    single { GoogleCalendarRepository() }
 }
 
 

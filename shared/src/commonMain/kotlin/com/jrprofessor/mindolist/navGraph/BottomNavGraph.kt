@@ -43,6 +43,9 @@ fun BottomNavGraph(
                 onEditProfileClick = {
                     navController.navigate(Screen.EditProfile.route)
                 },
+                onIntegrationClick = {
+                    navController.navigate(Screen.Integration.route)
+                },
                 onChangePasswordClick = {
                     navController.navigate(Screen.ChangePassword.route)
                 },
@@ -54,6 +57,13 @@ fun BottomNavGraph(
         // ✅ Add EditProfile here inside NavHost
         composable(route = Screen.EditProfile.route) {
             EditProfileScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        composable(route = Screen.Integration.route) {
+            IntegrationsScreen(
                 onBackClick = {
                     navController.popBackStack()
                 }

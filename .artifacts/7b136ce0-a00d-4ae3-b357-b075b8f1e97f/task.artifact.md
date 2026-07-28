@@ -1,0 +1,17 @@
+- `[ ]` Update `DashboardState.kt` with `TaskUIModel` and count fields
+- `[ ]` Update `DashboardAction.kt` with `SourceFilterSelected`
+- `[ ]` Refactor `DashboardViewModel.kt`
+    - `[ ]` Inject `GoogleAuthManager` and `GoogleCalendarRepository`
+    - `[ ]` Implement `TaskModel` to `TaskUIModel` mapping
+    - `[ ]` Implement Google items fetching and mapping
+    - `[ ]` Update filtering logic for sources (All, My Tasks, Google)
+    - `[ ]` Update search logic for `TaskUIModel`
+- `[ ]` Update `TaskItem.kt` UI
+    - `[ ]` Add left indicator stripe
+    - `[ ]` Add source chips ("You", "Calendar", etc.)
+    - `[ ]` Implement dark card styling and rounded checkbox
+- `[ ]` Update `AllTaskScreen.kt`
+    - `[ ]` Implement Segmented Header with counts
+    - `[ ]` Group tasks by date in `LazyColumn`
+- `[ ]` Update `DashboardScreen.kt` to use `TaskUIModel`
+- `[ ]` Verify changes on emulator

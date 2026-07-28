@@ -36,16 +36,21 @@ kotlin {
         version = "1.0"
         ios.deploymentTarget = "16.0"
 
-        // ✅ Sirf ek framework block — listOf wala hatao
         framework {
             baseName = "Shared"
-            isStatic = true
+            isStatic = false   // ← changed from true, see explanation below
         }
 
-//        pod("FirebaseCore")
-//        pod("FirebaseAuth")
-//        pod("FirebaseDatabase")
-//        pod("FirebaseStorage")
+        val firebaseVersion = "11.15.0"
+        pod("FirebaseCore") { version = firebaseVersion; linkOnly = true }
+        pod("FirebaseAuth") { version = firebaseVersion; linkOnly = true }
+        pod("FirebaseDatabase") { version = firebaseVersion; linkOnly = true }
+        pod("FirebaseStorage") { version = firebaseVersion; linkOnly = true }
+        pod("FirebaseAppCheck") { version = firebaseVersion; linkOnly = true }
+        pod("FirebaseCrashlytics") { version = firebaseVersion; linkOnly = true }
+        pod("FirebaseAI") { version = firebaseVersion; linkOnly = true }
+        pod("GoogleUtilities") { version = "8.1.2" }   // updated from 8.0.2 to satisfy FirebaseAuth 11.15.0 requirements
+        pod("GoogleSignIn") { linkOnly = true }
     }
 
     sourceSets {
@@ -84,6 +89,8 @@ kotlin {
             api(libs.koin.compose)
             api(libs.koin.compose.viewmodel)
             implementation(libs.kotlinx.serialization)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.multiplatform.settings)
             // build.gradle.kts commonMain
             implementation(libs.peekaboo.ui)
@@ -92,6 +99,8 @@ kotlin {
             implementation(libs.coil.network)
 
             implementation(compose.components.uiToolingPreview)
+
+
         }
         androidMain.dependencies {
             implementation(libs.ui.tooling)
@@ -105,6 +114,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.ktor.client.android)
             implementation(libs.firebase.ai)
+            implementation(libs.google.play.services.auth)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
