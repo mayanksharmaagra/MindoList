@@ -1,8 +1,10 @@
-package com.jrprofessor.mindolist.domain
+package com.jrprofessor.mindolist.domain.repository
 
+import com.jrprofessor.mindolist.domain.model.UnauthorizedException
 import com.jrprofessor.mindolist.model.GoogleItem
 import com.jrprofessor.mindolist.model.GoogleItemType
 import com.jrprofessor.mindolist.utils.Logger
+import com.jrprofessor.mindolist.utils.NetworkConnectivityManager
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -26,10 +28,10 @@ import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 @Serializable
-data class GoogleCalendarResponse(val items: List<CalendarItem>? = null)
+internal data class GoogleCalendarResponse(val items: List<CalendarItem>? = null)
 
 @Serializable
-data class CalendarItem(
+internal data class CalendarItem(
     val id: String,
     val summary: String? = null,
     val description: String? = null,
@@ -38,19 +40,19 @@ data class CalendarItem(
 )
 
 @Serializable
-data class CalendarTime(val dateTime: String? = null, val date: String? = null)
+internal data class CalendarTime(val dateTime: String? = null, val date: String? = null)
 
 @Serializable
-data class CalendarReminders(val overrides: List<ReminderOverride>? = null)
+internal data class CalendarReminders(val overrides: List<ReminderOverride>? = null)
 
 @Serializable
-data class ReminderOverride(val method: String, val minutes: Int)
+internal data class ReminderOverride(val method: String, val minutes: Int)
 
 @Serializable
-data class GoogleTasksResponse(val items: List<TaskItem>? = null)
+internal data class GoogleTasksResponse(val items: List<TaskItem>? = null)
 
 @Serializable
-data class TaskItem(
+internal data class TaskItem(
     val id: String,
     val title: String? = null,
     val notes: String? = null,
@@ -59,12 +61,14 @@ data class TaskItem(
 )
 
 @Serializable
-data class TaskListResponse(val items: List<TaskListItem>? = null)
+internal data class TaskListResponse(val items: List<TaskListItem>? = null)
 
 @Serializable
-data class TaskListItem(val id: String, val title: String? = null)
+internal data class TaskListItem(val id: String, val title: String? = null)
 
-class GoogleCalendarRepository {
+class GoogleCalendarRepositoryImpl(
+    private val networkConnectivityManager: NetworkConnectivityManager
+) : GoogleCalendarRepository {
 
     private val client = HttpClient {
         install(ContentNegotiation) {
@@ -76,7 +80,10 @@ class GoogleCalendarRepository {
         }
     }
 
-    suspend fun fetchAll(accessToken: String): List<GoogleItem> = withContext(Dispatchers.IO) {
+    override suspend fun fetchAll(accessToken: String): List<GoogleItem> = withContext(Dispatchers.IO) {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return@withContext emptyList()
+        }
         val events = fetchCalendarEvents(accessToken)
         val tasks = fetchTasks(accessToken)
         (events + tasks).sortedBy { it.dateTime }
@@ -97,10 +104,12 @@ class GoogleCalendarRepository {
                     parameter("orderBy", "startTime")
                 }
 
-            
             if (response.status.value !in 200..299) {
                 val errorBody = response.bodyAsText()
                 Logger.error { "Google Calendar API Error: ${response.status.value} - $errorBody" }
+                if (response.status.value == 401) {
+                    throw UnauthorizedException("Google Calendar API Unauthorized")
+                }
                 return emptyList()
             }
 
@@ -109,7 +118,7 @@ class GoogleCalendarRepository {
 
             bodyResponse.items?.map { item ->
                 Logger.error {
-                    "Google Calendar Events: " +item
+                    "Google Calendar Events: " + item
                 }
                 val dateTime = item.start?.dateTime?.let {
                     Instant.parse(it).toLocalDateTime(TimeZone.currentSystemDefault())
@@ -128,6 +137,8 @@ class GoogleCalendarRepository {
                     type = if (isReminder) GoogleItemType.CALENDAR_REMINDER else GoogleItemType.CALENDAR_EVENT
                 )
             } ?: emptyList()
+        } catch (e: UnauthorizedException) {
+            throw e
         } catch (e: Exception) {
             Logger.error { "Exception fetching calendar events: ${e.message}" }
             emptyList()
@@ -141,10 +152,13 @@ class GoogleCalendarRepository {
                 client.get("https://www.googleapis.com/tasks/v1/users/@me/lists") {
                     header("Authorization", "Bearer $accessToken")
                 }
-            
+
             if (listsResponse.status.value !in 200..299) {
                 val errorBody = listsResponse.bodyAsText()
                 Logger.error { "Google Tasks API Error (List): ${listsResponse.status.value} - $errorBody" }
+                if (listsResponse.status.value == 401) {
+                    throw UnauthorizedException("Google Tasks API Unauthorized")
+                }
                 return emptyList()
             }
 
@@ -161,12 +175,12 @@ class GoogleCalendarRepository {
                         parameter("showCompleted", false)
                         parameter("showHidden", false)
                     }
-                
+
                 if (response.status.value in 200..299) {
                     val taskBody = response.body<GoogleTasksResponse>()
                     taskBody.items?.map { item ->
                         Logger.error {
-                            "Google Calendar tasks: " +item
+                            "Google Calendar tasks: " + item
                         }
                         val dateTime = item.due?.let {
                             Instant.parse(it).toLocalDateTime(TimeZone.currentSystemDefault())
@@ -187,6 +201,8 @@ class GoogleCalendarRepository {
             }
 
             allItems
+        } catch (e: UnauthorizedException) {
+            throw e
         } catch (e: Exception) {
             Logger.error { "Exception fetching tasks: ${e.message}" }
             emptyList()

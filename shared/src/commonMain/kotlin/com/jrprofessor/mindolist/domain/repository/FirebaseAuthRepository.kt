@@ -73,4 +73,8 @@ interface FirebaseAuthRepository {
     suspend fun sendPasswordResetEmail(email: String): Result<Unit>
     suspend fun deleteAccount(): Result<Unit>
 
+    // ─── Google Integration ──────────────────────────
+    suspend fun updateGoogleIntegration(googleEmail: String, accessToken: String): Result<Unit>
+    suspend fun disconnectGoogleIntegration(): Result<Unit>
+
 }

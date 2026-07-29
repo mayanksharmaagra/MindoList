@@ -3,18 +3,24 @@ package com.jrprofessor.mindolist.domain.repository
 import com.google.firebase.ai.FirebaseAI
 import com.jrprofessor.mindolist.model.ParsedTask
 import com.jrprofessor.mindolist.utils.Logger
+import com.jrprofessor.mindolist.utils.NetworkConnectivityManager
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
 
-class AiTaskRepositoryImpl : AiTaskRepository {
+class AiTaskRepositoryImpl(
+    private val networkConnectivityManager: NetworkConnectivityManager
+) : AiTaskRepository {
 
     private val model = FirebaseAI.instance
         .generativeModel("gemini-3.1-flash-lite") // gemini-1.5-flash is shut down (404) — use a current model
 
     override suspend fun parseReminderText(userInput: String): ParsedTask {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            throw Exception("No internet connection")
+        }
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
         val today = "${now.day.toString().padStart(2, '0')}/${now.month.number.toString().padStart(2, '0')}/${now.year}"
         val currentTime = "${if (now.hour % 12 == 0) 12 else now.hour % 12}:${now.minute.toString().padStart(2, '0')} ${if (now.hour >= 12) "PM" else "AM"}"

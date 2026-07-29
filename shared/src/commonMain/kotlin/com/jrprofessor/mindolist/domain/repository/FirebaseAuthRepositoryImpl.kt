@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.map
 import kotlin.time.Clock.System.now
 import kotlinx.coroutines.flow.combine
 import com.jrprofessor.mindolist.model.TaskModel
+import com.jrprofessor.mindolist.utils.NetworkConnectivityManager
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.DateTimeUnit
@@ -35,6 +36,7 @@ open class FirebaseAuthRepositoryImpl(
     private val firebaseDatabase: FirebaseDatabase,
     private val firebaseStorage: FirebaseStorage,
     private val appSettings: AppSettings,
+    private val networkConnectivityManager: NetworkConnectivityManager,
 ) : FirebaseAuthRepository {
 
     private val userRef: DatabaseReference by lazy { firebaseDatabase.reference("users") }
@@ -47,6 +49,9 @@ open class FirebaseAuthRepositoryImpl(
     }
 
     override suspend fun sendOtpToEmail(email: String): Result<String> {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
         return try {
             // Check if user already exists in Database (alternative to deprecated fetchSignInMethodsForEmail)
             val userSnapshot = userRef.orderByChild("email").equalTo(email).valueEvents.first()
@@ -87,6 +92,9 @@ open class FirebaseAuthRepositoryImpl(
     }
 
     override suspend fun verifyOtp(email: String, otp: String): Result<Boolean> {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
         return try {
             val snapShot = otpRef.child(sanitizeEmail(email)).valueEvents.first()
 
@@ -127,6 +135,9 @@ open class FirebaseAuthRepositoryImpl(
         password: String,
         profileUrl: String
     ): Result<User> {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
         return try {
             val otpSnapShot = otpRef.child(sanitizeEmail(email)).valueEvents.first()
             val otpData = otpSnapShot.value<OtpVerification>()
@@ -163,6 +174,9 @@ open class FirebaseAuthRepositoryImpl(
     }
 
     override suspend fun saveUserToDatabase(user: User): Result<Unit> {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
         return try {
             userRef.child(user.uid).setValue(user)
             Logger.debug { "User saved successfully: ${user.uid}" }
@@ -273,6 +287,9 @@ open class FirebaseAuthRepositoryImpl(
         imageBytes: ByteArray,
         email: String?,          // ← signup time pe email pass karo
     ): Result<String> {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
         return try {
             // uid available hai to use karo, warna email use karo
             val identifier = when {
@@ -302,6 +319,9 @@ open class FirebaseAuthRepositoryImpl(
     }
 
     override suspend fun isOtpValid(email: String): Result<Boolean> {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
         return try {
             val snapshot = otpRef.child(sanitizeEmail(email)).valueEvents.first()
 
@@ -321,6 +341,9 @@ open class FirebaseAuthRepositoryImpl(
     }
 
     override suspend fun getResendCooldown(email: String): Result<Int> {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
         return try {
             val cooldown = getResendCooldownInternal(email)
             Result.Success(cooldown)
@@ -334,6 +357,9 @@ open class FirebaseAuthRepositoryImpl(
         email: String,
         password: String
     ): Result<User> {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
         return try {
             // ✅ dev.gitlive — no .await()
             val authResult = firebaseAuth.signInWithEmailAndPassword(email, password)
@@ -364,6 +390,9 @@ open class FirebaseAuthRepositoryImpl(
         email: String,
         password: String
     ): Result<Unit> {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
         return try {
             // STEP 1: Get current user
             val currentUser = firebaseAuth.currentUser
@@ -421,6 +450,9 @@ open class FirebaseAuthRepositoryImpl(
         Logger.debug { "OTP for $toEmail: $otp" }
     }
     override suspend fun sendPasswordResetEmail(email: String): Result<Unit> {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
         return try {
             firebaseAuth.sendPasswordResetEmail(email)
             Result.Success(Unit)
@@ -430,6 +462,9 @@ open class FirebaseAuthRepositoryImpl(
     }
 
     override suspend fun deleteAccount(): Result<Unit> {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
         return try {
             val currentUser = firebaseAuth.currentUser
                 ?: return Result.Error(Exception("No authenticated user"), "No user found")
@@ -447,6 +482,44 @@ open class FirebaseAuthRepositoryImpl(
         } catch (e: Exception) {
             Logger.error(e) { "Error deleting account" }
             Result.Error(e, "Failed to delete account. ${e.message}")
+        }
+    }
+
+    override suspend fun updateGoogleIntegration(googleEmail: String, accessToken: String): Result<Unit> {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
+        return try {
+            val uid = firebaseAuth.currentUser?.uid ?: return Result.Error(Exception("Not logged in"))
+            val updates = mapOf<String, Any?>(
+                "googleEmail" to googleEmail,
+                "googleAccessToken" to accessToken,
+                "isGoogleConnected" to true,
+                "googleLinkedAt" to currentTimeMillis()
+            )
+            userRef.child(uid).updateChildren(updates)
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error(e, "Failed to update Google integration")
+        }
+    }
+
+    override suspend fun disconnectGoogleIntegration(): Result<Unit> {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
+        return try {
+            val uid = firebaseAuth.currentUser?.uid ?: return Result.Error(Exception("Not logged in"))
+            val updates = mapOf<String, Any?>(
+                "googleEmail" to null,
+                "googleAccessToken" to null,
+                "isGoogleConnected" to false,
+                "googleLinkedAt" to 0L
+            )
+            userRef.child(uid).updateChildren(updates)
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error(e, "Failed to disconnect Google integration")
         }
     }
 

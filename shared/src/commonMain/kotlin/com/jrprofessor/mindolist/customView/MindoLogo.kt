@@ -47,7 +47,7 @@ fun MindoLogo(
 
         // 3. Checkmark Left Segment (Darker)
         val checkmarkLeftPath = Path().apply {
-            moveTo(width * 0.38f, height * 0.54f) // Start
+            moveTo(width * 0.36f, height * 0.54f) // Start
             lineTo(width * 0.50f, height * 0.68f) // Vertex
         }
 

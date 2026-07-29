@@ -1,16 +1,10 @@
 package com.jrprofessor.mindolist.utils
 
+import com.jrprofessor.mindolist.domain.model.User
 import kotlinx.coroutines.flow.StateFlow
 
-data class GoogleUserData(
-    val email: String,
-    val accessToken: String,
-    val displayName: String?
-)
-
 interface GoogleAuthManager {
-    val userData: StateFlow<GoogleUserData?>
+    val userData: StateFlow<User?>
     fun signOut()
+    suspend fun refreshAccessToken(oldToken: String? = null): String?
 }
-
-

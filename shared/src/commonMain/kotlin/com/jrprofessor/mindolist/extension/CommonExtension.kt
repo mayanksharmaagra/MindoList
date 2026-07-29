@@ -72,6 +72,24 @@ fun Long.toDisplayTime(): String {
     return "$displayHour:$minute $period"
 }
 
+fun Long.toTimeAgo(): String {
+    if (this == 0L) return "Never"
+    val now = Clock.System.now().toEpochMilliseconds()
+    val diff = now - this
+    
+    val seconds = diff / 1000
+    val minutes = seconds / 60
+    val hours = minutes / 60
+    val days = hours / 24
+
+    return when {
+        days > 0 -> "${days}d ago"
+        hours > 0 -> "${hours}h ago"
+        minutes > 0 -> "${minutes}m ago"
+        else -> "Just now"
+    }
+}
+
 fun LocalDate.toMonthYearLabel(): String {
     val month = month.name.lowercase().replaceFirstChar { it.uppercase() }
     return "$month $year"

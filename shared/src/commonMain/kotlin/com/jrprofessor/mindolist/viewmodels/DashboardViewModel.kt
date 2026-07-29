@@ -2,7 +2,7 @@ package com.jrprofessor.mindolist.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.jrprofessor.mindolist.domain.GoogleCalendarRepository
+import com.jrprofessor.mindolist.domain.repository.GoogleCalendarRepository
 import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepository
 import com.jrprofessor.mindolist.domain.repository.TaskRepository
@@ -24,20 +24,24 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+
 class DashboardViewModel(
     val getTaskUseCase: GetTasksUseCase,
     val firebaseAuthRepository: FirebaseAuthRepository,
     val taskRepository: TaskRepository,
-    val googleAuthManager: GoogleAuthManager,
-    val googleCalendarRepository: GoogleCalendarRepository
+    val googleCalendarRepository: GoogleCalendarRepository,
+    val googleAuthManager: GoogleAuthManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DashboardState())
@@ -58,30 +62,45 @@ class DashboardViewModel(
 
     private fun observeGoogleAuth() {
         viewModelScope.launch {
-            googleAuthManager.userData.collectLatest { googleUser ->
-                if (googleUser != null) {
-                    fetchGoogleItems(googleUser.accessToken)
-                } else {
-                    _googleItems.value = emptyList()
-                    combineAllTasks()
+            firebaseAuthRepository.getCurrentUser()
+                .map { it?.googleAccessToken }
+                .distinctUntilChanged()
+                .collectLatest { token ->
+                    if (token != null) {
+                        // Refresh the token locally to ensure it's a valid Access Token
+                        val refreshedToken = googleAuthManager.refreshAccessToken()
+                        fetchGoogleItems(refreshedToken ?: token)
+                    } else {
+                        _googleItems.value = emptyList()
+                        combineAllTasks()
+                    }
                 }
-            }
         }
     }
 
     private fun fetchGoogleItems(accessToken: String) {
         viewModelScope.launch {
             try {
-                val items = googleCalendarRepository.fetchAll(accessToken)
+                val items: List<GoogleItem> = googleCalendarRepository.fetchAll(accessToken)
+                Logger.debug { "Google Task Response: $items" }
                 _googleItems.value = items.map { it.toTaskUIModel() }
                 combineAllTasks()
             } catch (e: Exception) {
                 Logger.error { "Failed to fetch Google items: ${e.message}" }
+                _event.send(DashboardEvent.Error(e.message ?: "Failed to fetch Google items"))
             }
         }
     }
 
     private fun combineAllTasks() {
+        val selectedDate = _state.value.selectedDate
+        
+        // Filter google items by selected date
+        val filteredGoogleItems = _googleItems.value.filter { googleTask ->
+            val original = googleTask.originalModel as? GoogleItem
+            original?.dateTime?.date == selectedDate
+        }
+
         val combined = _myTasks.value + _googleItems.value
         _allTasks.value = combined
         updateCounts(combined)
@@ -112,7 +131,10 @@ class DashboardViewModel(
     fun dispatch(action: DashboardAction) {
         when (action) {
             is DashboardAction.LoadTasks -> loadTasks(null)
-            is DashboardAction.DateByTask -> loadTasks(action.selectedDate)
+            is DashboardAction.DateByTask -> {
+                _state.update { it.copy(selectedDate = action.selectedDate) }
+                loadTasks(action.selectedDate)
+            }
             is DashboardAction.LoadUserData -> loadUserData()
             is DashboardAction.UpdateDateTime -> updateDateTime()
             is DashboardAction.FilterByCategory -> {
@@ -309,7 +331,7 @@ fun GoogleItem.toTaskUIModel(): TaskUIModel {
         id = id,
         title = title,
         description = description,
-        dueDate = 0L, 
+        dueDate = dateTime?.toInstant(TimeZone.currentSystemDefault())?.toEpochMilliseconds() ?: 0L, 
         isCompleted = isCompleted,
         source = when (type) {
             GoogleItemType.TASK -> TaskSource.GOOGLE_TASK

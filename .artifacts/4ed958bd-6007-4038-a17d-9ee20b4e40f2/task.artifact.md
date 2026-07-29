@@ -1,0 +1,4 @@
+- [ ] Create `MindoLogoComponent.kt` in `shared/src/commonMain/kotlin/com/jrprofessor/mindolist/components/`
+- [ ] Implement `MindoLogoComponent` with `Canvas` and matching proportions
+- [ ] Implement `MindoLogoScreen` with black background
+- [ ] Add `@Preview` and verify with `render_compose_preview`

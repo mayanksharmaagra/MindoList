@@ -5,7 +5,18 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,7 +24,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -24,18 +44,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.jrprofessor.mindolist.utils.GoogleAuthManager
-import com.jrprofessor.mindolist.utils.rememberGoogleSignInLauncher
-import com.jrprofessor.mindolist.viewmodels.GoogleCalendarViewModel
-import io.github.aakira.napier.Napier
-import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
-import org.koin.compose.viewmodel.koinViewModel
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
@@ -49,36 +58,32 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jrprofessor.mindolist.extension.toTimeAgo
 import com.jrprofessor.mindolist.icons.GoogleLogo
-import com.jrprofessor.mindolist.theme.ErrorRedMuted
-import com.jrprofessor.mindolist.theme.ErrorRedSoftDark
-import com.jrprofessor.mindolist.theme.GoogleColor
-import com.jrprofessor.mindolist.theme.LineColor
-import com.jrprofessor.mindolist.theme.MindoListAccentDark
 import com.jrprofessor.mindolist.theme.MindoListAccentFixed
-import com.jrprofessor.mindolist.theme.MindoListAccentSoftDark
-import com.jrprofessor.mindolist.theme.MindoListBgDark
-import com.jrprofessor.mindolist.theme.MindoListCardBgDark
-import com.jrprofessor.mindolist.theme.MindoListCardChildBgDark
-import com.jrprofessor.mindolist.theme.MindoListMintBorderDark
-import com.jrprofessor.mindolist.theme.MindoListMintDark
 import com.jrprofessor.mindolist.theme.MindoListMintFixed
-import com.jrprofessor.mindolist.theme.MindoListMintKnobDark
-import com.jrprofessor.mindolist.theme.MindoListMintSoftDark
-import com.jrprofessor.mindolist.theme.MindoListTextPrimaryDark
-import com.jrprofessor.mindolist.theme.MindoListTextSecondaryDark
 import com.jrprofessor.mindolist.theme.MindoListTheme
-import com.jrprofessor.mindolist.theme.Panel2
+import com.jrprofessor.mindolist.utils.GoogleAuthManager
+import com.jrprofessor.mindolist.utils.rememberGoogleSignInLauncher
+import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
+import com.jrprofessor.mindolist.viewmodels.GoogleCalendarViewModel
+import io.github.aakira.napier.Napier
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun IntegrationsScreen(
     onBackClick: () -> Unit,
     viewModel: GoogleCalendarViewModel = koinViewModel(),
+    dashboardViewModel: DashboardViewModel = koinViewModel(),
     authManager: GoogleAuthManager = koinInject()
 ) {
     var autoSync by remember { mutableStateOf(true) }
-    val userData by authManager.userData.collectAsState()
-    val isGoogleConnected = userData != null
+    val dashboardState by dashboardViewModel.state.collectAsState()
+    val mainUser = dashboardState.user
+
+    val isGoogleConnected = mainUser?.isGoogleConnected == true
     val error by viewModel.error.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
@@ -86,7 +91,20 @@ fun IntegrationsScreen(
     
     val googleSignInLauncher = rememberGoogleSignInLauncher(
         onSuccess = { accessToken ->
-            viewModel.onGoogleSignInSuccess(accessToken)
+            scope.launch {
+                val googleUser = authManager.userData.value
+                if (googleUser != null && mainUser != null) {
+                    if (googleUser.googleEmail != mainUser.email) {
+                        snackbarHostState.showSnackbar("Email mismatch: Please use ${mainUser.email}")
+                        authManager.signOut()
+                    } else {
+                        viewModel.updateGoogleIntegration(
+                            googleEmail = googleUser.googleEmail ?: "",
+                            accessToken = accessToken
+                        )
+                    }
+                }
+            }
         },
         onError = { errorMessage ->
             Napier.e("Google Sign-In Error: $errorMessage", tag = "IntegrationsScreen")
@@ -213,16 +231,15 @@ fun IntegrationsScreen(
                 } else {
                     Spacer(modifier = Modifier.height(24.dp))
                     IntegrationsConnectedScreen(
-                        connectedEmail = userData?.email ?: "",
-                        lastSyncedLabel = "5m ago",
+                        connectedEmail = mainUser.googleEmail ?: "",
+                        lastSyncedLabel = mainUser.googleLinkedAt.toTimeAgo(),
                         autoSyncEnabled = autoSync,
                         onAutoSyncToggle = { autoSync = it },
                         onSyncNowClick = {
-                            userData?.accessToken?.let { viewModel.onGoogleSignInSuccess(it) }
+                            mainUser.googleAccessToken?.let { viewModel.onGoogleSignInSuccess(it) }
                         },
                         onDisconnectClick = {
-                            authManager.signOut()
-                            viewModel.clearItems()
+                            viewModel.disconnectGoogleIntegration()
                         }
                     )
                 }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -379,7 +380,7 @@ fun ProfilePhotoSection(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     val imageSource: Any? = state.avatarBytes ?: state.avatarUrl
-                    if (imageSource != null) {
+                    if ((imageSource!=null || imageSource.toString()!="null") &&  imageSource.toString()!="") {
                         AsyncImage(
                             model = imageSource,
                             contentDescription = "Profile",

@@ -1,6 +1,7 @@
 package com.jrprofessor.mindolist.di
 
-import com.jrprofessor.mindolist.domain.GoogleCalendarRepository
+import com.jrprofessor.mindolist.domain.repository.GoogleCalendarRepository
+import com.jrprofessor.mindolist.domain.repository.GoogleCalendarRepositoryImpl
 import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepository
 import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepositoryImpl
 import com.jrprofessor.mindolist.domain.repository.TaskRepository
@@ -41,7 +42,7 @@ val viewModelModule = module {
     viewModelOf(::SignUpViewModel)
     viewModelOf(::ForgotPasswordViewModel)
     viewModelOf(::DashboardViewModel)
-    viewModel { TaskViewModel(get(), getOrNull(), get()) }
+    viewModel { TaskViewModel(get(), getOrNull(), get(), get()) }
     viewModelOf(::AuthViewModel)
     viewModelOf(::SettingsViewmodel)
     viewModelOf(::EditProfileViewModel)
@@ -87,17 +88,19 @@ val firebaseModule = module {
         FirebaseAuthRepositoryImpl(
             firebaseAuth = get(),
             firebaseDatabase = get(),
-            firebaseStorage = get (),
+            firebaseStorage = get(),
             appSettings = get(),
+            networkConnectivityManager = get()
         )
     }
     single<TaskRepository> {
         TaskRepositoryImpl(
             firebaseAuth = get(),
-            firebaseDatabase = get()
+            firebaseDatabase = get(),
+            networkConnectivityManager = get()
         )
     }
-    single { GoogleCalendarRepository() }
+    single<GoogleCalendarRepository> { GoogleCalendarRepositoryImpl(get()) }
 }
 
 

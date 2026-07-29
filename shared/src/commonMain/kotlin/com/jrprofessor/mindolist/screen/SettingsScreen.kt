@@ -93,7 +93,7 @@ fun SettingsScreen(
                     SettingsMenuItem(
                         icon = GoogleLogo,
                         label = "Integrations",
-                        value = "Not Connected",
+                        value = if (stateDashboard.user?.isGoogleConnected == true) "Connected" else "Not Connected",
                         iconTint = GoogleColor,
                     ) {
                         onIntegrationClick()

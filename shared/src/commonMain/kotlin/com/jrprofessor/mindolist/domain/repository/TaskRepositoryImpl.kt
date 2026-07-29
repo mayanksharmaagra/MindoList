@@ -4,6 +4,7 @@ import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.extension.toDayMonthYearLabel
 import com.jrprofessor.mindolist.model.TaskModel
 import com.jrprofessor.mindolist.utils.Logger
+import com.jrprofessor.mindolist.utils.NetworkConnectivityManager
 import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.database.DatabaseReference
 import dev.gitlive.firebase.database.FirebaseDatabase
@@ -37,6 +38,7 @@ private fun currentTimeMillis(): Long = Clock.System.now().toEpochMilliseconds()
 open class TaskRepositoryImpl(
     private val firebaseAuth: FirebaseAuth,
     private val firebaseDatabase: FirebaseDatabase,
+    private val networkConnectivityManager: NetworkConnectivityManager,
 ) : TaskRepository {
 
     private val userRef: DatabaseReference by lazy { firebaseDatabase.reference("users") }
@@ -139,6 +141,9 @@ open class TaskRepositoryImpl(
     }
 
     override suspend fun addTask(task: TaskModel): Result<Unit> {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
         return try {
             val ref = tasksRef().push()
             val taskId = ref.key ?: return Result.Error(
@@ -184,6 +189,9 @@ open class TaskRepositoryImpl(
         taskId: String,
         isCompleted: Boolean
     ): Result<Unit> {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
         return try {
             val updateMap = mapOf(
                 "isCompleted" to isCompleted,               // ← hardcoded nahi

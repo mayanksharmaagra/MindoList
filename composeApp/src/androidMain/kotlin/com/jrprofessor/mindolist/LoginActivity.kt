@@ -4,10 +4,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.jrprofessor.mindolist.domain.GoogleCalendarRepository
+import com.jrprofessor.mindolist.customView.MindoLogo
+import com.jrprofessor.mindolist.domain.repository.GoogleCalendarRepository
+import com.jrprofessor.mindolist.model.GoogleItem
 import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.domain.model.User
 import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepository
@@ -24,7 +29,6 @@ import com.jrprofessor.mindolist.model.TaskModel
 import com.jrprofessor.mindolist.screen.IntegrationsScreen
 import com.jrprofessor.mindolist.theme.AppTheme
 import com.jrprofessor.mindolist.utils.GoogleAuthManager
-import com.jrprofessor.mindolist.utils.GoogleUserData
 import com.jrprofessor.mindolist.viewmodels.AnalyticsViewModel
 import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
 import com.jrprofessor.mindolist.viewmodels.ForgotPasswordViewModel
@@ -95,6 +99,12 @@ fun ScreenPreview(content: @Composable () -> Unit) {
                     Result.Success(Unit)
 
                 override suspend fun deleteAccount(): Result<Unit> = Result.Success(Unit)
+                override suspend fun updateGoogleIntegration(
+                    googleEmail: String,
+                    accessToken: String
+                ): Result<Unit> = Result.Success(Unit)
+
+                override suspend fun disconnectGoogleIntegration(): Result<Unit> = Result.Success(Unit)
             }
 
             val mockTaskRepo = object : TaskRepository {
@@ -115,11 +125,16 @@ fun ScreenPreview(content: @Composable () -> Unit) {
             single<FirebaseAuthRepository> { mockAuthRepo }
             single<TaskRepository> { mockTaskRepo }
 
-            single { GoogleCalendarRepository() }
+            single<GoogleCalendarRepository> {
+                object : GoogleCalendarRepository {
+                    override suspend fun fetchAll(accessToken: String) = emptyList<GoogleItem>()
+                }
+            }
             single<GoogleAuthManager> {
                 object : GoogleAuthManager {
-                    override val userData: StateFlow<GoogleUserData?> = MutableStateFlow(null).asStateFlow()
+                    override val userData: StateFlow<User?> = MutableStateFlow(null).asStateFlow()
                     override fun signOut() {}
+                    override suspend fun refreshAccessToken(oldToken: String?): String? =""
                 }
             }
 
@@ -162,9 +177,6 @@ fun WelcomePreview() {
 //            onNavigateToSignUpStep = {
 //
 //            })
-//        MindoLogo(modifier = Modifier.size(200.dp))
-        IntegrationsScreen(onBackClick = {
-
-        })
+        MindoLogo(modifier = Modifier.size(200.dp))
     }
 }

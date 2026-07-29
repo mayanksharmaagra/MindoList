@@ -7,6 +7,8 @@ import com.jrprofessor.mindolist.local.SettingsDelegate
 import com.jrprofessor.mindolist.utils.AndroidSpeechToTextParser
 import com.jrprofessor.mindolist.utils.AndroidGoogleAuthManager
 import com.jrprofessor.mindolist.utils.GoogleAuthManager
+import com.jrprofessor.mindolist.utils.AndroidNetworkConnectivityManager
+import com.jrprofessor.mindolist.utils.NetworkConnectivityManager
 import com.jrprofessor.mindolist.utils.SpeechToTextParser
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
@@ -16,7 +18,8 @@ import org.koin.core.module.Module
 actual val platformModule: Module = module {
     single { SettingsDelegate(androidContext()) }
     single { AppSettings(get()) }
-    single<AiTaskRepository> { AiTaskRepositoryImpl() }
+    single<AiTaskRepository> { AiTaskRepositoryImpl(get()) }
     single<SpeechToTextParser> { AndroidSpeechToTextParser(androidContext()) }
     single<GoogleAuthManager> { AndroidGoogleAuthManager(androidContext()) }
+    single<NetworkConnectivityManager> { AndroidNetworkConnectivityManager(androidContext()) }
 }

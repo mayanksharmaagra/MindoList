@@ -3,6 +3,8 @@ package com.jrprofessor.mindolist.utils
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
@@ -12,6 +14,7 @@ actual fun rememberGoogleSignInLauncher(
 ): () -> Unit {
     val authManager = koinInject<GoogleAuthManager>()
     val androidAuthManager = authManager as? AndroidGoogleAuthManager
+    val scope = rememberCoroutineScope()
     
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -23,9 +26,15 @@ actual fun rememberGoogleSignInLauncher(
         try {
             val account = androidAuthManager.handleResult(result.data)
             if (account != null) {
-                // For simplicity, we use the serverAuthCode or idToken as "accessToken" 
-                // In a real app, you'd exchange the serverAuthCode for a refresh/access token
-                onSuccess(account.idToken ?: account.serverAuthCode ?: "")
+                scope.launch {
+                    val token = androidAuthManager.refreshAccessToken()
+                    if (token != null) {
+                        onSuccess(token)
+                    } else {
+                        // Fallback to idToken if refresh fails, but it might still 401
+                        onSuccess(account.idToken ?: account.serverAuthCode ?: "")
+                    }
+                }
             } else {
                 onError("Sign in failed: No account returned")
             }

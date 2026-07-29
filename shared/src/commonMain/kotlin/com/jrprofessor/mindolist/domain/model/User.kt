@@ -21,5 +21,11 @@ data class User(
     val completedTasks: Int = 0,
     val pendingTasks: Int = 0,
     val currentStreak: Int = 0,
-    val focusRate: Double = 0.0
+    val focusRate: Double = 0.0,
+
+    // Google Integration
+    val googleEmail: String? = null,
+    val googleAccessToken: String? = null,
+    val isGoogleConnected: Boolean = false,
+    val googleLinkedAt: Long = 0L
 )

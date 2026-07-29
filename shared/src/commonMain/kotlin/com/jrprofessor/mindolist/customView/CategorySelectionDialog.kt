@@ -122,9 +122,9 @@ fun CategorySelectionDialog(
                         )
                     }
 
-                    item {
-                        AddNewCategoryPlaceholder()
-                    }
+//                    item {
+//                        AddNewCategoryPlaceholder()
+//                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))

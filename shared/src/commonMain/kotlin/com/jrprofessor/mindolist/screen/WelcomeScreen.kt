@@ -1,5 +1,6 @@
 package com.jrprofessor.mindolist.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,7 +46,6 @@ import com.jrprofessor.mindolist.customView.MindoLogo
 import com.jrprofessor.mindolist.customView.ShowEmailView
 import com.jrprofessor.mindolist.customView.ShowNameView
 import com.jrprofessor.mindolist.customView.ShowPasswordView
-import com.jrprofessor.mindolist.icons.AppLogo
 import com.jrprofessor.mindolist.presentation.login.LoginEvent
 import com.jrprofessor.mindolist.presentation.login.LoginIntent
 import com.jrprofessor.mindolist.presentation.signup.SignUpButtonState
@@ -57,6 +57,9 @@ import com.jrprofessor.mindolist.utils.showToast
 import com.jrprofessor.mindolist.viewmodels.LoginViewModel
 import com.jrprofessor.mindolist.viewmodels.SignUpViewModel
 import kotlinx.coroutines.flow.collectLatest
+import mindolist.shared.generated.resources.Res
+import mindolist.shared.generated.resources.app_logo
+import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -125,13 +128,18 @@ fun WelcomeScreen(
                     .background(ledgerGradient),
                 contentAlignment = Alignment.Center
             ) {
-                /*Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    tint = Color.Black,
-                    modifier = Modifier.size(24.dp)
-                )*/
-                MindoLogo(modifier = Modifier.size(36.dp))
+//                Icon(
+//                    imageVector = Icons.Default.Check,
+//                    contentDescription = null,
+//                    tint = Color.Black,
+//                    modifier = Modifier.size(24.dp)
+//                )
+                Image(
+                    painter = painterResource(Res.drawable.app_logo),
+                    contentDescription = "App Logo",
+                    modifier = Modifier.size(36.dp)
+                )
+//                MindoLogo(modifier = Modifier.size(36.dp))
             }
             Spacer(modifier = Modifier.width(12.dp))
             Text(

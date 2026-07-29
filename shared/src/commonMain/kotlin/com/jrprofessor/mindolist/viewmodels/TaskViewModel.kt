@@ -13,6 +13,7 @@ import com.jrprofessor.mindolist.presentation.addTask.AddTaskEvent.Error
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskEvent.Success
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskUiState
 import com.jrprofessor.mindolist.presentation.dashboard.DashboardEvent
+import com.jrprofessor.mindolist.utils.NetworkConnectivityManager
 import com.jrprofessor.mindolist.utils.SpeechToTextParser
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -33,7 +34,8 @@ import kotlin.time.Clock
 class TaskViewModel(
     private val addTaskUseCase: AddTaskUseCase,
     private val aiRepository: AiTaskRepository? = null,
-    private val sttParser: SpeechToTextParser
+    private val sttParser: SpeechToTextParser,
+    private val networkConnectivityManager: NetworkConnectivityManager
 ) : ViewModel() {
     private val _state = MutableStateFlow(AddTaskUiState())
     val state: StateFlow<AddTaskUiState> = _state.asStateFlow()
@@ -89,6 +91,10 @@ class TaskViewModel(
         if (input.isBlank() || aiRepository == null) return
 
         viewModelScope.launch {
+            if (!networkConnectivityManager.isNetworkAvailable()) {
+                _state.update { it.copy(aiError = "No internet connection") }
+                return@launch
+            }
             _state.update { it.copy(isParsingAi = true, aiError = null) }
             try {
                 val parsed = aiRepository.parseReminderText(input)
@@ -104,7 +110,7 @@ class TaskViewModel(
                 }
             } catch (e: Exception) {
                 _state.update {
-                    it.copy(isParsingAi = false, aiError = "Couldn't parse. Try again.")
+                    it.copy(isParsingAi = false, aiError = e.message ?: "Couldn't parse. Try again.")
                 }
             }
         }

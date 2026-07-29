@@ -121,6 +121,8 @@ class EditProfileViewModel(
                 }
                 is Result.Error -> {
                     _state.update { it.copy(isLoading = false, error = result.message) }
+                    _event.emit(EditProfileEvent.ShowToast(result.message?:""))
+
                 }
                 is Result.Loading -> { /* Handle if needed */ }
             }

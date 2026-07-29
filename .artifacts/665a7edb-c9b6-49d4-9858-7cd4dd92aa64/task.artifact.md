@@ -1,0 +1,3 @@
+- [x] Update `GoogleCalendarRepository.kt` with detailed diagnostic logging
+- [x] Update `DashboardViewModel.kt` to inject `GoogleAuthManager` and refresh token
+- [x] Verify build

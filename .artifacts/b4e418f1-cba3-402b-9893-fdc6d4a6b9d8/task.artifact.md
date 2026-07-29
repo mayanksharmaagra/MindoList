@@ -1,0 +1,5 @@
+- [x] Fix Google Auth token null issue
+    - [x] Update `AndroidGoogleAuthManager.kt`
+    - [x] Update `DashboardViewModel.kt`
+    - [x] Update `GoogleSignInLauncher.android.kt`
+    - [x] Verify changes
