@@ -176,6 +176,7 @@ open class TaskRepositoryImpl(
         "category" to category,
         "reminderEnabled" to reminderEnabled,
         "reminderValue" to reminderValue,
+        "duration" to duration,
         "isCompleted" to isCompleted,
         "createdAt" to createdAt,
         "updatedAt" to updatedAt,

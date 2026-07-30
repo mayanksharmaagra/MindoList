@@ -69,6 +69,7 @@ class TaskViewModel(
             is AddTaskAction.TimeSelected,
             is AddTaskAction.TitleChanged,
             is AddTaskAction.ReminderValue,
+            is AddTaskAction.DurationChanged,
             is AddTaskAction.NaturalInputChanged,
             is AddTaskAction.ResetState -> _state.update {
                 reduceTask(it, action)
@@ -128,6 +129,7 @@ class TaskViewModel(
         is AddTaskAction.CategoryChanged -> state.copy(category = action.category)
         is AddTaskAction.ReminderToggled -> state.copy(reminderEnabled = action.enabled)
         is AddTaskAction.ReminderValue -> state.copy(reminderOption = action.reminder)
+        is AddTaskAction.DurationChanged -> state.copy(duration = action.minutes)
         is AddTaskAction.NaturalInputChanged -> state.copy(naturalInput = action.value)
         AddTaskAction.ResetState -> AddTaskUiState()
         else -> state
@@ -147,7 +149,8 @@ class TaskViewModel(
                 priority = st.priority.label,
                 category = st.category.label,
                 reminderEnabled = st.reminderEnabled,
-                reminderValue =st.reminderOption.label ,
+                reminderValue = st.reminderOption.label,
+                duration = st.duration,
                 updatedAt = Clock.System.now().toEpochMilliseconds(),
             )
 

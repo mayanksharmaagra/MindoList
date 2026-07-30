@@ -14,6 +14,7 @@ sealed class AddTaskAction{
     data class CategoryChanged(val category: Category) : AddTaskAction()
     data class ReminderToggled(val enabled: Boolean) : AddTaskAction()
     data class ReminderValue(val reminder: ReminderOption) : AddTaskAction()
+    data class DurationChanged(val minutes: Int) : AddTaskAction()
     data object ResetState : AddTaskAction()
 
     // Side effects → ViewModel

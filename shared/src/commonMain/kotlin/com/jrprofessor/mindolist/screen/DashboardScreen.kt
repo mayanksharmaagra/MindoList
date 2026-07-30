@@ -96,11 +96,11 @@ fun DashboardContent(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        SummaryCardsRow(state.tasks)
+        SummaryCardsRow(state.todayTasks)
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        TodayTask(state.tasks, markCompleted, onAddTaskClick, navigateToAllTasks)
+        TodayTask(state.todayTasks, markCompleted, onAddTaskClick, navigateToAllTasks)
 
         Spacer(modifier = Modifier.height(100.dp))
     }

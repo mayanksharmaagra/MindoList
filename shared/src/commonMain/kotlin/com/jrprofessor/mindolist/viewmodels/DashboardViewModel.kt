@@ -53,7 +53,12 @@ class DashboardViewModel(
     private val _myTasks = MutableStateFlow<List<TaskUIModel>>(emptyList())
     private val _googleItems = MutableStateFlow<List<TaskUIModel>>(emptyList())
 
+    private var isGoogleLoading = false
+    private var isFirebaseLoading = false
+    private var isAuthObserved = false
+
     init {
+        _state.update { it.copy(isLoading = true) }
         dispatch(DashboardAction.LoadUserData)
         dispatch(DashboardAction.UpdateDateTime)
         startDateTimeTimer()
@@ -66,11 +71,13 @@ class DashboardViewModel(
                 .map { it?.googleAccessToken }
                 .distinctUntilChanged()
                 .collectLatest { token ->
+                    isAuthObserved = true
                     if (token != null) {
-                        // Refresh the token locally to ensure it's a valid Access Token
+                        isGoogleLoading = true
                         val refreshedToken = googleAuthManager.refreshAccessToken()
                         fetchGoogleItems(refreshedToken ?: token)
                     } else {
+                        isGoogleLoading = false
                         _googleItems.value = emptyList()
                         combineAllTasks()
                     }
@@ -81,13 +88,18 @@ class DashboardViewModel(
     private fun fetchGoogleItems(accessToken: String) {
         viewModelScope.launch {
             try {
+                isGoogleLoading = true
+                _state.update { it.copy(isLoading = true) }
                 val items: List<GoogleItem> = googleCalendarRepository.fetchAll(accessToken)
                 Logger.debug { "Google Task Response: $items" }
                 _googleItems.value = items.map { it.toTaskUIModel() }
+                isGoogleLoading = false
                 combineAllTasks()
             } catch (e: Exception) {
+                isGoogleLoading = false
                 Logger.error { "Failed to fetch Google items: ${e.message}" }
                 _event.send(DashboardEvent.Error(e.message ?: "Failed to fetch Google items"))
+                combineAllTasks()
             }
         }
     }
@@ -95,16 +107,34 @@ class DashboardViewModel(
     private fun combineAllTasks() {
         val selectedDate = _state.value.selectedDate
         
-        // Filter google items by selected date
+        // Filter google items by selected date for the Dashboard (Today's Tasks)
         val filteredGoogleItems = _googleItems.value.filter { googleTask ->
-            val original = googleTask.originalModel as? GoogleItem
-            original?.dateTime?.date == selectedDate
+            if (googleTask.dueDate == 0L) return@filter false
+            val instant = kotlinx.datetime.Instant.fromEpochMilliseconds(googleTask.dueDate)
+            val taskDate = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
+            taskDate == selectedDate
         }
 
-        val combined = _myTasks.value + _googleItems.value
-        _allTasks.value = combined
-        updateCounts(combined)
+        // For the Dashboard, we only show tasks for the selected date (Today)
+        val todayCombined = (_myTasks.value.filter { task ->
+            if (task.dueDate == 0L) return@filter false
+            val instant = kotlinx.datetime.Instant.fromEpochMilliseconds(task.dueDate)
+            val taskDate = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
+            taskDate == selectedDate
+        } + filteredGoogleItems).sortedBy { it.dueDate }
+
+        // _allTasks contains EVERYTHING fetched so far (for All Tasks screen)
+        val allCombined = (_myTasks.value + _googleItems.value).sortedBy { it.dueDate }
+        _allTasks.value = allCombined
+        
+        updateCounts(allCombined)
         applyFilter(_state.value.selectedFilter, _state.value.selectedSourceFilter, _state.value.searchQuery)
+        
+        _state.update { it.copy(todayTasks = todayCombined) }
+
+        if (isAuthObserved && !isGoogleLoading && !isFirebaseLoading) {
+            _state.update { it.copy(isLoading = false) }
+        }
     }
 
     private fun updateCounts(allTasks: List<TaskUIModel>) {
@@ -189,7 +219,7 @@ class DashboardViewModel(
             Filter.PENDING   -> _allTasks.value.filter { !it.isCompleted }
             Filter.COMPLETED -> _allTasks.value.filter { it.isCompleted }
             Filter.OVERDUE   -> _allTasks.value.filter {
-                !it.isCompleted && it.dueDate < Clock.System.now().toEpochMilliseconds()
+                !it.isCompleted && it.dueDate != 0L && it.dueDate < Clock.System.now().toEpochMilliseconds()
             }
         }
 
@@ -236,11 +266,14 @@ class DashboardViewModel(
     private fun loadTasks(selectedDate: LocalDate?) {
         viewModelScope.launch {
             Logger.debug { "Loading tasks :$selectedDate" }
+            isFirebaseLoading = true
+            _state.update { it.copy(isLoading = true) }
             getTaskUseCase(selectedDate).collect { result ->
                 when(result){
                     is Result.Error -> {
-                        _state.update { it.copy(isLoading = false) }
+                        isFirebaseLoading = false
                         _event.send(DashboardEvent.Error(result.message?:"Something went wrong"))
+                        combineAllTasks()
                     }
                     Result.Loading -> Unit
                     is Result.Success<*> -> {
@@ -249,6 +282,7 @@ class DashboardViewModel(
                         }
                         val taskList: List<TaskUIModel> = (result.data as List<TaskModel>).map { it.toTaskUIModel() }
                         _myTasks.value = taskList
+                        isFirebaseLoading = false
                         combineAllTasks()
                     }
                 }

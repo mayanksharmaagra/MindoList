@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -431,6 +433,12 @@ fun ManualInputSection(
                 icon = Icons.Default.KeyboardArrowDown
             )
         }
+
+        DurationSection(
+            selectedDuration = state.duration,
+            onDurationSelected = { viewModel.dispatch(AddTaskAction.DurationChanged(it)) }
+        )
+
         AlertsSection(
             viewModel = viewModel,
             isEnabled = state.reminderEnabled,
@@ -439,6 +447,62 @@ fun ManualInputSection(
             onReminderSelected = { viewModel.dispatch(AddTaskAction.ReminderValue(it)) })
     }
 }
+@Composable
+fun DurationSection(
+    selectedDuration: Int,
+    onDurationSelected: (Int) -> Unit
+) {
+    val options = listOf(
+        15 to "15 min",
+        30 to "30 min",
+        45 to "45 min",
+        60 to "1 hr",
+        90 to "1.5 hrs",
+        120 to "2 hrs",
+        150 to "2.5 hrs",
+        180 to "3 hrs"
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            "TASK DURATION",
+            color = MindoListTheme.colors.textSecondary,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold
+        )
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(horizontal = 2.dp)
+        ) {
+            items(options) { (minutes, label) ->
+                val isSelected = selectedDuration == minutes
+                Surface(
+                    onClick = { onDurationSelected(minutes) },
+                    modifier = Modifier.height(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isSelected) MindoListTheme.colors.accent else MindoListTheme.colors.inputBg,
+                    border = BorderStroke(
+                        1.dp,
+                        if (isSelected) MindoListTheme.colors.accent else MindoListTheme.colors.textSecondary.copy(alpha = 0.1f)
+                    )
+                ) {
+                    Box(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = label,
+                            color = if (isSelected) Color.Black else MindoListTheme.colors.textPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun AlertsSection(
     isEnabled: Boolean,

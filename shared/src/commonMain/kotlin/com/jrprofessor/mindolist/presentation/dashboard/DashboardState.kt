@@ -12,11 +12,12 @@ import kotlin.time.Clock
 data class DashboardState (
     // Tasks
     val tasks: List<TaskUIModel> = emptyList(),
+    val todayTasks: List<TaskUIModel> = emptyList(),
     val totalTasksCount: Int = 0,
     val myTasksCount: Int = 0,
     val googleTasksCount: Int = 0,
     val allTasksCount: Int = 0,
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = true,
     val error: String? = null,
 
     // DateTime

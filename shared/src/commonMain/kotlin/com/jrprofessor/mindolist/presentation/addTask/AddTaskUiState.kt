@@ -17,6 +17,7 @@ data class AddTaskUiState(
     var category: Category = Category.PERSONAL,
     var reminderEnabled: Boolean = false,
     var reminderOption: ReminderOption = ReminderOption.FIFTEEN_MINUTES,
+    var duration: Int = 0,
     var isLoading: Boolean = false,
     var isImageLoading: Boolean = false,
     var titleError: String? = null,
