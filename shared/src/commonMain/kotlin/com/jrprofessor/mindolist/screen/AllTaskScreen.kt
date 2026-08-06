@@ -3,18 +3,7 @@ package com.jrprofessor.mindolist.screen
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -22,19 +11,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,16 +20,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jrprofessor.mindolist.customView.DeleteConfirmationDialog
 import com.jrprofessor.mindolist.customView.NoTasksEmptyState
 import com.jrprofessor.mindolist.customView.TaskItem
 import com.jrprofessor.mindolist.extension.today
 import com.jrprofessor.mindolist.model.Filter
+import com.jrprofessor.mindolist.model.TaskModel
+import com.jrprofessor.mindolist.presentation.addTask.AddTaskAction
 import com.jrprofessor.mindolist.presentation.dashboard.DashboardAction
 import com.jrprofessor.mindolist.presentation.dashboard.DashboardEvent
 import com.jrprofessor.mindolist.presentation.dashboard.DashboardState
 import com.jrprofessor.mindolist.theme.MindoListTheme
 import com.jrprofessor.mindolist.utils.showToast
 import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
+import com.jrprofessor.mindolist.viewmodels.TaskViewModel
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
@@ -62,9 +44,12 @@ import kotlin.time.Instant
 @Composable
 fun AllTaskScreen(
     dashboardViewModel: DashboardViewModel = koinViewModel(),
+    taskViewModel: TaskViewModel,
     onAddTaskClick: () -> Unit,
 ) {
     val state by dashboardViewModel.state.collectAsState()
+    var showDeleteDialog by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(Unit) {
         dashboardViewModel.dispatch(DashboardAction.LoadTasks)
     }
@@ -100,9 +85,24 @@ fun AllTaskScreen(
                 markCompleted = { id, isComplete ->
                     dashboardViewModel.dispatch(DashboardAction.MarkComplete(id, isComplete))
                 },
+                onDelete = { taskId -> showDeleteDialog = taskId },
+                onEdit = { task ->
+                    taskViewModel.dispatch(AddTaskAction.EditTask(task))
+                    onAddTaskClick()
+                },
                 onSearchQueryChanged = { dashboardViewModel.dispatch(DashboardAction.SearchQueryChanged(it)) },
                 onToggleSearch = { dashboardViewModel.dispatch(DashboardAction.ToggleSearch) },
                 onAddTaskClick = onAddTaskClick
+            )
+        }
+
+        if (showDeleteDialog != null) {
+            DeleteConfirmationDialog(
+                onConfirm = {
+                    dashboardViewModel.dispatch(DashboardAction.DeleteTask(showDeleteDialog!!))
+                    showDeleteDialog = null
+                },
+                onDismiss = { showDeleteDialog = null }
             )
         }
     }
@@ -114,6 +114,8 @@ fun AllTaskScreenContent(
     onFilterSelected: (String) -> Unit,
     onSourceFilterSelected: (String) -> Unit,
     markCompleted: (String, Boolean) -> Unit,
+    onDelete: (String) -> Unit,
+    onEdit: (TaskModel) -> Unit,
     onSearchQueryChanged: (String) -> Unit,
     onToggleSearch: () -> Unit,
     onAddTaskClick: () -> Unit
@@ -194,23 +196,46 @@ fun AllTaskScreenContent(
                 contentPadding = PaddingValues(bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                groupedTasks.forEach { (dateLabel, tasks) ->
-                    item {
-                        Text(
-                            text = dateLabel,
-                            style = MaterialTheme.typography.labelLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = MindoListTheme.colors.textSecondary,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
+                if (state.viewMode == com.jrprofessor.mindolist.presentation.settings.ViewMode.GROUPED) {
+                    groupedTasks.forEach { (dateLabel, tasks) ->
+                        item {
+                            Text(
+                                text = dateLabel,
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.sp
+                                ),
+                                color = MindoListTheme.colors.textSecondary,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                        items(items = tasks, key = { it.id }) { task ->
+                            TaskItem(
+                                task = task,
+                                onToggleComplete = { isCompleted ->
+                                    markCompleted(task.id, isCompleted)
+                                },
+                                onDelete = { onDelete(task.id) },
+                                onEdit = { 
+                                    if (task.originalModel is TaskModel) {
+                                        onEdit(task.originalModel)
+                                    }
+                                }
+                            )
+                        }
                     }
-                    items(items = tasks, key = { it.id }) { task ->
+                } else {
+                    items(items = state.tasks, key = { it.id }) { task ->
                         TaskItem(
                             task = task,
                             onToggleComplete = { isCompleted ->
                                 markCompleted(task.id, isCompleted)
+                            },
+                            onDelete = { onDelete(task.id) },
+                            onEdit = { 
+                                if (task.originalModel is TaskModel) {
+                                    onEdit(task.originalModel)
+                                }
                             }
                         )
                     }

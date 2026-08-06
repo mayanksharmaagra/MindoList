@@ -452,7 +452,8 @@ fun BasicInfoSection(state: EditProfileState, onAction: (EditProfileAction) -> U
             label = "FULL NAME",
             value = state.fullName,
             onValueChange = { onAction(EditProfileAction.OnFullNameChange(it)) },
-            icon = IcUser
+            icon = IcUser,
+            maxLength = 50
         )
 
         EditField(
@@ -460,6 +461,7 @@ fun BasicInfoSection(state: EditProfileState, onAction: (EditProfileAction) -> U
             value = state.email,
             onValueChange = { onAction(EditProfileAction.OnEmailChange(it)) },
             icon = Icons.Outlined.Email,
+            maxLength = 50,
             trailingContent = {
                 if (state.isVerified) {
                     Surface(
@@ -485,7 +487,8 @@ fun BasicInfoSection(state: EditProfileState, onAction: (EditProfileAction) -> U
             value = state.phoneNumber,
             onValueChange = { onAction(EditProfileAction.OnPhoneNumberChange(it)) },
             icon = Icons.Outlined.Phone,
-            placeholder = "+91 00000 00000"
+            placeholder = "+91 00000 00000",
+            maxLength = 15
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -495,21 +498,33 @@ fun BasicInfoSection(state: EditProfileState, onAction: (EditProfileAction) -> U
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
             )
-            OutlinedTextField(
-                value = state.about,
-                onValueChange = { onAction(EditProfileAction.OnAboutChange(it)) },
-                placeholder = { Text("A short line about yourself", color = MindoListTheme.colors.textSecondary) },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.2f),
-                    unfocusedBorderColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.2f),
-                    focusedContainerColor = MindoListTheme.colors.inputBg,
-                    unfocusedContainerColor = MindoListTheme.colors.inputBg,
-                    focusedTextColor = MindoListTheme.colors.textPrimary,
-                    unfocusedTextColor = MindoListTheme.colors.textPrimary
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = state.about,
+                    onValueChange = { 
+                        if (it.length <= 200) {
+                            onAction(EditProfileAction.OnAboutChange(it)) 
+                        }
+                    },
+                    placeholder = { Text("A short line about yourself", color = MindoListTheme.colors.textSecondary) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.2f),
+                        unfocusedBorderColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.2f),
+                        focusedContainerColor = MindoListTheme.colors.inputBg,
+                        unfocusedContainerColor = MindoListTheme.colors.inputBg,
+                        focusedTextColor = MindoListTheme.colors.textPrimary,
+                        unfocusedTextColor = MindoListTheme.colors.textPrimary
+                    )
                 )
-            )
+                Text(
+                    text = "${state.about.length}/200",
+                    color = MindoListTheme.colors.textSecondary.copy(alpha = 0.5f),
+                    fontSize = 11.sp,
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 12.dp)
+                )
+            }
             Text(
                 "Shown only to you — not shared anywhere.",
                 color = MindoListTheme.colors.textSecondary.copy(alpha = 0.5f),
@@ -526,6 +541,7 @@ fun EditField(
     onValueChange: (String) -> Unit,
     icon: ImageVector,
     placeholder: String = "",
+    maxLength: Int = Int.MAX_VALUE,
     trailingContent: @Composable (() -> Unit)? = null
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -537,7 +553,11 @@ fun EditField(
         )
         OutlinedTextField(
             value = value,
-            onValueChange = onValueChange,
+            onValueChange = {
+                if (it.length <= maxLength) {
+                    onValueChange(it)
+                }
+            },
             placeholder = { Text(placeholder, color = MindoListTheme.colors.textSecondary) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),

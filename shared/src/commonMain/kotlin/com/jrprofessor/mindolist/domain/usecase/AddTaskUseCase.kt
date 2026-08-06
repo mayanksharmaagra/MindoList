@@ -11,6 +11,11 @@ class AddTaskUseCase(
             return com.jrprofessor.mindolist.domain.model.Result.Error(Exception("Validation"), "Title cannot be empty")
         if (task.dueDate == 0L)
             return com.jrprofessor.mindolist.domain.model.Result.Error(Exception("Validation"), "Please select a due date")
-        return repository.addTask(task)
+        
+        return if (task.id.isEmpty()) {
+            repository.addTask(task)
+        } else {
+            repository.updateTask(task)
+        }
     }
 }

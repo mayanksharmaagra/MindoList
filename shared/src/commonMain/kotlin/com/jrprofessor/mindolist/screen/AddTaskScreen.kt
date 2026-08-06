@@ -59,13 +59,22 @@ enum class ReminderOption(val label: String) {
 }
 @Composable
 fun AddTaskScreen(
-    viewModel: TaskViewModel = koinViewModel(),
+    viewModel: TaskViewModel,
+    settingsViewModel: com.jrprofessor.mindolist.viewmodels.SettingsViewmodel = koinViewModel(),
     onNavigateBack: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
+    val settingsState by settingsViewModel.state.collectAsState()
+    
     var showTimePicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showCategoryDialog by remember { mutableStateOf(false) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.dispatch(AddTaskAction.ResetState)
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.addTaskEffect.collectLatest { effect ->
@@ -94,13 +103,13 @@ fun AddTaskScreen(
             AddTaskToolbar(onNavigateBack)
             Spacer(modifier = Modifier.height(30.dp))
 
-//            if (getPlatform().isAndroid) {
+            if (settingsState.aiExtractionEnabled) {
                 AiExtractionSection(state, viewModel)
 
                 Spacer(modifier = Modifier.height(30.dp))
                 ManualDivider()
                 Spacer(modifier = Modifier.height(25.dp))
-//            }
+            }
 
             ManualInputSection(
                 state = state,
@@ -113,7 +122,7 @@ fun AddTaskScreen(
             Spacer(modifier = Modifier.height(40.dp))
 
             ActionButton(
-                text = "Save task",
+                text = if (state.isEditMode) "Update task" else "Save task",
                 isLoading = state.isLoading,
                 isEnabled = state.title.isNotBlank() && !state.isLoading,
                 containerColor = MindoListAccentFixed,
@@ -139,8 +148,8 @@ fun AddTaskScreen(
                 initialHour = initialHour,
                 initialMinute = initialMinute,
                 period = period,
-                onTimeSelected = { hour, minute, selectedPeriod ->
-                    viewModel.dispatch(AddTaskAction.TimeSelected("$hour:$minute $selectedPeriod"))
+                onTimeSelected = { formattedTime ->
+                    viewModel.dispatch(AddTaskAction.TimeSelected(formattedTime))
                     showTimePicker = false
                 },
                 onDismiss = { showTimePicker = false }
@@ -364,7 +373,8 @@ fun ManualInputSection(
             label = "TITLE",
             value = state.title,
             onValueChange = { viewModel.dispatch(AddTaskAction.TitleChanged(it)) },
-            placeholder = "Team sync call"
+            placeholder = "Team sync call",
+            maxLength = 100
         )
 
         InputField(
@@ -372,7 +382,9 @@ fun ManualInputSection(
             value = state.description,
             onValueChange = { viewModel.dispatch(AddTaskAction.DescriptionChanged(it)) },
             placeholder = "Add notes (optional)",
-            minHeight = 80.dp
+            minHeight = 80.dp,
+            maxLength = 500,
+            showCount = true
         )
 
         Row(
@@ -651,7 +663,9 @@ fun InputField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    minHeight: Dp = 56.dp
+    minHeight: Dp = 56.dp,
+    maxLength: Int? = null,
+    showCount: Boolean = false
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
@@ -660,23 +674,40 @@ fun InputField(
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold
         )
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            placeholder = { Text(placeholder, color = MindoListTheme.colors.textSecondary) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = minHeight),
-            shape = RoundedCornerShape(16.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.2f),
-                unfocusedBorderColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.2f),
-                focusedContainerColor = MindoListTheme.colors.inputBg,
-                unfocusedContainerColor = MindoListTheme.colors.inputBg,
-                focusedTextColor = MindoListTheme.colors.textPrimary,
-                unfocusedTextColor = MindoListTheme.colors.textPrimary
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(
+                value = value,
+                onValueChange = {
+                    if (maxLength == null || it.length <= maxLength) {
+                        onValueChange(it)
+                    }
+                },
+                placeholder = { Text(placeholder, color = MindoListTheme.colors.textSecondary) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = minHeight),
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.2f),
+                    unfocusedBorderColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.2f),
+                    focusedContainerColor = MindoListTheme.colors.inputBg,
+                    unfocusedContainerColor = MindoListTheme.colors.inputBg,
+                    focusedTextColor = MindoListTheme.colors.textPrimary,
+                    unfocusedTextColor = MindoListTheme.colors.textPrimary
+                )
             )
-        )
+            
+            if (showCount && maxLength != null) {
+                Text(
+                    text = "${value.length}/$maxLength",
+                    color = MindoListTheme.colors.textSecondary,
+                    fontSize = 11.sp,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 12.dp, bottom = 12.dp)
+                )
+            }
+        }
     }
 }
 
@@ -708,8 +739,8 @@ fun ClickableInputField(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = value,
-                    color = MindoListTheme.colors.textPrimary,
+                    text = value.ifBlank { "No time" },
+                    color = if (value.isBlank()) MindoListTheme.colors.textSecondary else MindoListTheme.colors.textPrimary,
                     modifier = Modifier.weight(1f)
                 )
                 Icon(

@@ -2,6 +2,7 @@ package com.jrprofessor.mindolist.extension
 
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
@@ -13,6 +14,7 @@ import kotlin.time.Duration
 import kotlin.time.Instant
 
 fun today(): LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+fun todayDateTime(): LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 fun Duration.toDateFormat(): String {
 
     val instant = Instant.fromEpochMilliseconds(this.inWholeMilliseconds)

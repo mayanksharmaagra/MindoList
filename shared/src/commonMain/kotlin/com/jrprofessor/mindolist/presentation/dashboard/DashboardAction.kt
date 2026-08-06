@@ -15,4 +15,5 @@ sealed class DashboardAction {
     data class DeleteTask(val taskId: String) : DashboardAction()
     data class SearchQueryChanged(val query: String) : DashboardAction()
     data object ToggleSearch : DashboardAction()
+    data object RefreshGoogleTasks : DashboardAction()
 }

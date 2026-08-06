@@ -5,12 +5,35 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxState
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,14 +54,96 @@ import com.jrprofessor.mindolist.model.TaskSource
 import com.jrprofessor.mindolist.model.TaskUIModel
 import com.jrprofessor.mindolist.theme.MindoListTheme
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskItem(
     task: TaskUIModel,
     onToggleComplete: (Boolean) -> Unit = {},
+    onDelete: () -> Unit = {},
+    onEdit: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    var checked by remember(task.isCompleted) { mutableStateOf(task.isCompleted) }
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            when (value) {
+                SwipeToDismissBoxValue.StartToEnd -> {
+                    onDelete()
+                    false // Don't dismiss automatically, wait for confirmation/action
+                }
+                SwipeToDismissBoxValue.EndToStart -> {
+                    onEdit()
+                    false // Don't dismiss automatically
+                }
+                else -> false
+            }
+        }
+    )
 
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            SwipeBackground(dismissState)
+        },
+        modifier = modifier.padding(vertical = 4.dp),
+        enableDismissFromStartToEnd = true,
+        enableDismissFromEndToStart = true
+    ) {
+        TaskItemContent(
+            task = task,
+            onToggleComplete = onToggleComplete,
+            checked = task.isCompleted
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeBackground(dismissState: SwipeToDismissBoxState) {
+    val direction = dismissState.dismissDirection
+    val color = when (direction) {
+        SwipeToDismissBoxValue.StartToEnd -> Color(0xFFEF5350) // Red for Delete
+        SwipeToDismissBoxValue.EndToStart -> Color(0xFF42A5F5) // Blue for Edit
+        else -> Color.Transparent
+    }
+    
+    val icon = when (direction) {
+        SwipeToDismissBoxValue.StartToEnd -> Icons.Default.Delete
+        SwipeToDismissBoxValue.EndToStart -> Icons.Default.Edit
+        else -> null
+    }
+
+    val alignment = when (direction) {
+        SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+        SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
+        else -> Alignment.Center
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(16.dp))
+            .background(color)
+            .padding(horizontal = 24.dp),
+        contentAlignment = alignment
+    ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun TaskItemContent(
+    task: TaskUIModel,
+    onToggleComplete: (Boolean) -> Unit,
+    checked: Boolean,
+) {
+    var localChecked by remember(checked) { mutableStateOf(checked) }
     val priorityColor = Priority.entries
         .find { it.label == task.priority }?.dotColor ?: MindoListTheme.colors.textSecondary
 
@@ -58,9 +163,7 @@ fun TaskItem(
     }
 
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MindoListTheme.colors.cardBg),
     ) {
@@ -87,9 +190,9 @@ fun TaskItem(
             ) {
                 // ── Checkbox ──────────────────────────────────────────────────
                 TaskCheckbox(
-                    checked = checked,
+                    checked = localChecked,
                     onCheckedChange = {
-                        checked = it
+                        localChecked = it
                         onToggleComplete(it)
                     },
                 )
@@ -102,8 +205,8 @@ fun TaskItem(
                         text = task.title,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (checked) MindoListTheme.colors.textSecondary else MindoListTheme.colors.textPrimary,
-                        textDecoration = if (checked) TextDecoration.LineThrough
+                        color = if (localChecked) MindoListTheme.colors.textSecondary else MindoListTheme.colors.textPrimary,
+                        textDecoration = if (localChecked) TextDecoration.LineThrough
                         else TextDecoration.None,
                         maxLines = 1,
                     )
@@ -117,19 +220,35 @@ fun TaskItem(
                             modifier = Modifier
                                 .size(8.dp)
                                 .clip(CircleShape)
-                                .background(if (checked) MindoListTheme.colors.success else priorityColor)
+                                .background(if (localChecked) MindoListTheme.colors.success else priorityColor)
                         )
 
-                        Text(
-                            text = if (task.dueDate > 0) {
-                                "${task.dueDate.toDisplayTime()} · ${category.label}"
+                        val timeText = if (task.dueDate > 0) {
+                            val startTime = task.dueDate.toDisplayTime()
+                            if (task.duration > 0) {
+                                val durationMillis = task.duration * 60 * 1000L
+                                val endTime = (task.dueDate + durationMillis).toDisplayTime()
+                                "$startTime - $endTime"
                             } else {
-                                "No time set · ${category.label}"
-                            },
+                                startTime
+                            }
+                        } else {
+                            "No time set"
+                        }
+
+                        Text(
+                            text = timeText,
                             fontSize = 14.sp,
                             color = MindoListTheme.colors.textSecondary,
                         )
                     }
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = category.label,
+                        fontSize = 14.sp,
+                        color = MindoListTheme.colors.textSecondary,
+                    )
                 }
 
                 // ── Source Chip ───────────────────────────────────────────────

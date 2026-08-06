@@ -6,6 +6,7 @@ import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.domain.repository.AiTaskRepository
 import com.jrprofessor.mindolist.domain.usecase.AddTaskUseCase
 import com.jrprofessor.mindolist.model.Category
+import com.jrprofessor.mindolist.model.Priority
 import com.jrprofessor.mindolist.model.TaskModel
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskAction
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskEvent
@@ -13,6 +14,8 @@ import com.jrprofessor.mindolist.presentation.addTask.AddTaskEvent.Error
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskEvent.Success
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskUiState
 import com.jrprofessor.mindolist.presentation.dashboard.DashboardEvent
+import com.jrprofessor.mindolist.screen.ReminderOption
+import com.jrprofessor.mindolist.extension.*
 import com.jrprofessor.mindolist.utils.NetworkConnectivityManager
 import com.jrprofessor.mindolist.utils.SpeechToTextParser
 import kotlinx.coroutines.channels.Channel
@@ -71,6 +74,7 @@ class TaskViewModel(
             is AddTaskAction.ReminderValue,
             is AddTaskAction.DurationChanged,
             is AddTaskAction.NaturalInputChanged,
+            is AddTaskAction.EditTask,
             is AddTaskAction.ResetState -> _state.update {
                 reduceTask(it, action)
             }
@@ -131,6 +135,23 @@ class TaskViewModel(
         is AddTaskAction.ReminderValue -> state.copy(reminderOption = action.reminder)
         is AddTaskAction.DurationChanged -> state.copy(duration = action.minutes)
         is AddTaskAction.NaturalInputChanged -> state.copy(naturalInput = action.value)
+        is AddTaskAction.EditTask -> {
+            val task = action.task
+            state.copy(
+                isEditMode = true,
+                editTaskId = task.id,
+                title = task.title,
+                description = task.description,
+                selectedDate = task.dueDate.toDisplayDate(),
+                selectedTime = task.dueDate.toDisplayTime(),
+                priority = Priority.entries.find { it.label == task.priority } ?: Priority.MEDIUM,
+                category = Category.entries.find { it.label == task.category } ?: Category.PERSONAL,
+                reminderEnabled = task.reminderEnabled,
+                reminderOption = ReminderOption.entries.find { it.label == task.reminderValue } ?: ReminderOption.FIFTEEN_MINUTES,
+                duration = task.duration,
+                createdAt = task.createdAt // Save original createdAt
+            )
+        }
         AddTaskAction.ResetState -> AddTaskUiState()
         else -> state
     }
@@ -151,6 +172,7 @@ class TaskViewModel(
                 reminderEnabled = st.reminderEnabled,
                 reminderValue = st.reminderOption.label,
                 duration = st.duration,
+                createdAt = if (st.isEditMode) st.createdAt else Clock.System.now().toEpochMilliseconds(),
                 updatedAt = Clock.System.now().toEpochMilliseconds(),
             )
 
@@ -212,11 +234,23 @@ class TaskViewModel(
     }
 
     private fun validate(): Boolean {
+        val st = _state.value
         var isValid = true
-        if (_state.value.title.isBlank()) {
+
+        if (st.title.isBlank()) {
             _state.update { it.copy(titleError = "Title cannot be empty") }
             isValid = false
+        } else if (st.title.length > 100) {
+            _state.update { it.copy(titleError = "Title must be 100 characters or less") }
+            isValid = false
         }
+
+        val dueDateMillis = buildDueDateMillis(st.selectedDate, st.selectedTime)
+        if (com.jrprofessor.mindolist.utils.Validators.isDateInPast(dueDateMillis)) {
+            _state.update { it.copy(aiError = "Due date cannot be in the past") }
+            isValid = false
+        }
+
         return isValid
     }
 }

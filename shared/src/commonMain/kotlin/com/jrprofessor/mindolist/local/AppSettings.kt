@@ -9,6 +9,7 @@ private object PrefKeys {
     const val THEME_MODE = "theme_mode"
     const val NOTIFICATIONS_ENABLED = "notifications_enabled"
     const val AI_EXTRACTION_ENABLED = "ai_extraction_enabled"
+    const val DEFAULT_VIEW = "default_view"
 }
 
 expect fun createSettings(): AppSettings
@@ -23,6 +24,9 @@ class AppSettings(private val delegate: SettingsDelegate) {
 
     private val _aiExtractionFlow = MutableStateFlow(delegate.getBoolean(PrefKeys.AI_EXTRACTION_ENABLED, true))
     val aiExtractionFlow: StateFlow<Boolean> = _aiExtractionFlow.asStateFlow()
+
+    private val _defaultViewFlow = MutableStateFlow(delegate.getString(PrefKeys.DEFAULT_VIEW, "GROUPED"))
+    val defaultViewFlow: StateFlow<String> = _defaultViewFlow.asStateFlow()
 
     var isLoggedIn: Boolean
         get() = delegate.getBoolean(PrefKeys.IS_LOGGED_IN, false)
@@ -47,6 +51,13 @@ class AppSettings(private val delegate: SettingsDelegate) {
         set(value) {
             delegate.putBoolean(PrefKeys.AI_EXTRACTION_ENABLED, value)
             _aiExtractionFlow.value = value
+        }
+
+    var defaultView: String
+        get() = delegate.getString(PrefKeys.DEFAULT_VIEW, "GROUPED")
+        set(value) {
+            delegate.putString(PrefKeys.DEFAULT_VIEW, value)
+            _defaultViewFlow.value = value
         }
 
     fun clear() = delegate.clear()

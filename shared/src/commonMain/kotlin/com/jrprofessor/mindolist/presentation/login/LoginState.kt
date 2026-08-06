@@ -14,7 +14,8 @@ data class LoginState(
     val isLoginButtonEnabled: Boolean = false,
     val isGoogleLoading: Boolean = false,
     val isFacebookLoading: Boolean = false,
-    val isAppleLoading: Boolean = false
+    val isAppleLoading: Boolean = false,
+    val rememberMe: Boolean = false
 )
 enum class LoginMode  {
     INITIAL,           // Social login options screen

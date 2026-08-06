@@ -89,11 +89,12 @@ class ForgotPasswordViewModel(
 
     private fun onEmailChanged(email: String) {
         val isValid = Validators.validateEmail(email)
+        val error = Validators.getEmailError(email)
         _state.update {
             it.copy(
                 email = email,
                 isEmailValid = isValid,
-                emailError = if (email.isNotEmpty() && !isValid) "Invalid email address" else null,
+                emailError = error,
             )
         }
     }

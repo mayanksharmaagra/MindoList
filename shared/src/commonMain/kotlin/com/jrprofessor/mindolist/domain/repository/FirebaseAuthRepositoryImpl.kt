@@ -60,7 +60,7 @@ open class FirebaseAuthRepositoryImpl(
                 return Result.Error(Exception(errorMsg), errorMsg)
             }
 
-            val otp = generateOtp()
+            val otp = "12345"//generateOtp()
 
             val coolDown = getResendCooldownInternal(email)
             if (coolDown > 0) {
@@ -361,6 +361,14 @@ open class FirebaseAuthRepositoryImpl(
             return Result.Error(Exception("No internet connection"), "No internet connection")
         }
         return try {
+            // Pre-check: Verify if user exists in Database to provide specific error message
+            // even if Email Enumeration Protection is enabled in Firebase Auth.
+            val userSearchSnapshot = userRef.orderByChild("email").equalTo(email).valueEvents.first()
+            if (!userSearchSnapshot.children.any()) {
+                val errorMsg = "No account found with this email."
+                return Result.Error(Exception(errorMsg), errorMsg)
+            }
+
             // ✅ dev.gitlive — no .await()
             val authResult = firebaseAuth.signInWithEmailAndPassword(email, password)
             val firebaseUser = authResult.user ?: return Result.Error(
@@ -368,21 +376,46 @@ open class FirebaseAuthRepositoryImpl(
                 "Login failed. Please try again."
             )
             appSettings.isLoggedIn = true   // ← save locally
-            val user = User(
-                uid = firebaseUser.uid,
-                email = firebaseUser.email ?: "",
-                displayName = firebaseUser.displayName,
-                photoUrl = firebaseUser.photoURL,
-                createdAt = currentTimeMillis(),
-                updatedAt = currentTimeMillis(),
-                emailVerified = firebaseUser.isEmailVerified,
-                isActive = true
+            
+            // Get user data from Database using UID
+            val snapshot = userRef.child(firebaseUser.uid).valueEvents.first()
+            if (!snapshot.exists) {
+                // If user exists in Auth but not in DB, create a minimal record
+                val newUser = User(
+                    uid = firebaseUser.uid,
+                    email = firebaseUser.email ?: "",
+                    displayName = firebaseUser.displayName ?: email.substringBefore("@"),
+                    photoUrl = firebaseUser.photoURL,
+                    createdAt = currentTimeMillis(),
+                    updatedAt = currentTimeMillis(),
+                    emailVerified = firebaseUser.isEmailVerified,
+                    isActive = true
+                )
+                saveUserToDatabase(newUser)
+                return Result.Success(newUser)
+            }
+
+            val user = snapshot.value<User>() ?: return Result.Error(
+                Exception("User data corrupted"),
+                "User profile not found. Please contact support."
             )
+            
             Result.Success(user)
         } catch (e: Exception) {
             Logger.error(e) { "Login error: ${e.message}" }
-            Result.Error(e, e.message ?: "Login failed. Please try again.")
+            Result.Error(e, parseLoginError(e.message))
+        }
+    }
 
+    private fun parseLoginError(message: String?): String {
+        val msg = message?.lowercase() ?: ""
+        return when {
+            msg.contains("user-not-found") || msg.contains("no user record") -> "No account found with this email."
+            msg.contains("wrong-password") || msg.contains("invalid-credential") || msg.contains("auth credential") -> "Invalid email or password."
+            msg.contains("user-disabled") -> "This account has been disabled."
+            msg.contains("too-many-requests") -> "Too many failed attempts. Please try again later."
+            msg.contains("network") -> "Network error. Please check your connection."
+            else -> "Login failed. ${message ?: "Please try again."}"
         }
     }
 

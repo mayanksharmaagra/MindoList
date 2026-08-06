@@ -34,9 +34,12 @@ fun DeleteAccountScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(state.success) {
-        if (state.success) {
-            onAccountDeleted()
+    LaunchedEffect(Unit) {
+        viewModel.event.collect { message ->
+            com.jrprofessor.mindolist.utils.showToast(message)
+            if (message.contains("successfully", ignoreCase = true)) {
+                onAccountDeleted()
+            }
         }
     }
 
@@ -141,9 +144,9 @@ fun DeleteAccountScreen(
 
             // ── Consequences ──────────────────────────────────────────────
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                ConsequenceItem("All your tasks, categories, and notes will be permanently deleted")
+                ConsequenceItem("All your ${state.taskCount} tasks, categories, and notes will be permanently deleted")
                 ConsequenceItem("Your analytics history and streaks will be lost")
-                ConsequenceItem("You'll be signed out of MindoList on all devices")
+                ConsequenceItem("You'll be signed out of OneList AI on all devices")
                 ConsequenceItem("This cannot be reversed, even by our support team")
             }
 

@@ -39,7 +39,11 @@ fun ShowEmailView(
 //
         OutlinedTextField(
             value = email,
-            onValueChange = onEmailChange,
+            onValueChange = {
+                if (it.length <= 50) {
+                    onEmailChange(it)
+                }
+            },
             placeholder = { Text("example@example.com", color = placeholderColor) },
             singleLine = true,
             shape = RoundedCornerShape(14.dp),

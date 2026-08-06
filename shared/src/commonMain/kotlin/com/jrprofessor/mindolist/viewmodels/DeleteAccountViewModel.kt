@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 data class DeleteAccountState(
     val confirmationText: String = "",
     val isConfirmed: Boolean = false,
+    val taskCount: Int = 0,
     val isLoading: Boolean = false,
     val error: String? = null,
     val success: Boolean = false
@@ -30,6 +31,18 @@ class DeleteAccountViewModel(
 
     private val _event = MutableSharedFlow<String>()
     val event = _event.asSharedFlow()
+
+    init {
+        loadTaskCount()
+    }
+
+    private fun loadTaskCount() {
+        viewModelScope.launch {
+            firebaseAuthRepository.getCurrentUser().collect { user ->
+                _state.update { it.copy(taskCount = user?.totalTasks ?: 0) }
+            }
+        }
+    }
 
     fun onConfirmationTextChange(value: String) = _state.update { it.copy(confirmationText = value) }
     fun onConfirmedChange(value: Boolean) = _state.update { it.copy(isConfirmed = value) }

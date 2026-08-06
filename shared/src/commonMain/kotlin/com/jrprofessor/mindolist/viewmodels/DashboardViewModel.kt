@@ -13,11 +13,13 @@ import com.jrprofessor.mindolist.model.GoogleItemType
 import com.jrprofessor.mindolist.model.TaskModel
 import com.jrprofessor.mindolist.model.TaskSource
 import com.jrprofessor.mindolist.model.TaskUIModel
+import com.jrprofessor.mindolist.presentation.settings.ViewMode
 import com.jrprofessor.mindolist.presentation.dashboard.DashboardAction
 import com.jrprofessor.mindolist.presentation.dashboard.DashboardEvent
 import com.jrprofessor.mindolist.presentation.dashboard.DashboardState
 import com.jrprofessor.mindolist.utils.GoogleAuthManager
 import com.jrprofessor.mindolist.utils.Logger
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +27,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -41,7 +44,8 @@ class DashboardViewModel(
     val firebaseAuthRepository: FirebaseAuthRepository,
     val taskRepository: TaskRepository,
     val googleCalendarRepository: GoogleCalendarRepository,
-    val googleAuthManager: GoogleAuthManager
+    val googleAuthManager: GoogleAuthManager,
+    private val appSettings: com.jrprofessor.mindolist.local.AppSettings
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DashboardState())
@@ -56,6 +60,8 @@ class DashboardViewModel(
     private var isGoogleLoading = false
     private var isFirebaseLoading = false
     private var isAuthObserved = false
+    private var searchJob: Job? = null
+    private var googleSyncJob: Job? = null
 
     init {
         _state.update { it.copy(isLoading = true) }
@@ -63,6 +69,19 @@ class DashboardViewModel(
         dispatch(DashboardAction.UpdateDateTime)
         startDateTimeTimer()
         observeGoogleAuth()
+        observeViewMode()
+    }
+
+    private fun observeViewMode() {
+        viewModelScope.launch {
+            appSettings.defaultViewFlow.collect { modeStr ->
+                runCatching {
+                    ViewMode.valueOf(modeStr)
+                }.getOrNull()?.let { mode ->
+                    _state.update { it.copy(viewMode = mode) }
+                }
+            }
+        }
     }
 
     private fun observeGoogleAuth() {
@@ -86,19 +105,20 @@ class DashboardViewModel(
     }
 
     private fun fetchGoogleItems(accessToken: String) {
-        viewModelScope.launch {
+        googleSyncJob?.cancel()
+        googleSyncJob = viewModelScope.launch {
             try {
                 isGoogleLoading = true
-                _state.update { it.copy(isLoading = true) }
+                _state.update { it.copy(isGoogleSyncing = true) }
                 val items: List<GoogleItem> = googleCalendarRepository.fetchAll(accessToken)
-                Logger.debug { "Google Task Response: $items" }
+                Logger.debug { "Google Task Response: ${items.size} items" }
                 _googleItems.value = items.map { it.toTaskUIModel() }
-                isGoogleLoading = false
-                combineAllTasks()
             } catch (e: Exception) {
-                isGoogleLoading = false
                 Logger.error { "Failed to fetch Google items: ${e.message}" }
-                _event.send(DashboardEvent.Error(e.message ?: "Failed to fetch Google items"))
+                _event.send(DashboardEvent.Error("Google Sync: ${e.message}"))
+            } finally {
+                isGoogleLoading = false
+                _state.update { it.copy(isGoogleSyncing = false) }
                 combineAllTasks()
             }
         }
@@ -107,26 +127,18 @@ class DashboardViewModel(
     private fun combineAllTasks() {
         val selectedDate = _state.value.selectedDate
         
-        // Filter google items by selected date for the Dashboard (Today's Tasks)
-        val filteredGoogleItems = _googleItems.value.filter { googleTask ->
-            if (googleTask.dueDate == 0L) return@filter false
-            val instant = kotlinx.datetime.Instant.fromEpochMilliseconds(googleTask.dueDate)
-            val taskDate = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
-            taskDate == selectedDate
-        }
-
-        // For the Dashboard, we only show tasks for the selected date (Today)
-        val todayCombined = (_myTasks.value.filter { task ->
+        // All tasks logic
+        val allCombined = (_myTasks.value + _googleItems.value).sortedBy { it.dueDate }
+        _allTasks.value = allCombined
+        
+        // Dashboard (Today's) logic
+        val todayCombined = allCombined.filter { task ->
             if (task.dueDate == 0L) return@filter false
             val instant = kotlinx.datetime.Instant.fromEpochMilliseconds(task.dueDate)
             val taskDate = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
             taskDate == selectedDate
-        } + filteredGoogleItems).sortedBy { it.dueDate }
+        }
 
-        // _allTasks contains EVERYTHING fetched so far (for All Tasks screen)
-        val allCombined = (_myTasks.value + _googleItems.value).sortedBy { it.dueDate }
-        _allTasks.value = allCombined
-        
         updateCounts(allCombined)
         applyFilter(_state.value.selectedFilter, _state.value.selectedSourceFilter, _state.value.searchQuery)
         
@@ -174,7 +186,7 @@ class DashboardViewModel(
                 markAsCompleted(action.taskId, action.isCompleted)
             }
             is DashboardAction.DeleteTask -> {
-
+                deleteTask(action.taskId)
             }
 
             is DashboardAction.SelectedDate -> {
@@ -194,7 +206,11 @@ class DashboardViewModel(
 
             is DashboardAction.SearchQueryChanged -> {
                 _state.update { it.copy(searchQuery = action.query) }
-                applyFilter(_state.value.selectedFilter, _state.value.selectedSourceFilter, action.query)
+                searchJob?.cancel()
+                searchJob = viewModelScope.launch {
+                    delay(300) // Debounce for 300ms
+                    applyFilter(_state.value.selectedFilter, _state.value.selectedSourceFilter, action.query)
+                }
             }
 
             is DashboardAction.ToggleSearch -> {
@@ -209,34 +225,96 @@ class DashboardViewModel(
                     applyFilter(_state.value.selectedFilter, _state.value.selectedSourceFilter, "")
                 }
             }
+            is DashboardAction.RefreshGoogleTasks -> {
+                refreshGoogleItems()
+            }
+        }
+    }
+
+    private fun refreshGoogleItems() {
+        viewModelScope.launch {
+            val user = firebaseAuthRepository.getCurrentUser().first()
+            val token = user?.googleAccessToken
+            if (token != null) {
+                isGoogleLoading = true
+                _state.update { it.copy(isLoading = true) }
+                try {
+                    val refreshedToken = googleAuthManager.refreshAccessToken()
+                    fetchGoogleItems(refreshedToken ?: token)
+                    _event.send(DashboardEvent.Error("Sync completed ✓")) // Using Error event for success msg as shortcut or add Message event
+                } catch (e: Exception) {
+                    isGoogleLoading = false
+                    _state.update { it.copy(isLoading = false) }
+                    _event.send(DashboardEvent.Error("Sync failed: ${e.message}"))
+                }
+            } else {
+                _event.send(DashboardEvent.Error("Google account not connected"))
+            }
         }
     }
     private fun applyFilter(filterLabel: String, sourceLabel: String = "ALL", query: String = "") {
         val filter = Filter.entries.find { it.name == filterLabel } ?: Filter.ALL
+        val now = Clock.System.now().toEpochMilliseconds()
         
-        var filtered = when (filter) {
-            Filter.ALL       -> _allTasks.value
-            Filter.PENDING   -> _allTasks.value.filter { !it.isCompleted }
-            Filter.COMPLETED -> _allTasks.value.filter { it.isCompleted }
-            Filter.OVERDUE   -> _allTasks.value.filter {
-                !it.isCompleted && it.dueDate != 0L && it.dueDate < Clock.System.now().toEpochMilliseconds()
+        val statusFiltered = when (filter) {
+            Filter.ALL -> _allTasks.value.filter {
+                it.isCompleted || it.dueDate == 0L || it.dueDate >= now
+            }
+            Filter.PENDING -> _allTasks.value.filter {
+                !it.isCompleted && (it.dueDate == 0L || it.dueDate >= now)
+            }
+            Filter.COMPLETED -> _allTasks.value.filter {
+                it.isCompleted
+            }
+            Filter.OVERDUE -> _allTasks.value.filter {
+                !it.isCompleted && it.dueDate != 0L && it.dueDate < now
             }
         }
 
-        filtered = when (sourceLabel) {
-            "MY_TASKS" -> filtered.filter { it.source == TaskSource.MY_TASK }
-            "GOOGLE" -> filtered.filter { it.source != TaskSource.MY_TASK }
-            else -> filtered
+        // Update counts based on the status filter
+        val myCount = statusFiltered.count { it.source == TaskSource.MY_TASK }
+        val googleCount = statusFiltered.count { it.source != TaskSource.MY_TASK }
+        
+        _state.update {
+            it.copy(
+                allTasksCount = statusFiltered.size,
+                myTasksCount = myCount,
+                googleTasksCount = googleCount
+            )
+        }
+
+        var finalFiltered = when (sourceLabel) {
+            "MY_TASKS" -> statusFiltered.filter { it.source == TaskSource.MY_TASK }
+            "GOOGLE" -> statusFiltered.filter { it.source != TaskSource.MY_TASK }
+            else -> statusFiltered
         }
 
         if (query.isNotBlank()) {
-            filtered = filtered.filter { 
+            finalFiltered = finalFiltered.filter { 
                 it.title.contains(query, ignoreCase = true) || 
                 (it.description?.contains(query, ignoreCase = true) ?: false)
             }
         }
         
-        _state.update { it.copy(tasks = filtered) }
+        _state.update { it.copy(tasks = finalFiltered) }
+    }
+
+    private fun deleteTask(taskId: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            when (val result = taskRepository.deleteTask(taskId)) {
+                is Result.Error -> {
+                    _state.update { it.copy(isLoading = false) }
+                    _event.send(DashboardEvent.Error(result.message ?: "Failed to delete task"))
+                }
+                Result.Loading -> Unit
+                is Result.Success<*> -> {
+                    _myTasks.update { tasks -> tasks.filter { it.id != taskId } }
+                    combineAllTasks()
+                    _event.send(DashboardEvent.TaskDeleted)
+                }
+            }
+        }
     }
 
     private fun markAsCompleted(taskId: String, completed: Boolean) {
@@ -258,6 +336,7 @@ class DashboardViewModel(
                         }
                     }
                     combineAllTasks()
+                    _event.send(DashboardEvent.TaskCompleted)
                 }
             }
         }
@@ -353,6 +432,7 @@ fun TaskModel.toTaskUIModel() = TaskUIModel(
     title = title,
     description = description,
     dueDate = dueDate,
+    duration = duration,
     priority = priority,
     category = category,
     isCompleted = isCompleted,

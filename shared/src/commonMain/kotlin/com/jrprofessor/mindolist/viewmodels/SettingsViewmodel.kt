@@ -8,6 +8,7 @@ import com.jrprofessor.mindolist.local.AppSettings
 import com.jrprofessor.mindolist.presentation.settings.SettingsAction
 import com.jrprofessor.mindolist.presentation.settings.SettingsEvent
 import com.jrprofessor.mindolist.presentation.settings.SettingsState
+import com.jrprofessor.mindolist.presentation.settings.ViewMode
 import com.jrprofessor.mindolist.theme.ThemeMode
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,6 +53,15 @@ class SettingsViewmodel(
                 _state.update { it.copy(aiExtractionEnabled = enabled) }
             }
         }
+        viewModelScope.launch {
+            appSettings.defaultViewFlow.collect { viewModeStr ->
+                runCatching {
+                    ViewMode.valueOf(viewModeStr)
+                }.getOrNull()?.let { viewMode ->
+                    _state.update { it.copy(defaultView = viewMode) }
+                }
+            }
+        }
     }
 
     fun dispatch(action: SettingsAction) {
@@ -65,6 +75,9 @@ class SettingsViewmodel(
             }
             is SettingsAction.SetAiExtractionEnabled -> {
                 appSettings.aiExtractionEnabled = action.enabled
+            }
+            is SettingsAction.SetDefaultView -> {
+                appSettings.defaultView = action.mode.name
             }
         }
     }

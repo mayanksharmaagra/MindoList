@@ -37,6 +37,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -69,6 +74,8 @@ fun EmailVerifyScreen(
     onNavigateToHome: () -> Unit = {},
     otpLength: Int = 5
 ) {
+
+    val signUpState by signUpViewModel.signUpState.collectAsState()
 
     LaunchedEffect(Unit) {
         signUpViewModel.signUpEffect.collectLatest { effect ->
@@ -140,6 +147,7 @@ fun EmailVerifyScreen(
         OtpInputField(
             otp = otp,
             otpLength = otpLength,
+            otpSentTimestamp = signUpState.otpSentTimestamp,
             onOtpComplete = {
                 signUpViewModel.handleEvent(SignUpIntent.OtpChanged(it))
             }
@@ -222,8 +230,6 @@ fun EmailVerifyScreen(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        val signUpState by signUpViewModel.signUpState.collectAsState()
-
         ActionButton(
             text = "Verify & continue",
             isLoading = signUpState.isLoading,
@@ -268,6 +274,7 @@ fun EmailVerifyScreen(
 private fun OtpInputField(
     otp: String,
     otpLength: Int = 5,
+    otpSentTimestamp: Long = 0L,
     onOtpComplete: (String) -> Unit
 ) {
     val focusRequesters = remember { List(otpLength) { FocusRequester() } }
@@ -278,9 +285,17 @@ private fun OtpInputField(
         }
     }
 
-    LaunchedEffect(otp) {
-        repeat(otpLength) { index ->
-            otpState[index] = otp.getOrNull(index)?.toString() ?: ""
+    LaunchedEffect(otp, otpSentTimestamp) {
+        if (otp.isEmpty()) {
+            repeat(otpLength) { index ->
+                otpState[index] = ""
+            }
+            focusRequesters.first().requestFocus()
+        } else if (otp.length == otpLength) {
+            // Only sync from external if it's a full OTP to prevent shifting during manual edits
+            repeat(otpLength) { index ->
+                otpState[index] = otp.getOrNull(index)?.toString() ?: ""
+            }
         }
     }
 
@@ -299,15 +314,23 @@ private fun OtpInputField(
             OutlinedTextField(
                 value = otpState[index],
                 onValueChange = { value ->
-                    if (value.length <= 1 && (value.isEmpty() || value.all { it.isDigit() })) {
-                        otpState[index] = value
-                        val newOtp = otpState.joinToString("")
-                        onOtpComplete(newOtp)
+                    val digits = value.filter { it.isDigit() }
+                    
+                    if (digits.length >= otpLength) {
+                        // Handle full paste
+                        val fullOtp = digits.take(otpLength)
+                        repeat(otpLength) { i -> otpState[i] = fullOtp[i].toString() }
+                        onOtpComplete(fullOtp)
+                        focusRequesters.last().requestFocus()
+                    } else {
+                        // Handle single digit edit or deletion
+                        val newChar = digits.lastOrNull()?.toString() ?: ""
+                        otpState[index] = newChar
+                        onOtpComplete(otpState.joinToString(""))
 
-                        if (value.isNotEmpty() && index < otpLength - 1) {
+                        if (newChar.isNotEmpty() && index < otpLength - 1) {
                             focusRequesters[index + 1].requestFocus()
-                        }
-                        if (value.isEmpty() && index > 0) {
+                        } else if (newChar.isEmpty() && index > 0) {
                             focusRequesters[index - 1].requestFocus()
                         }
                     }
@@ -316,7 +339,15 @@ private fun OtpInputField(
                     .weight(1f)
                     .height(64.dp)
                     .focusRequester(focusRequesters[index])
-                    .onFocusChanged { isFocused.value = it.isFocused },
+                    .onFocusChanged { isFocused.value = it.isFocused }
+                    .onKeyEvent { event ->
+                        if (event.type == KeyEventType.KeyDown && event.key == Key.Backspace && otpState[index].isEmpty() && index > 0) {
+                            focusRequesters[index - 1].requestFocus()
+                            true
+                        } else {
+                            false
+                        }
+                    },
                 singleLine = true,
                 placeholder = {
                     Text(

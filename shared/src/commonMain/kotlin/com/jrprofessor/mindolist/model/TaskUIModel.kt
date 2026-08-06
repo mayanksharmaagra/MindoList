@@ -15,6 +15,7 @@ data class TaskUIModel(
     val title: String,
     val description: String? = null,
     val dueDate: Long, // epoch millis
+    val duration: Int = 0, // minutes
     val priority: String = Priority.MEDIUM.label,
     val category: String = Category.PERSONAL.label,
     val isCompleted: Boolean = false,

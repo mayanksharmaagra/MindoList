@@ -84,7 +84,7 @@ val TextHeadingColor = Color(0xFF9CA3AF)
 // MindoList Brand Colors - Dark
 val MindoListBgDark = Color(0xFF12141C)
 val MindoListCardBgDark = Color(0xFF1B1E2A)
-val MindoListCardChildBgDark = Color(0xFF1E2129)
+val MindoListCardChildBgDark = Color(0xFF2D303E)
 val MindoListTextPrimaryDark = Color(0xFFF2F0EA)
 val MindoListTextSecondaryDark = Color(0xFF8B90A3)
 val MindoListAccentDark = Color(0xFFE8A94C)

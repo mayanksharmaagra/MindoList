@@ -18,4 +18,5 @@ sealed class LoginIntent {
     object ErrorDismissed : LoginIntent()
 
     object ClearState : LoginIntent()
+    data class ToggleRememberMe(val remember: Boolean) : LoginIntent()
 }

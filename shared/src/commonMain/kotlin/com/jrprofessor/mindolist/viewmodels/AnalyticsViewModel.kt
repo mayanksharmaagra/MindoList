@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.domain.repository.TaskRepository
+import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepository
 import com.jrprofessor.mindolist.model.TaskModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -37,7 +38,8 @@ data class CategoryStats(
 )
 
 class AnalyticsViewModel(
-    private val taskRepository: TaskRepository
+    private val taskRepository: TaskRepository,
+    private val firebaseAuthRepository: FirebaseAuthRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AnalyticsState())
@@ -45,6 +47,17 @@ class AnalyticsViewModel(
 
     init {
         loadAnalytics()
+        observeUserStats()
+    }
+
+    private fun observeUserStats() {
+        viewModelScope.launch {
+            firebaseAuthRepository.getCurrentUser().collectLatest { user ->
+                _state.update { 
+                    it.copy(longestStreak = user?.currentStreak ?: 0) 
+                }
+            }
+        }
     }
 
     fun setFilter(filter: AnalyticsFilter) {
@@ -73,16 +86,27 @@ class AnalyticsViewModel(
 
     private fun processTasks(tasks: List<TaskModel>) {
         val st = _state.value
-        val total = tasks.size
-        val completed = tasks.count { it.isCompleted }
+        val now = kotlin.time.Clock.System.now().toEpochMilliseconds()
+        
+        // Filter out tasks that aren't relevant for this range's completion rate
+        // Usually, we want to know: of all tasks that WERE due or completed in this range, how many are done?
+        val relevantTasks = tasks.filter { 
+            it.isCompleted || (it.dueDate != 0L && it.dueDate < now) || it.isSameDay(st.selectedDate)
+        }
+
+        val total = relevantTasks.size
+        val completed = relevantTasks.count { it.isCompleted }
         val percentage = if (total > 0) (completed * 100) / total else 0
 
         val categoryStats = tasks.groupBy { it.category }
-            .map { (category, catTasks) ->
+            .map { (categoryLabel, catTasks) ->
                 val catTotal = catTasks.size
                 val catCompleted = catTasks.count { it.isCompleted }
+                val category = com.jrprofessor.mindolist.model.Category.entries.find { it.label.equals(categoryLabel, ignoreCase = true) } 
+                    ?: com.jrprofessor.mindolist.model.Category.PERSONAL
+                
                 CategoryStats(
-                    name = category,
+                    name = category.label,
                     progress = if (catTotal > 0) catCompleted.toFloat() / catTotal else 0f,
                     count = catTotal
                 )
@@ -104,31 +128,36 @@ class AnalyticsViewModel(
     }
 
     private fun aggregateChartData(tasks: List<TaskModel>, filter: AnalyticsFilter, date: LocalDate): List<ChartDataPoint> {
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
         return when (filter) {
             AnalyticsFilter.WEEK -> {
                 val weekStart = date.minus(date.dayOfWeek.ordinal, DateTimeUnit.DAY)
                 (0..6).map { i ->
                     val d = weekStart.plus(i, DateTimeUnit.DAY)
                     val count = tasks.count { it.isCompleted && it.isSameDay(d) }
-                    ChartDataPoint(d.dayOfWeek.name.first().toString(), count.toFloat(), d == date)
+                    ChartDataPoint(d.dayOfWeek.name.first().toString(), count.toFloat(), d == today)
                 }
             }
             AnalyticsFilter.MONTH -> {
                 // Group by week of month
-                val firstDay = LocalDate(date.year, date.month, 1)
-                val lastDay = firstDay.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
+                val currentWeek = today.getWeekOfMonth()
+                val isCurrentMonth = date.month == today.month && date.year == today.year
                 
                 (1..5).map { week ->
+                    val firstDay = LocalDate(date.year, date.month, 1)
+                    val lastDay = firstDay.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
                     val weekStartDay = (week - 1) * 7 + 1
                     if (weekStartDay > lastDay.day) return@map null
                     val count = tasks.count { it.isCompleted && it.getWeekOfMonth() == week }
-                    ChartDataPoint("W$week", count.toFloat(), date.getWeekOfMonth() == week)
+                    ChartDataPoint("W$week", count.toFloat(), isCurrentMonth && week == currentWeek)
                 }.filterNotNull()
             }
             AnalyticsFilter.YEAR -> {
+                val currentMonth = today.monthNumber
+                val isCurrentYear = date.year == today.year
                 (1..12).map { month ->
                     val count = tasks.count { it.isCompleted && it.getMonth() == month }
-                    ChartDataPoint(Month(month).name.first().toString(), count.toFloat(), date.month.number == month)
+                    ChartDataPoint(Month(month).name.first().toString(), count.toFloat(), isCurrentYear && month == currentMonth)
                 }
             }
         }

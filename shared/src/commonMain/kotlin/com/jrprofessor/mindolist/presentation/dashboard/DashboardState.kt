@@ -4,6 +4,7 @@ import com.jrprofessor.mindolist.domain.model.User
 import com.jrprofessor.mindolist.extension.today
 import com.jrprofessor.mindolist.model.Filter
 import com.jrprofessor.mindolist.model.TaskUIModel
+import com.jrprofessor.mindolist.presentation.settings.ViewMode
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -18,6 +19,7 @@ data class DashboardState (
     val googleTasksCount: Int = 0,
     val allTasksCount: Int = 0,
     val isLoading: Boolean = true,
+    val isGoogleSyncing: Boolean = false,
     val error: String? = null,
 
     // DateTime
@@ -29,5 +31,6 @@ data class DashboardState (
     val selectedFilter: String= Filter.ALL.name,
     val selectedSourceFilter: String = "ALL", // ALL, MY_TASKS, GOOGLE
     val searchQuery: String = "",
-    val isSearchActive: Boolean = false
+    val isSearchActive: Boolean = false,
+    val viewMode: ViewMode = ViewMode.GROUPED
 )

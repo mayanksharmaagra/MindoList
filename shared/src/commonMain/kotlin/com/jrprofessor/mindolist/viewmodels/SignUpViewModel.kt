@@ -348,33 +348,35 @@ class SignUpViewModel (
     }
 
     private fun onPasswordChanged(password: String) {
-        val isValid = Validators.validatePassword(password)
+        val error = Validators.getPasswordError(password)
         _signUpState.update {
             it.copy(
                 password = password,
-                isPasswordValid = isValid,
-                passwordError = null
+                isPasswordValid = error == null,
+                passwordError = if (password.isNotEmpty()) error else null
             )
         }
     }
 
     private fun onEmailChanged(email: String) {
         val isValid = Validators.validateEmail(email)
+        val error = Validators.getEmailError(email)
         _signUpState.update {
             it.copy(
                 email = email,
                 isEmailValid = isValid,
-                error = if (email.isNotEmpty() && !isValid) "Invalid email address" else null
+                emailError = error
             )
         }
     }
     private fun onNameChanged(name: String) {
         val isValid = Validators.validateName(name)
+        val error = Validators.getNameError(name)
         _signUpState.update {
             it.copy(
                 name = name,
                 isNameValid = isValid,
-                error = if (name.isNotEmpty() && !isValid) "Enter your name" else null
+                nameError = error
             )
         }
     }

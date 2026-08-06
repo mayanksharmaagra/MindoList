@@ -2,6 +2,7 @@ package com.jrprofessor.mindolist.presentation.addTask
 
 import com.jrprofessor.mindolist.model.Category
 import com.jrprofessor.mindolist.model.Priority
+import com.jrprofessor.mindolist.model.TaskModel
 import com.jrprofessor.mindolist.screen.ReminderOption
 
 sealed class AddTaskAction{
@@ -15,6 +16,7 @@ sealed class AddTaskAction{
     data class ReminderToggled(val enabled: Boolean) : AddTaskAction()
     data class ReminderValue(val reminder: ReminderOption) : AddTaskAction()
     data class DurationChanged(val minutes: Int) : AddTaskAction()
+    data class EditTask(val task: TaskModel) : AddTaskAction()
     data object ResetState : AddTaskAction()
 
     // Side effects → ViewModel

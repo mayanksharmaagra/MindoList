@@ -58,8 +58,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.CircularProgressIndicator
 import com.jrprofessor.mindolist.extension.toTimeAgo
 import com.jrprofessor.mindolist.icons.GoogleLogo
+import com.jrprofessor.mindolist.presentation.dashboard.DashboardAction
 import com.jrprofessor.mindolist.theme.MindoListAccentFixed
 import com.jrprofessor.mindolist.theme.MindoListMintFixed
 import com.jrprofessor.mindolist.theme.MindoListTheme
@@ -235,8 +237,9 @@ fun IntegrationsScreen(
                         lastSyncedLabel = mainUser.googleLinkedAt.toTimeAgo(),
                         autoSyncEnabled = autoSync,
                         onAutoSyncToggle = { autoSync = it },
+                        isSyncing = dashboardState.isGoogleSyncing,
                         onSyncNowClick = {
-                            mainUser.googleAccessToken?.let { viewModel.onGoogleSignInSuccess(it) }
+                            dashboardViewModel.dispatch(DashboardAction.RefreshGoogleTasks)
                         },
                         onDisconnectClick = {
                             viewModel.disconnectGoogleIntegration()
@@ -254,6 +257,7 @@ fun IntegrationsConnectedScreen(
     connectedEmail: String,
     lastSyncedLabel: String,
     autoSyncEnabled: Boolean,
+    isSyncing: Boolean,
     onAutoSyncToggle: (Boolean) -> Unit,
     onSyncNowClick: () -> Unit,
     onDisconnectClick: () -> Unit,
@@ -272,6 +276,7 @@ fun IntegrationsConnectedScreen(
             connectedEmail = connectedEmail,
             lastSyncedLabel = lastSyncedLabel,
             autoSyncEnabled = autoSyncEnabled,
+            isSyncing = isSyncing,
             onAutoSyncToggle = onAutoSyncToggle,
             onSyncNowClick = onSyncNowClick,
             onDisconnectClick = onDisconnectClick
@@ -298,6 +303,7 @@ private fun ConnectedGoogleCard(
     connectedEmail: String,
     lastSyncedLabel: String,
     autoSyncEnabled: Boolean,
+    isSyncing: Boolean,
     onAutoSyncToggle: (Boolean) -> Unit,
     onSyncNowClick: () -> Unit,
     onDisconnectClick: () -> Unit
@@ -379,7 +385,7 @@ private fun ConnectedGoogleCard(
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = "Synced $lastSyncedLabel",
+                        text = if (isSyncing) "Syncing..." else "Synced $lastSyncedLabel",
                         color = MindoListTheme.colors.textSecondary,
                         fontSize = 10.sp
                     )
@@ -427,7 +433,7 @@ private fun ConnectedGoogleCard(
 
             // ---- action buttons ----
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                SyncNowButton(onClick = onSyncNowClick, modifier = Modifier.weight(1f))
+                SyncNowButton(onClick = onSyncNowClick, isSyncing = isSyncing, modifier = Modifier.weight(1f))
                 DisconnectButton(onClick = onDisconnectClick, modifier = Modifier.weight(1f))
             }
         }
@@ -461,12 +467,12 @@ private fun ConnectedStatusPill() {
 }
 
 @Composable
-private fun SyncNowButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun SyncNowButton(onClick: () -> Unit, isSyncing: Boolean, modifier: Modifier = Modifier) {
     Surface(
         shape = RoundedCornerShape(11.dp),
         color = MindoListTheme.colors.accent.copy(alpha = 0.15f),
         border = BorderStroke(1.dp, MindoListTheme.colors.accent.copy(alpha = 0.4f)),
-        onClick = onClick,
+        onClick = { if (!isSyncing) onClick() },
         modifier = modifier
     ) {
         Row(
@@ -474,9 +480,22 @@ private fun SyncNowButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth().padding(vertical = 11.dp)
         ) {
-            SyncGlyph(color = MindoListTheme.colors.accent)
+            if (isSyncing) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(14.dp),
+                    strokeWidth = 2.dp,
+                    color = MindoListTheme.colors.accent
+                )
+            } else {
+                SyncGlyph(color = MindoListTheme.colors.accent)
+            }
             Spacer(Modifier.width(6.dp))
-            Text(text = "Sync now", color = MindoListTheme.colors.accent, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+            Text(
+                text = if (isSyncing) "Syncing..." else "Sync now", 
+                color = MindoListTheme.colors.accent, 
+                fontSize = 12.5.sp, 
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

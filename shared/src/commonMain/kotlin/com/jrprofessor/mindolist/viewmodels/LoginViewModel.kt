@@ -39,7 +39,12 @@ class LoginViewModel (
             is LoginIntent.BackPressed -> onBackPressed()
             is LoginIntent.ErrorDismissed -> onErrorDismissed()
             is LoginIntent.ClearState -> onClearState()
+            is LoginIntent.ToggleRememberMe -> onToggleRememberMe(intent.remember)
         }
+    }
+
+    private fun onToggleRememberMe(remember: Boolean) {
+        _loginState.update { it.copy(rememberMe = remember) }
     }
 
     private fun onClearState() {
@@ -139,11 +144,12 @@ class LoginViewModel (
 
     private fun onEmailChanged(email: String) {
         val isValid = Validators.validateEmail(email)
+        val error = Validators.getEmailError(email)
         _loginState.update {
             it.copy(
                 email = email,
                 isEmailValid = isValid,
-                emailError = if (email.isNotEmpty() && !isValid) "Invalid email address" else null,
+                emailError = error,
                 isLoginButtonEnabled = isValid && it.isPasswordValid
             )
         }

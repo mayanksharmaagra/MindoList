@@ -27,9 +27,11 @@ import com.jrprofessor.mindolist.navGraph.BottomNavGraph
 import com.jrprofessor.mindolist.navGraph.BottomNavItem
 import com.jrprofessor.mindolist.theme.MindoListTheme
 import com.jrprofessor.mindolist.theme.MindoListAccentFixed
+import com.jrprofessor.mindolist.viewmodels.TaskViewModel
 
 @Composable
 fun HomeScreen(
+    taskViewModel: TaskViewModel,
     onTaskAdd: () -> Unit = {},
     onLogout: () -> Unit = {},
 ) {
@@ -52,6 +54,7 @@ fun HomeScreen(
     ) {
         BottomNavGraph(
             navController = navController,
+            taskViewModel = taskViewModel,
             onAddTaskClick = onTaskAdd,
             onLogout = onLogout
         )

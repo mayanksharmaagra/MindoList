@@ -154,7 +154,7 @@ open class TaskRepositoryImpl(
             val taskWithId = task.copy(
                 id = taskId,
                 userId = uid,
-                createdAt = now,
+                createdAt = task.createdAt.takeIf { it > 0 } ?: now,
                 updatedAt = now,
             )
             ref.setValue(taskWithId.toMap())
@@ -183,7 +183,20 @@ open class TaskRepositoryImpl(
     )
 
     override suspend fun updateTask(task: TaskModel): Result<Unit> {
-        TODO("Not yet implemented")
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
+        return try {
+            val updateMap = task.toMap().toMutableMap()
+            updateMap["updatedAt"] = currentTimeMillis()
+            
+            tasksRef().child(task.id).updateChildren(updateMap)
+            Logger.debug { "Task updated successfully: ${task.id}" }
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Logger.error(e) { "Error updating task: ${e.message}" }
+            Result.Error(e, "Failed to update task")
+        }
     }
 
     override suspend fun markComplete(
@@ -208,7 +221,17 @@ open class TaskRepositoryImpl(
     }
 
     override suspend fun deleteTask(taskId: String): Result<Unit> {
-        TODO("Not yet implemented")
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
+        return try {
+            tasksRef().child(taskId).removeValue()
+            Logger.debug { "Task deleted successfully: $taskId" }
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Logger.error(e) { "Error deleting task: ${e.message}" }
+            Result.Error(e, "Failed to delete task")
+        }
     }
 
 

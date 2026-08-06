@@ -38,7 +38,11 @@ fun ShowNameView(
 
         OutlinedTextField(
             value = name,
-            onValueChange = onNameChange,
+            onValueChange = {
+                if (it.length <= 50) {
+                    onNameChange(it)
+                }
+            },
             placeholder = { Text("Enter your name", color = placeholderColor) },
             singleLine = true,
             shape = RoundedCornerShape(14.dp),

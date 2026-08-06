@@ -33,9 +33,19 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun ChangePasswordScreen(
     viewModel: ChangePasswordViewModel = koinViewModel(),
+    settingsViewModel: com.jrprofessor.mindolist.viewmodels.SettingsViewmodel = koinViewModel(),
     onBackClick: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.event.collect { message ->
+            com.jrprofessor.mindolist.utils.showToast(message)
+            if (message.contains("successfully", ignoreCase = true)) {
+                onBackClick()
+            }
+        }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -216,7 +226,9 @@ fun ChangePasswordScreen(
                         color = MindoListTheme.colors.accent,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable { /* Handle logout & reset */ }
+                        modifier = Modifier.clickable { 
+                            settingsViewModel.confirmLogout()
+                        }
                     )
                 }
             }

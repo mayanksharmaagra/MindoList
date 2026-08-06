@@ -48,6 +48,7 @@ fun SettingsScreen(
     val stateSettings by viewModelSettings.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showViewDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModelDashboard.dispatch(DashboardAction.LoadUserData)
@@ -124,8 +125,10 @@ fun SettingsScreen(
                     SettingsMenuItem(
                         icon = Icons.Outlined.GridView,
                         label = "Default view",
-                        value = "Grouped"
-                    ) {}
+                        value = stateSettings.defaultView.name.lowercase().replaceFirstChar { it.uppercase() }
+                    ) {
+                        showViewDialog = true
+                    }
                     SettingsDivider()
                     SettingsToggleItem(
                         icon = Icons.Default.AutoAwesome,
@@ -168,7 +171,7 @@ fun SettingsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "MindoList v1.0.0",
+                        text = "OneList AI v1.0.0",
                         color = MindoListTheme.colors.textSecondary.copy(alpha = 0.5f),
                         fontSize = 14.sp,
                         fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
@@ -194,6 +197,83 @@ fun SettingsScreen(
                 showThemeDialog = false
             },
             onDismiss = { showThemeDialog = false }
+        )
+    }
+
+    if (showViewDialog) {
+        ViewModeSelectionDialog(
+            currentMode = stateSettings.defaultView,
+            onModeSelected = {
+                viewModelSettings.dispatch(SettingsAction.SetDefaultView(it))
+                showViewDialog = false
+            },
+            onDismiss = { showViewDialog = false }
+        )
+    }
+}
+
+@Composable
+fun ViewModeSelectionDialog(
+    currentMode: com.jrprofessor.mindolist.presentation.settings.ViewMode,
+    onModeSelected: (com.jrprofessor.mindolist.presentation.settings.ViewMode) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MindoListTheme.colors.cardBg),
+            border = BorderStroke(1.dp, MindoListTheme.colors.textSecondary.copy(alpha = 0.1f))
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Default View",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MindoListTheme.colors.textPrimary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                
+                ViewModeOptionItem("Grouped by Date", com.jrprofessor.mindolist.presentation.settings.ViewMode.GROUPED, currentMode == com.jrprofessor.mindolist.presentation.settings.ViewMode.GROUPED) { onModeSelected(com.jrprofessor.mindolist.presentation.settings.ViewMode.GROUPED) }
+                ViewModeOptionItem("Simple List", com.jrprofessor.mindolist.presentation.settings.ViewMode.LIST, currentMode == com.jrprofessor.mindolist.presentation.settings.ViewMode.LIST) { onModeSelected(com.jrprofessor.mindolist.presentation.settings.ViewMode.LIST) }
+            }
+        }
+    }
+}
+
+@Composable
+fun ViewModeOptionItem(
+    label: String,
+    mode: com.jrprofessor.mindolist.presentation.settings.ViewMode,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (isSelected) MindoListTheme.colors.accent.copy(alpha = 0.1f) else Color.Transparent)
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(
+            selected = isSelected,
+            onClick = onClick,
+            colors = RadioButtonDefaults.colors(
+                selectedColor = MindoListTheme.colors.accent,
+                unselectedColor = MindoListTheme.colors.textSecondary
+            )
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = label,
+            fontSize = 16.sp,
+            color = if (isSelected) MindoListTheme.colors.accent else MindoListTheme.colors.textPrimary,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
         )
     }
 }
@@ -399,7 +479,7 @@ fun LogoutDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Are you sure you want to log out from MindoList?",
+                    text = "Are you sure you want to log out from OneList AI?",
                     fontSize = 14.sp,
                     color = MindoListTheme.colors.textSecondary,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center

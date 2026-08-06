@@ -9,4 +9,5 @@ sealed class SettingsAction {
     data class SetThemeMode(val mode: ThemeMode) : SettingsAction()
     data class SetNotificationsEnabled(val enabled: Boolean) : SettingsAction()
     data class SetAiExtractionEnabled(val enabled: Boolean) : SettingsAction()
+    data class SetDefaultView(val mode: com.jrprofessor.mindolist.presentation.settings.ViewMode) : SettingsAction()
 }

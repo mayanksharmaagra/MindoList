@@ -88,6 +88,11 @@ class EditProfileViewModel(
 
     private fun saveChanges() {
         viewModelScope.launch {
+            if (_state.value.fullName.isBlank()) {
+                _event.emit(EditProfileEvent.ShowToast("Name cannot be empty"))
+                return@launch
+            }
+            
             _state.update { it.copy(isLoading = true, error = null, success = false) }
 
             val currentState = _state.value
@@ -101,6 +106,7 @@ class EditProfileViewModel(
                     }
                     is Result.Error -> {
                         _state.update { it.copy(isLoading = false, error = result.message) }
+                        _event.emit(EditProfileEvent.ShowToast("Failed to upload image"))
                         return@launch
                     }
                     is Result.Loading -> { /* Handle if needed */ }
@@ -117,11 +123,11 @@ class EditProfileViewModel(
             when (val result = firebaseAuthRepository.saveUserToDatabase(updatedUser)) {
                 is Result.Success -> {
                     _state.update { it.copy(isLoading = false, success = true) }
-                    _event.emit(EditProfileEvent.ShowToast("Profile updated successfully"))
+                    _event.emit(EditProfileEvent.ShowToast("Profile updated successfully ✓"))
                 }
                 is Result.Error -> {
                     _state.update { it.copy(isLoading = false, error = result.message) }
-                    _event.emit(EditProfileEvent.ShowToast(result.message?:""))
+                    _event.emit(EditProfileEvent.ShowToast(result.message ?: "Failed to save profile"))
 
                 }
                 is Result.Loading -> { /* Handle if needed */ }

@@ -6,10 +6,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.jrprofessor.mindolist.screen.*
+import com.jrprofessor.mindolist.viewmodels.TaskViewModel
 
 @Composable
 fun BottomNavGraph(
     navController: NavHostController,
+    taskViewModel: TaskViewModel,
     onAddTaskClick: () -> Unit,
     onLogout: () -> Unit = {}
 ) {
@@ -19,6 +21,7 @@ fun BottomNavGraph(
     ) {
         composable(route = BottomNavItem.Dashboard.route) {
             DashboardScreen(
+                taskViewModel = taskViewModel,
                 onAddTaskClick = onAddTaskClick,
                 navigateToAllTasks = {
                     navController.navigate(BottomNavItem.Tasks.route) {
@@ -32,7 +35,10 @@ fun BottomNavGraph(
             )
         }
         composable(route = BottomNavItem.Tasks.route) {
-            AllTaskScreen(onAddTaskClick = onAddTaskClick)
+            AllTaskScreen(
+                taskViewModel = taskViewModel,
+                onAddTaskClick = onAddTaskClick
+            )
         }
         composable(route = BottomNavItem.Analytics.route) {
            AnalyticsScreen()

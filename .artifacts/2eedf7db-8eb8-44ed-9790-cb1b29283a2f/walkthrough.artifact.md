@@ -1,6 +1,6 @@
 # Change Password and Delete Account Screens Redesign Walkthrough
 
-The **Change Password** and **Delete Account** screens have been implemented to match the modern dark-themed "MindoList" design, providing a secure and brand-consistent experience.
+The **Change Password** and **Delete Account** screens have been implemented to match the modern dark-themed "OneList AI" design, providing a secure and brand-consistent experience.
 
 ## Changes Made
 
