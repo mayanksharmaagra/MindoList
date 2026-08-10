@@ -87,6 +87,7 @@ fun IntegrationsScreen(
 
     val isGoogleConnected = mainUser?.isGoogleConnected == true
     val error by viewModel.error.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -96,12 +97,13 @@ fun IntegrationsScreen(
             scope.launch {
                 val googleUser = authManager.userData.value
                 if (googleUser != null && mainUser != null) {
-                    if (googleUser.googleEmail != mainUser.email) {
+                    val googleEmail = googleUser.googleEmail
+                    if (googleEmail != null && googleEmail != mainUser.email) {
                         snackbarHostState.showSnackbar("Email mismatch: Please use ${mainUser.email}")
                         authManager.signOut()
-                    } else {
+                    } else if (googleEmail != null) {
                         viewModel.updateGoogleIntegration(
-                            googleEmail = googleUser.googleEmail ?: "",
+                            googleEmail = googleEmail,
                             accessToken = accessToken
                         )
                     }
@@ -247,6 +249,18 @@ fun IntegrationsScreen(
                     )
                 }
                 Spacer(modifier = Modifier.height(40.dp))
+            }
+
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.4f))
+                        .clickable(enabled = false) {}, // Prevent clicks through overlay
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = MindoListTheme.colors.accent)
+                }
             }
         }
     }

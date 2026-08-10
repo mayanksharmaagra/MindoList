@@ -15,7 +15,7 @@ class AiTaskRepositoryImpl(
 ) : AiTaskRepository {
 
     private val model = FirebaseAI.instance
-        .generativeModel("gemini-3.1-flash-lite") // gemini-1.5-flash is shut down (404) — use a current model
+        .generativeModel("gemini-3.1-flash-lite") 
 
     override suspend fun parseReminderText(userInput: String): ParsedTask {
         if (!networkConnectivityManager.isNetworkAvailable()) {

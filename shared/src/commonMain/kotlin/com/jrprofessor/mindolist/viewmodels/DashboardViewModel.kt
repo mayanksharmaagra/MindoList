@@ -7,6 +7,7 @@ import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepository
 import com.jrprofessor.mindolist.domain.repository.TaskRepository
 import com.jrprofessor.mindolist.domain.usecase.GetTasksUseCase
+import com.jrprofessor.mindolist.model.Category
 import com.jrprofessor.mindolist.model.Filter
 import com.jrprofessor.mindolist.model.GoogleItem
 import com.jrprofessor.mindolist.model.GoogleItemType
@@ -45,7 +46,8 @@ class DashboardViewModel(
     val taskRepository: TaskRepository,
     val googleCalendarRepository: GoogleCalendarRepository,
     val googleAuthManager: GoogleAuthManager,
-    private val appSettings: com.jrprofessor.mindolist.local.AppSettings
+    private val appSettings: com.jrprofessor.mindolist.local.AppSettings,
+    private val notificationScheduler: com.jrprofessor.mindolist.utils.NotificationScheduler
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DashboardState())
@@ -104,7 +106,7 @@ class DashboardViewModel(
         }
     }
 
-    private fun fetchGoogleItems(accessToken: String) {
+    private fun fetchGoogleItems(accessToken: String, isRetry: Boolean = false) {
         googleSyncJob?.cancel()
         googleSyncJob = viewModelScope.launch {
             try {
@@ -113,6 +115,22 @@ class DashboardViewModel(
                 val items: List<GoogleItem> = googleCalendarRepository.fetchAll(accessToken)
                 Logger.debug { "Google Task Response: ${items.size} items" }
                 _googleItems.value = items.map { it.toTaskUIModel() }
+            } catch (e: com.jrprofessor.mindolist.domain.model.UnauthorizedException) {
+                if (!isRetry) {
+                    Logger.debug { "Google token unauthorized, attempting refresh..." }
+                    val refreshedToken = googleAuthManager.refreshAccessToken(accessToken)
+                    if (refreshedToken != null) {
+                        // Update in Firebase for persistence
+                        val user = firebaseAuthRepository.getCurrentUser().first()
+                        if (user?.googleEmail != null) {
+                            firebaseAuthRepository.updateGoogleIntegration(user.googleEmail, refreshedToken)
+                        }
+                        fetchGoogleItems(refreshedToken, isRetry = true)
+                        return@launch
+                    }
+                }
+                Logger.error { "Google authorization failed after retry" }
+                _event.send(DashboardEvent.Error("Google session expired. Please reconnect."))
             } catch (e: Exception) {
                 Logger.error { "Failed to fetch Google items: ${e.message}" }
                 _event.send(DashboardEvent.Error("Google Sync: ${e.message}"))
@@ -152,12 +170,19 @@ class DashboardViewModel(
     private fun updateCounts(allTasks: List<TaskUIModel>) {
         val myTasksCount = allTasks.count { it.source == TaskSource.MY_TASK }
         val googleTasksCount = allTasks.count { it.source != TaskSource.MY_TASK }
+        
+        // Use labels as keys for grouping, normalized to match Category.label exactly
+        val categoryCounts = allTasks.groupBy { task ->
+            Category.entries.find { it.label.equals(task.category, ignoreCase = true) || it.dbKey.equals(task.category, ignoreCase = true) }?.label ?: Category.PERSONAL.label
+        }.mapValues { it.value.size }
+
         _state.update {
             it.copy(
                 allTasksCount = allTasks.size,
                 myTasksCount = myTasksCount,
                 googleTasksCount = googleTasksCount,
-                totalTasksCount = allTasks.size
+                totalTasksCount = allTasks.size,
+                categoryCounts = categoryCounts
             )
         }
     }
@@ -236,17 +261,9 @@ class DashboardViewModel(
             val user = firebaseAuthRepository.getCurrentUser().first()
             val token = user?.googleAccessToken
             if (token != null) {
-                isGoogleLoading = true
-                _state.update { it.copy(isLoading = true) }
-                try {
-                    val refreshedToken = googleAuthManager.refreshAccessToken()
-                    fetchGoogleItems(refreshedToken ?: token)
-                    _event.send(DashboardEvent.Error("Sync completed ✓")) // Using Error event for success msg as shortcut or add Message event
-                } catch (e: Exception) {
-                    isGoogleLoading = false
-                    _state.update { it.copy(isLoading = false) }
-                    _event.send(DashboardEvent.Error("Sync failed: ${e.message}"))
-                }
+                // First attempt a silent refresh to be safe
+                val refreshedToken = googleAuthManager.refreshAccessToken(token)
+                fetchGoogleItems(refreshedToken ?: token)
             } else {
                 _event.send(DashboardEvent.Error("Google account not connected"))
             }
@@ -309,6 +326,7 @@ class DashboardViewModel(
                 }
                 Result.Loading -> Unit
                 is Result.Success<*> -> {
+                    notificationScheduler.cancelNotification(taskId)
                     _myTasks.update { tasks -> tasks.filter { it.id != taskId } }
                     combineAllTasks()
                     _event.send(DashboardEvent.TaskDeleted)
@@ -327,7 +345,12 @@ class DashboardViewModel(
 
                 Result.Loading -> Unit
                 is Result.Success<*> -> {
-
+                    if (completed) {
+                        notificationScheduler.cancelNotification(taskId)
+                    } else {
+                        // If unmarked, we might want to re-schedule, but we'd need the full TaskModel
+                        // For now, completion is the main trigger for cancellation.
+                    }
                     // Local state update karo — Firebase realtime se bhi update aayega
                     _myTasks.update { tasks ->
                         tasks.map { task ->

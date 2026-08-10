@@ -18,6 +18,7 @@ data class DashboardState (
     val myTasksCount: Int = 0,
     val googleTasksCount: Int = 0,
     val allTasksCount: Int = 0,
+    val categoryCounts: Map<String, Int> = emptyMap(),
     val isLoading: Boolean = true,
     val isGoogleSyncing: Boolean = false,
     val error: String? = null,

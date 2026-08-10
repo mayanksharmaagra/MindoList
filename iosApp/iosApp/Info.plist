@@ -15,5 +15,17 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>OneList AI needs microphone access to convert your voice to tasks.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>OneList AI needs speech recognition access to convert your voice to tasks.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>OneList AI needs camera access to let you take profile photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>OneList AI needs gallery access to let you pick profile photos.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

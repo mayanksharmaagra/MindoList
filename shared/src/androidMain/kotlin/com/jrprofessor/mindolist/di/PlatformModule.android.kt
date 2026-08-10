@@ -10,6 +10,8 @@ import com.jrprofessor.mindolist.utils.GoogleAuthManager
 import com.jrprofessor.mindolist.utils.AndroidNetworkConnectivityManager
 import com.jrprofessor.mindolist.utils.NetworkConnectivityManager
 import com.jrprofessor.mindolist.utils.SpeechToTextParser
+import com.jrprofessor.mindolist.utils.NotificationScheduler
+import com.jrprofessor.mindolist.utils.AndroidNotificationScheduler
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 import org.koin.core.module.Module
@@ -22,4 +24,5 @@ actual val platformModule: Module = module {
     single<SpeechToTextParser> { AndroidSpeechToTextParser(androidContext()) }
     single<GoogleAuthManager> { AndroidGoogleAuthManager(androidContext()) }
     single<NetworkConnectivityManager> { AndroidNetworkConnectivityManager(androidContext()) }
+    single<NotificationScheduler> { AndroidNotificationScheduler(androidContext()) }
 }

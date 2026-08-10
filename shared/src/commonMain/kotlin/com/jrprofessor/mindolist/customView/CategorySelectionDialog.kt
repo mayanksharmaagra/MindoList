@@ -30,6 +30,7 @@ import com.jrprofessor.mindolist.theme.*
 @Composable
 fun CategorySelectionDialog(
     selectedCategory: Category,
+    categoryCounts: Map<String, Int> = emptyMap(),
     onCategorySelected: (Category) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -118,6 +119,7 @@ fun CategorySelectionDialog(
                         CategoryListItem(
                             category = category,
                             isSelected = category == currentSelection,
+                            count = categoryCounts[category.label] ?: 0,
                             onClick = { currentSelection = category }
                         )
                     }
@@ -159,6 +161,7 @@ fun CategorySelectionDialog(
 fun CategoryListItem(
     category: Category,
     isSelected: Boolean,
+    count: Int,
     onClick: () -> Unit
 ) {
     val border = if (isSelected) BorderStroke(1.dp, MindoListTheme.colors.accent) else null
@@ -203,7 +206,7 @@ fun CategoryListItem(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "${(3..15).random()} tasks", 
+                    text = "$count tasks", 
                     color = MindoListTheme.colors.textSecondary,
                     fontSize = 14.sp
                 )

@@ -41,8 +41,8 @@ val viewModelModule = module {
     viewModelOf(::LoginViewModel)
     viewModelOf(::SignUpViewModel)
     viewModelOf(::ForgotPasswordViewModel)
-    viewModel { DashboardViewModel(get(), get(), get(), get(), get(), get()) }
-    viewModel { TaskViewModel(get(), getOrNull(), get(), get()) }
+    viewModel { DashboardViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { TaskViewModel(get(), getOrNull(), get(), get(), get()) }
     viewModelOf(::AuthViewModel)
     viewModelOf(::SettingsViewmodel)
     viewModelOf(::EditProfileViewModel)

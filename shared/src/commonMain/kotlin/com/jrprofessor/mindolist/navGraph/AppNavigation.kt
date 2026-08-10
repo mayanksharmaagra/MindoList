@@ -15,6 +15,7 @@ import com.jrprofessor.mindolist.screen.ForgotPasswordScreen
 import com.jrprofessor.mindolist.screen.HomeScreen
 import com.jrprofessor.mindolist.screen.SplashScreen
 import com.jrprofessor.mindolist.screen.WelcomeScreen
+import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
 import com.jrprofessor.mindolist.viewmodels.LoginViewModel
 import com.jrprofessor.mindolist.viewmodels.SignUpViewModel
 import com.jrprofessor.mindolist.viewmodels.TaskViewModel
@@ -123,13 +124,17 @@ fun AppNavigation() {
             route = Screen.MainGraph.route
         ) {
             composable(Screen.Home.route) { entry ->
+                
                 val mainBackStackEntry = remember(entry) {
                     navController.getBackStackEntry(Screen.MainGraph.route)
                 }
+                
                 val taskViewModel: TaskViewModel = koinViewModel(viewModelStoreOwner = mainBackStackEntry)
+                val dashboardViewModel: DashboardViewModel = koinViewModel(viewModelStoreOwner = mainBackStackEntry)
 
                 HomeScreen(
                     taskViewModel = taskViewModel,
+                    dashboardViewModel = dashboardViewModel,
                     onTaskAdd = { 
                         navController.navigate(Screen.AddTask.route) {
                             launchSingleTop = true
@@ -147,9 +152,11 @@ fun AppNavigation() {
                     navController.getBackStackEntry(Screen.MainGraph.route)
                 }
                 val taskViewModel: TaskViewModel = koinViewModel(viewModelStoreOwner = mainBackStackEntry)
+                val dashboardViewModel: DashboardViewModel = koinViewModel(viewModelStoreOwner = mainBackStackEntry)
 
                 AddTaskScreen(
                     viewModel = taskViewModel,
+                    dashboardViewModel = dashboardViewModel,
                     onNavigateBack = { 
                         navController.popBackStack() 
                     }

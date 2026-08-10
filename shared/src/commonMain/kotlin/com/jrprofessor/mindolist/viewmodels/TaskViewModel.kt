@@ -7,6 +7,7 @@ import com.jrprofessor.mindolist.domain.repository.AiTaskRepository
 import com.jrprofessor.mindolist.domain.usecase.AddTaskUseCase
 import com.jrprofessor.mindolist.model.Category
 import com.jrprofessor.mindolist.model.Priority
+import com.jrprofessor.mindolist.model.ReminderOption
 import com.jrprofessor.mindolist.model.TaskModel
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskAction
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskEvent
@@ -14,8 +15,10 @@ import com.jrprofessor.mindolist.presentation.addTask.AddTaskEvent.Error
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskEvent.Success
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskUiState
 import com.jrprofessor.mindolist.presentation.dashboard.DashboardEvent
-import com.jrprofessor.mindolist.screen.ReminderOption
 import com.jrprofessor.mindolist.extension.*
+import com.jrprofessor.mindolist.utils.Logger
+import com.jrprofessor.mindolist.utils.NotificationScheduler
+import com.jrprofessor.mindolist.utils.ReminderUtils
 import com.jrprofessor.mindolist.utils.NetworkConnectivityManager
 import com.jrprofessor.mindolist.utils.SpeechToTextParser
 import kotlinx.coroutines.channels.Channel
@@ -38,7 +41,8 @@ class TaskViewModel(
     private val addTaskUseCase: AddTaskUseCase,
     private val aiRepository: AiTaskRepository? = null,
     private val sttParser: SpeechToTextParser,
-    private val networkConnectivityManager: NetworkConnectivityManager
+    private val networkConnectivityManager: NetworkConnectivityManager,
+    private val notificationScheduler: NotificationScheduler
 ) : ViewModel() {
     private val _state = MutableStateFlow(AddTaskUiState())
     val state: StateFlow<AddTaskUiState> = _state.asStateFlow()
@@ -108,6 +112,7 @@ class TaskViewModel(
                         title = parsed.title,
                         description = parsed.description,
                         category = Category.entries.find { cat -> cat.label.equals(parsed.category, ignoreCase = true) } ?: Category.PERSONAL,
+                        priority = Priority.entries.find { p -> p.label.equals(parsed.importance, ignoreCase = true) } ?: Priority.MEDIUM,
                         selectedDate = parsed.date ?: it.selectedDate,
                         selectedTime = parsed.time ?: it.selectedTime,
                         isParsingAi = false
@@ -162,11 +167,18 @@ class TaskViewModel(
             _state.update { it.copy(isLoading = true) }
 
             val st = _state.value
+            val dueDateMillis = buildDueDateMillis(st.selectedDate, st.selectedTime)
+            
+            if (st.reminderEnabled) {
+                val triggerTime = ReminderUtils.calculateTriggerTime(dueDateMillis, st.reminderOption)
+                Logger.debug { "Reminder set for: ${st.reminderOption.label}, Trigger time: ${triggerTime.toDisplayTime()}" }
+            }
+
             val task = TaskModel(
                 id = if (st.isEditMode) st.editTaskId else "",
                 title = st.title.trim(),
                 description = st.description.trim(),
-                dueDate = buildDueDateMillis(st.selectedDate, st.selectedTime),
+                dueDate = dueDateMillis,
                 priority = st.priority.label,
                 category = st.category.label,
                 reminderEnabled = st.reminderEnabled,
@@ -182,6 +194,13 @@ class TaskViewModel(
 
             when (result) {
                 is Result.Success -> {
+                    // Schedule notification
+                    if (task.reminderEnabled) {
+                        notificationScheduler.scheduleNotification(task)
+                    } else {
+                        notificationScheduler.cancelNotification(task.id)
+                    }
+
                     _addTaskEffect.emit(
                         Success(
                             if (st.isEditMode) "Task updated successfully ✓"

@@ -53,6 +53,22 @@ actual fun RequestStoragePermission(
 }
 
 @Composable
+actual fun RequestNotificationPermission(
+    onPermissionGranted: () -> Unit,
+    onPermissionDenied: () -> Unit
+) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        RequestPermissionInternal(
+            permission = Manifest.permission.POST_NOTIFICATIONS,
+            onPermissionGranted = onPermissionGranted,
+            onPermissionDenied = onPermissionDenied
+        )
+    } else {
+        onPermissionGranted()
+    }
+}
+
+@Composable
 private fun RequestPermissionInternal(
     permission: String,
     onPermissionGranted: () -> Unit,

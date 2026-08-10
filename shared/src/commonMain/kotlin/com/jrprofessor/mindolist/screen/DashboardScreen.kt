@@ -35,17 +35,17 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun DashboardScreen(
-    viewModel: DashboardViewModel = koinViewModel(),
+    dashboardViewModel: DashboardViewModel = koinViewModel(),
     taskViewModel: TaskViewModel,
     onAddTaskClick: () -> Unit,
     navigateToAllTasks: () -> Unit
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by dashboardViewModel.state.collectAsState()
     var showDeleteDialog by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        viewModel.dispatch(DashboardAction.DateByTask(today()))
-        viewModel.event.collect { event ->
+        dashboardViewModel.dispatch(DashboardAction.DateByTask(today()))
+        dashboardViewModel.event.collect { event ->
             when (event) {
                 is DashboardEvent.Error -> showToast(event.message)
                 DashboardEvent.TaskCompleted -> showToast("Task completed ✓")
@@ -67,7 +67,7 @@ fun DashboardScreen(
             DashboardContent(
                 state = state,
                 markCompleted = { taskId, isCompleted ->
-                    viewModel.dispatch(DashboardAction.MarkComplete(taskId, isCompleted))
+                    dashboardViewModel.dispatch(DashboardAction.MarkComplete(taskId, isCompleted))
                 },
                 onDelete = { taskId -> showDeleteDialog = taskId },
                 onEdit = { task ->
@@ -82,7 +82,7 @@ fun DashboardScreen(
         if (showDeleteDialog != null) {
             DeleteConfirmationDialog(
                 onConfirm = {
-                    viewModel.dispatch(DashboardAction.DeleteTask(showDeleteDialog!!))
+                    dashboardViewModel.dispatch(DashboardAction.DeleteTask(showDeleteDialog!!))
                     showDeleteDialog = null
                 },
                 onDismiss = { showDeleteDialog = null }

@@ -5,12 +5,25 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -18,12 +31,35 @@ import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -32,43 +68,54 @@ import com.jrprofessor.mindolist.customView.ActionButton
 import com.jrprofessor.mindolist.customView.CategorySelectionDialog
 import com.jrprofessor.mindolist.customView.DatePickerDialog
 import com.jrprofessor.mindolist.customView.TimePickerDialog
-import com.jrprofessor.mindolist.getPlatform
 import com.jrprofessor.mindolist.icons.IcBell
 import com.jrprofessor.mindolist.icons.IcCalendar
 import com.jrprofessor.mindolist.icons.IcClock
-import com.jrprofessor.mindolist.model.Category
 import com.jrprofessor.mindolist.model.Priority
+import com.jrprofessor.mindolist.model.ReminderOption
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskAction
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskEvent
 import com.jrprofessor.mindolist.presentation.addTask.AddTaskUiState
-import com.jrprofessor.mindolist.theme.*
+import com.jrprofessor.mindolist.theme.MindoListAccentFixed
+import com.jrprofessor.mindolist.theme.MindoListTheme
 import com.jrprofessor.mindolist.utils.RequestMicrophonePermission
+import com.jrprofessor.mindolist.utils.RequestNotificationPermission
 import com.jrprofessor.mindolist.utils.showToast
 import com.jrprofessor.mindolist.viewmodels.TaskViewModel
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
 
-enum class ReminderOption(val label: String) {
-    FIVE_MINUTES("5 minutes before"),
-    TEN_MINUTES("10 minutes before"),
-    FIFTEEN_MINUTES("15 minutes before"),
-    THIRTY_MINUTES("30 minutes before"),
-    ONE_HOUR("1 hour before"),
-    TWO_HOURS("2 hours before"),
-    ONE_DAY("1 day before"),
-}
 @Composable
 fun AddTaskScreen(
     viewModel: TaskViewModel,
+    dashboardViewModel: com.jrprofessor.mindolist.viewmodels.DashboardViewModel,
     settingsViewModel: com.jrprofessor.mindolist.viewmodels.SettingsViewmodel = koinViewModel(),
     onNavigateBack: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val settingsState by settingsViewModel.state.collectAsState()
+    val dashboardState by dashboardViewModel.state.collectAsState()
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
     
     var showTimePicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showCategoryDialog by remember { mutableStateOf(false) }
+    var requestNotificationPermission by remember { mutableStateOf(false) }
+
+    if (requestNotificationPermission) {
+        RequestNotificationPermission(
+            onPermissionGranted = {
+                requestNotificationPermission = false
+                viewModel.dispatch(AddTaskAction.ReminderToggled(true))
+            },
+            onPermissionDenied = {
+                requestNotificationPermission = false
+                showToast("Notification permission is required for reminders")
+                viewModel.dispatch(AddTaskAction.ReminderToggled(false))
+            }
+        )
+    }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -92,6 +139,12 @@ fun AddTaskScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MindoListTheme.colors.background)
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                })
+            }
     ) {
         Column(
             modifier = Modifier
@@ -104,7 +157,10 @@ fun AddTaskScreen(
             Spacer(modifier = Modifier.height(30.dp))
 
             if (settingsState.aiExtractionEnabled) {
-                AiExtractionSection(state, viewModel)
+                AiExtractionSection(state, viewModel, onAiExtractClick = {
+                    keyboardController?.hide()
+                    viewModel.dispatch(AddTaskAction.ParseAiClicked)
+                })
 
                 Spacer(modifier = Modifier.height(30.dp))
                 ManualDivider()
@@ -116,7 +172,14 @@ fun AddTaskScreen(
                 viewModel = viewModel,
                 onDateClick = { showDatePicker = true },
                 onTimeClick = { showTimePicker = true },
-                onCategoryClick = { showCategoryDialog = true }
+                onCategoryClick = { showCategoryDialog = true },
+                onReminderToggle = { enabled ->
+                    if (enabled) {
+                        requestNotificationPermission = true
+                    } else {
+                        viewModel.dispatch(AddTaskAction.ReminderToggled(false))
+                    }
+                }
             )
 
             Spacer(modifier = Modifier.height(40.dp))
@@ -132,7 +195,10 @@ fun AddTaskScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(12.dp),
-                onClick = { viewModel.dispatch(AddTaskAction.SaveClicked) }
+                onClick = { 
+                    keyboardController?.hide()
+                    viewModel.dispatch(AddTaskAction.SaveClicked) 
+                }
             )
             Spacer(modifier = Modifier.height(40.dp))
         }
@@ -167,6 +233,7 @@ fun AddTaskScreen(
         if (showCategoryDialog) {
             CategorySelectionDialog(
                 selectedCategory = state.category,
+                categoryCounts = dashboardState.categoryCounts,
                 onCategorySelected = {
                     viewModel.dispatch(AddTaskAction.CategoryChanged(it))
                 },
@@ -212,7 +279,7 @@ fun AddTaskToolbar(onNavigateBack: () -> Unit) {
 }
 
 @Composable
-fun AiExtractionSection(state: AddTaskUiState, viewModel: TaskViewModel) {
+fun AiExtractionSection(state: AddTaskUiState, viewModel: TaskViewModel, onAiExtractClick: () -> Unit) {
 //    if (!getPlatform().isAndroid) return
     
     var showPermissionRequest by remember { mutableStateOf(false) }
@@ -316,7 +383,7 @@ fun AiExtractionSection(state: AddTaskUiState, viewModel: TaskViewModel) {
                     .height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 iconTint = Color.Black,
-                onClick = { viewModel.dispatch(AddTaskAction.ParseAiClicked) }
+                onClick = onAiExtractClick
             )
 
             AnimatedVisibility(
@@ -366,7 +433,8 @@ fun ManualInputSection(
     viewModel: TaskViewModel,
     onDateClick: () -> Unit,
     onTimeClick: () -> Unit,
-    onCategoryClick: () -> Unit
+    onCategoryClick: () -> Unit,
+    onReminderToggle: (Boolean) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
         InputField(
@@ -374,7 +442,8 @@ fun ManualInputSection(
             value = state.title,
             onValueChange = { viewModel.dispatch(AddTaskAction.TitleChanged(it)) },
             placeholder = "Team sync call",
-            maxLength = 100
+            maxLength = 100,
+            singleLine = true
         )
 
         InputField(
@@ -455,7 +524,7 @@ fun ManualInputSection(
             viewModel = viewModel,
             isEnabled = state.reminderEnabled,
             selectedReminder = state.reminderOption,
-            onToggle = { viewModel.dispatch(AddTaskAction.ReminderToggled(it)) },
+            onToggle = onReminderToggle,
             onReminderSelected = { viewModel.dispatch(AddTaskAction.ReminderValue(it)) })
     }
 }
@@ -665,7 +734,8 @@ fun InputField(
     placeholder: String,
     minHeight: Dp = 56.dp,
     maxLength: Int? = null,
-    showCount: Boolean = false
+    showCount: Boolean = false,
+    singleLine: Boolean = false
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
@@ -687,6 +757,7 @@ fun InputField(
                     .fillMaxWidth()
                     .heightIn(min = minHeight),
                 shape = RoundedCornerShape(16.dp),
+                singleLine = singleLine,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.2f),
                     unfocusedBorderColor = MindoListTheme.colors.textSecondary.copy(alpha = 0.2f),

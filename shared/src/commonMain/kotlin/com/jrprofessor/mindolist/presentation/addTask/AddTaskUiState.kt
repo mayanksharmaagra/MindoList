@@ -4,7 +4,7 @@ import com.jrprofessor.mindolist.extension.toDateFormat
 import com.jrprofessor.mindolist.extension.toTimeFormat
 import com.jrprofessor.mindolist.model.Category
 import com.jrprofessor.mindolist.model.Priority
-import com.jrprofessor.mindolist.screen.ReminderOption
+import com.jrprofessor.mindolist.model.ReminderOption
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 

@@ -19,3 +19,9 @@ expect fun RequestStoragePermission(
     onPermissionGranted: () -> Unit,
     onPermissionDenied: () -> Unit
 )
+
+@Composable
+expect fun RequestNotificationPermission(
+    onPermissionGranted: () -> Unit,
+    onPermissionDenied: () -> Unit
+)

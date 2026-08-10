@@ -83,10 +83,14 @@ class AndroidSpeechToTextParser(
 
     override fun onResults(results: Bundle?) {
         results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.getOrNull(0)?.let { text ->
-            _state.update { it.copy(spokenText = text) }
+            _state.update { it.copy(spokenText = text, isSpeaking = false) }
         }
     }
 
-    override fun onPartialResults(partialResults: Bundle?) = Unit
+    override fun onPartialResults(partialResults: Bundle?) {
+        partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.getOrNull(0)?.let { text ->
+            _state.update { it.copy(spokenText = text) }
+        }
+    }
     override fun onEvent(eventType: Int, params: Bundle?) = Unit
 }

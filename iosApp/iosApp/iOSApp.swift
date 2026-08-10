@@ -1,13 +1,11 @@
-// iosApp/iosApp/iOSApp.swift
 import SwiftUI
 import FirebaseCore
 import FirebaseAppCheck
 import Shared
-
-// iosApp/iosApp/iOSApp.swift
 import GoogleSignIn
+import UserNotifications
 
-class AppDelegate: NSObject, UIApplicationDelegate {
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
 
@@ -15,7 +13,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         AppCheck.setAppCheckProviderFactory(providerFactory)
         FirebaseApp.configure()
 
-        // Configure GIDSignIn once at launch — Kotlin's GoogleSignInLauncher.ios.kt calls signIn() directly
+        UNUserNotificationCenter.current().delegate = self
+        
+        // Request notification permission on startup to ensure system is ready
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
+
+        // Configure GIDSignIn once at launch
         if let clientID = FirebaseApp.app()?.options.clientID {
             GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
         }
@@ -30,6 +33,13 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                      open url: URL,
                      options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
         return GIDSignIn.sharedInstance.handle(url)
+    }
+
+    // Show notifications when app is in foreground
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .list, .sound])
     }
 }
 

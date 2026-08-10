@@ -3,6 +3,7 @@ package com.jrprofessor.mindolist.screen
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,7 +53,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -105,6 +109,9 @@ fun EditProfileContent(
     onBackClick: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
     var showCamera by remember { mutableStateOf(false) }
     var showImageSourceOption by remember { mutableStateOf(false) }
 
@@ -164,7 +171,16 @@ fun EditProfileContent(
         modifier = Modifier.fillMaxSize(),
         color = MindoListTheme.colors.background
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                    })
+                }
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -190,7 +206,10 @@ fun EditProfileContent(
                 Spacer(modifier = Modifier.height(40.dp))
 
                 Button(
-                    onClick = { onAction(EditProfileAction.OnSaveClick) },
+                    onClick = { 
+                        keyboardController?.hide()
+                        onAction(EditProfileAction.OnSaveClick) 
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(64.dp),
