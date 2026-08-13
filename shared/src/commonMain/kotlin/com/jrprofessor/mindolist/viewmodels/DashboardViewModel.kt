@@ -115,6 +115,7 @@ class DashboardViewModel(
                 val items: List<GoogleItem> = googleCalendarRepository.fetchAll(accessToken)
                 Logger.debug { "Google Task Response: ${items.size} items" }
                 _googleItems.value = items.map { it.toTaskUIModel() }
+                _event.send(DashboardEvent.SyncSuccess)
             } catch (e: com.jrprofessor.mindolist.domain.model.UnauthorizedException) {
                 if (!isRetry) {
                     Logger.debug { "Google token unauthorized, attempting refresh..." }
@@ -145,8 +146,9 @@ class DashboardViewModel(
     private fun combineAllTasks() {
         val selectedDate = _state.value.selectedDate
         
-        // All tasks logic
-        val allCombined = (_myTasks.value + _googleItems.value).sortedBy { it.dueDate }
+        // All tasks logic: Pinned first, then by dueDate
+        val allCombined = (_myTasks.value + _googleItems.value)
+            .sortedWith(compareByDescending<TaskUIModel> { it.isPinned }.thenBy { it.dueDate })
         _allTasks.value = allCombined
         
         // Dashboard (Today's) logic
@@ -212,6 +214,9 @@ class DashboardViewModel(
             }
             is DashboardAction.DeleteTask -> {
                 deleteTask(action.taskId)
+            }
+            is DashboardAction.TogglePin -> {
+                togglePin(action.taskId, action.isPinned)
             }
 
             is DashboardAction.SelectedDate -> {
@@ -365,6 +370,26 @@ class DashboardViewModel(
         }
     }
 
+    private fun togglePin(taskId: String, pinned: Boolean) {
+        viewModelScope.launch {
+            when (val result = taskRepository.togglePin(taskId, pinned)) {
+                is Result.Error -> {
+                    _event.send(DashboardEvent.Error(result.message ?: "Failed to toggle pin"))
+                }
+                Result.Loading -> Unit
+                is Result.Success<*> -> {
+                    _myTasks.update { tasks ->
+                        tasks.map { task ->
+                            if (task.id == taskId) task.copy(isPinned = pinned)
+                            else task
+                        }
+                    }
+                    combineAllTasks()
+                }
+            }
+        }
+    }
+
     private fun loadTasks(selectedDate: LocalDate?) {
         viewModelScope.launch {
             Logger.debug { "Loading tasks :$selectedDate" }
@@ -459,6 +484,7 @@ fun TaskModel.toTaskUIModel() = TaskUIModel(
     priority = priority,
     category = category,
     isCompleted = isCompleted,
+    isPinned = isPinned,
     source = TaskSource.MY_TASK,
     originalModel = this
 )

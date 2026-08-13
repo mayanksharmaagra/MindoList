@@ -35,15 +35,14 @@ import com.jrprofessor.mindolist.utils.showToast
 import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
 import com.jrprofessor.mindolist.viewmodels.TaskViewModel
 import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
-import org.koin.compose.viewmodel.koinViewModel
-import kotlin.time.Instant
 
 @Composable
 fun AllTaskScreen(
-    dashboardViewModel: DashboardViewModel = koinViewModel(),
+    dashboardViewModel: DashboardViewModel,
     taskViewModel: TaskViewModel,
     onAddTaskClick: () -> Unit,
 ) {
@@ -59,6 +58,7 @@ fun AllTaskScreen(
                 is DashboardEvent.Error -> showToast(event.message)
                 is DashboardEvent.TaskCompleted -> showToast("Task completed ✓")
                 is DashboardEvent.TaskDeleted -> showToast("Task deleted ✓")
+                is DashboardEvent.SyncSuccess -> showToast("Sync successful ✓")
             }
         }
     }
@@ -84,6 +84,9 @@ fun AllTaskScreen(
                 },
                 markCompleted = { id, isComplete ->
                     dashboardViewModel.dispatch(DashboardAction.MarkComplete(id, isComplete))
+                },
+                onTogglePin = { id, isPinned ->
+                    dashboardViewModel.dispatch(DashboardAction.TogglePin(id, isPinned))
                 },
                 onDelete = { taskId -> showDeleteDialog = taskId },
                 onEdit = { task ->
@@ -114,6 +117,7 @@ fun AllTaskScreenContent(
     onFilterSelected: (String) -> Unit,
     onSourceFilterSelected: (String) -> Unit,
     markCompleted: (String, Boolean) -> Unit,
+    onTogglePin: (String, Boolean) -> Unit,
     onDelete: (String) -> Unit,
     onEdit: (TaskModel) -> Unit,
     onSearchQueryChanged: (String) -> Unit,
@@ -215,6 +219,9 @@ fun AllTaskScreenContent(
                                 onToggleComplete = { isCompleted ->
                                     markCompleted(task.id, isCompleted)
                                 },
+                                onTogglePin = { isPinned ->
+                                    onTogglePin(task.id, isPinned)
+                                },
                                 onDelete = { onDelete(task.id) },
                                 onEdit = { 
                                     if (task.originalModel is TaskModel) {
@@ -230,6 +237,9 @@ fun AllTaskScreenContent(
                             task = task,
                             onToggleComplete = { isCompleted ->
                                 markCompleted(task.id, isCompleted)
+                            },
+                            onTogglePin = { isPinned ->
+                                onTogglePin(task.id, isPinned)
                             },
                             onDelete = { onDelete(task.id) },
                             onEdit = { 

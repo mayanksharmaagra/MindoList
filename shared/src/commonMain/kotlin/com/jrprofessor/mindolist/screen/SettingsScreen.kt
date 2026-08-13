@@ -3,6 +3,8 @@ package com.jrprofessor.mindolist.screen
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -36,7 +38,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun SettingsScreen(
-    viewModelDashboard: DashboardViewModel = koinViewModel(),
+    viewModelDashboard: DashboardViewModel,
     viewModelSettings: SettingsViewmodel = koinViewModel(),
     onNavigateToSignUp: () -> Unit = {},
     onEditProfileClick: () -> Unit = {},
@@ -49,6 +51,7 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showThemeDialog by remember { mutableStateOf(false) }
     var showViewDialog by remember { mutableStateOf(false) }
+    var showExportDialog by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         viewModelDashboard.dispatch(DashboardAction.LoadUserData)
@@ -56,6 +59,9 @@ fun SettingsScreen(
             when (event) {
                 is SettingsEvent.Message -> snackbarHostState.showSnackbar(event.message)
                 is SettingsEvent.NavigateToSignUp -> onNavigateToSignUp()
+                is SettingsEvent.ExportSuccess -> {
+                    showExportDialog = event.json
+                }
             }
         }
     }
@@ -138,6 +144,14 @@ fun SettingsScreen(
                             viewModelSettings.dispatch(SettingsAction.SetAiExtractionEnabled(it))
                         }
                     )
+                    SettingsDivider()
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.FileDownload,
+                        label = "Export tasks",
+                        value = "JSON"
+                    ) {
+                        viewModelSettings.dispatch(SettingsAction.ExportTasks)
+                    }
                 }
             }
 
@@ -209,6 +223,64 @@ fun SettingsScreen(
             },
             onDismiss = { showViewDialog = false }
         )
+    }
+
+    if (showExportDialog != null) {
+        ExportDataDialog(
+            json = showExportDialog!!,
+            onDismiss = { showExportDialog = null }
+        )
+    }
+}
+
+@Composable
+fun ExportDataDialog(json: String, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MindoListTheme.colors.cardBg),
+            border = BorderStroke(1.dp, MindoListTheme.colors.textSecondary.copy(alpha = 0.1f))
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp).fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Exported Tasks",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MindoListTheme.colors.textPrimary
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Surface(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MindoListTheme.colors.cardChildBg
+                ) {
+                    Box(modifier = Modifier.padding(12.dp).verticalScroll(rememberScrollState())) {
+                        Text(
+                            text = json,
+                            fontSize = 12.sp,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                            color = MindoListTheme.colors.textSecondary
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                ActionButton(
+                    text = "Close",
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    containerColor = MindoListTheme.colors.accent,
+                    textColor = Color.Black,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
     }
 }
 

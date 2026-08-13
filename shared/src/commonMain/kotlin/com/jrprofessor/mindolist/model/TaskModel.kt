@@ -16,6 +16,7 @@ data class TaskModel(
     val reminderValue: String = "",    // epoch millis
     val duration: Int = 0,             // minutes
     var isCompleted: Boolean = false,
+    val isPinned: Boolean = false,
     val createdAt: Long = Clock.System.now().toEpochMilliseconds(),
     var updatedAt: Long = Clock.System.now().toEpochMilliseconds(),
 )

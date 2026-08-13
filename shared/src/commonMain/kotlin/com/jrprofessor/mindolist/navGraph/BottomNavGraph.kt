@@ -49,6 +49,7 @@ fun BottomNavGraph(
         }
         composable(route = BottomNavItem.Settings.route) {
             SettingsScreen(
+                viewModelDashboard = dashboardViewModel,
                 onNavigateToSignUp = onLogout,
                 onEditProfileClick = {
                     navController.navigate(Screen.EditProfile.route)
@@ -74,6 +75,7 @@ fun BottomNavGraph(
         }
         composable(route = Screen.Integration.route) {
             IntegrationsScreen(
+                dashboardViewModel = dashboardViewModel,
                 onBackClick = {
                     navController.popBackStack()
                 }

@@ -13,6 +13,7 @@ sealed class DashboardAction {
     data class FilterSelected(val filterLabel: String) : DashboardAction()
     data class SourceFilterSelected(val sourceLabel: String) : DashboardAction()
     data class DeleteTask(val taskId: String) : DashboardAction()
+    data class TogglePin(val taskId: String, val isPinned: Boolean) : DashboardAction()
     data class SearchQueryChanged(val query: String) : DashboardAction()
     data object ToggleSearch : DashboardAction()
     data object RefreshGoogleTasks : DashboardAction()

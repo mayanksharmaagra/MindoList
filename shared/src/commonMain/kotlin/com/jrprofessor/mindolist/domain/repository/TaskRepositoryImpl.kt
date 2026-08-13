@@ -178,6 +178,7 @@ open class TaskRepositoryImpl(
         "reminderValue" to reminderValue,
         "duration" to duration,
         "isCompleted" to isCompleted,
+        "isPinned" to isPinned,
         "createdAt" to createdAt,
         "updatedAt" to updatedAt,
     )
@@ -217,6 +218,24 @@ open class TaskRepositoryImpl(
         } catch (e: Exception) {
             Logger.error(e) { "Error marking task: ${e.message}" }
             Result.Error(e, "Failed to update task status")
+        }
+    }
+
+    override suspend fun togglePin(taskId: String, isPinned: Boolean): Result<Unit> {
+        if (!networkConnectivityManager.isNetworkAvailable()) {
+            return Result.Error(Exception("No internet connection"), "No internet connection")
+        }
+        return try {
+            val updateMap = mapOf(
+                "isPinned" to isPinned,
+                "updatedAt" to Clock.System.now().toEpochMilliseconds()
+            )
+            tasksRef().child(taskId).updateChildren(updateMap)
+            Logger.debug { "Task pin toggled $isPinned: $taskId" }
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Logger.error(e) { "Error toggling pin: ${e.message}" }
+            Result.Error(e, "Failed to update pin status")
         }
     }
 

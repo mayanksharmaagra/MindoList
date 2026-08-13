@@ -19,6 +19,7 @@ data class TaskUIModel(
     val priority: String = Priority.MEDIUM.label,
     val category: String = Category.PERSONAL.label,
     val isCompleted: Boolean = false,
+    val isPinned: Boolean = false,
     val source: TaskSource = TaskSource.MY_TASK,
     val originalModel: Any? = null // Reference to TaskModel or GoogleItem
 )

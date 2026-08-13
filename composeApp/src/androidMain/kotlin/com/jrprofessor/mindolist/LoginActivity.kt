@@ -118,6 +118,11 @@ fun ScreenPreview(content: @Composable () -> Unit) {
                     Result.Success(Unit)
 
                 override suspend fun deleteTask(taskId: String) = Result.Success(Unit)
+                override suspend fun togglePin(
+                    taskId: String,
+                    isPinned: Boolean
+                ): Result<Unit> =Result.Success(Unit)
+
                 override fun getTasksInRange(startMillis: Long, endMillis: Long) =
                     flowOf(Result.Success(emptyList<TaskModel>()))
             }

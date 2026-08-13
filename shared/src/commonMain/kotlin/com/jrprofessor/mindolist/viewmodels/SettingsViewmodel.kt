@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jrprofessor.mindolist.domain.model.Result
 import com.jrprofessor.mindolist.domain.repository.FirebaseAuthRepository
+import com.jrprofessor.mindolist.domain.repository.TaskRepository
 import com.jrprofessor.mindolist.local.AppSettings
 import com.jrprofessor.mindolist.presentation.settings.SettingsAction
 import com.jrprofessor.mindolist.presentation.settings.SettingsEvent
@@ -14,12 +15,16 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 class SettingsViewmodel(
     private val firebaseAuthRepository: FirebaseAuthRepository,
+    private val taskRepository: TaskRepository,
     private val appSettings: AppSettings,
 ) : ViewModel() {
 
@@ -78,6 +83,28 @@ class SettingsViewmodel(
             }
             is SettingsAction.SetDefaultView -> {
                 appSettings.defaultView = action.mode.name
+            }
+            is SettingsAction.ExportTasks -> exportTasks()
+        }
+    }
+
+    private fun exportTasks() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            try {
+                // Fetch tasks (using first() to get the current list from the flow)
+                val result = taskRepository.getTasks().first { it !is Result.Loading }
+                if (result is Result.Success) {
+                    val json = Json { prettyPrint = true }.encodeToString(result.data)
+                    _event.send(SettingsEvent.ExportSuccess(json))
+                    _event.send(SettingsEvent.Message("Tasks exported successfully!"))
+                } else if (result is Result.Error) {
+                    _event.send(SettingsEvent.Message(result.message ?: "Failed to fetch tasks"))
+                }
+            } catch (e: Exception) {
+                _event.send(SettingsEvent.Message("Export failed: ${e.message}"))
+            } finally {
+                _state.update { it.copy(isLoading = false) }
             }
         }
     }

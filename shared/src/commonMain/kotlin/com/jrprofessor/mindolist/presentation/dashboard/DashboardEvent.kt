@@ -6,4 +6,5 @@ sealed class DashboardEvent {
     data class Error(val message: String) : DashboardEvent()
     data object TaskCompleted : DashboardEvent()
     data object TaskDeleted : DashboardEvent()
+    data object SyncSuccess : DashboardEvent()
 }

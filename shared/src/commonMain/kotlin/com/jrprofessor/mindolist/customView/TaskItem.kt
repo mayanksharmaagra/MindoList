@@ -24,10 +24,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxState
@@ -42,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -59,6 +63,7 @@ import com.jrprofessor.mindolist.theme.MindoListTheme
 fun TaskItem(
     task: TaskUIModel,
     onToggleComplete: (Boolean) -> Unit = {},
+    onTogglePin: (Boolean) -> Unit = {},
     onDelete: () -> Unit = {},
     onEdit: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -91,6 +96,7 @@ fun TaskItem(
         TaskItemContent(
             task = task,
             onToggleComplete = onToggleComplete,
+            onTogglePin = onTogglePin,
             checked = task.isCompleted
         )
     }
@@ -141,6 +147,7 @@ fun SwipeBackground(dismissState: SwipeToDismissBoxState) {
 fun TaskItemContent(
     task: TaskUIModel,
     onToggleComplete: (Boolean) -> Unit,
+    onTogglePin: (Boolean) -> Unit,
     checked: Boolean,
 ) {
     var localChecked by remember(checked) { mutableStateOf(checked) }
@@ -201,15 +208,31 @@ fun TaskItemContent(
 
                 // ── Title + Subtitle ──────────────────────────────────────────
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = task.title,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (localChecked) MindoListTheme.colors.textSecondary else MindoListTheme.colors.textPrimary,
-                        textDecoration = if (localChecked) TextDecoration.LineThrough
-                        else TextDecoration.None,
-                        maxLines = 1,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = task.title,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (localChecked) MindoListTheme.colors.textSecondary else MindoListTheme.colors.textPrimary,
+                            textDecoration = if (localChecked) TextDecoration.LineThrough
+                            else TextDecoration.None,
+                            maxLines = 1,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (task.source == TaskSource.MY_TASK) {
+                            IconButton(
+                                onClick = { onTogglePin(!task.isPinned) },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (task.isPinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
+                                    contentDescription = "Pin Task",
+                                    tint = if (task.isPinned) MindoListTheme.colors.accent else MindoListTheme.colors.textSecondary.copy(alpha = 0.5f),
+                                    modifier = Modifier.size(16.dp).rotate(if (task.isPinned) 0f else 45f)
+                                )
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Row(

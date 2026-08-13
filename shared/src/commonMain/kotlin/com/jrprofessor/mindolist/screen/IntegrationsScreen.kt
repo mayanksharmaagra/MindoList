@@ -77,8 +77,8 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun IntegrationsScreen(
     onBackClick: () -> Unit,
+    dashboardViewModel: DashboardViewModel,
     viewModel: GoogleCalendarViewModel = koinViewModel(),
-    dashboardViewModel: DashboardViewModel = koinViewModel(),
     authManager: GoogleAuthManager = koinInject()
 ) {
     var autoSync by remember { mutableStateOf(true) }

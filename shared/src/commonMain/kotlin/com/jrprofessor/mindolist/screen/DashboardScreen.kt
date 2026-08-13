@@ -31,11 +31,10 @@ import com.jrprofessor.mindolist.theme.MindoListAccentFixed
 import com.jrprofessor.mindolist.utils.showToast
 import com.jrprofessor.mindolist.viewmodels.DashboardViewModel
 import com.jrprofessor.mindolist.viewmodels.TaskViewModel
-import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun DashboardScreen(
-    dashboardViewModel: DashboardViewModel = koinViewModel(),
+    dashboardViewModel: DashboardViewModel,
     taskViewModel: TaskViewModel,
     onAddTaskClick: () -> Unit,
     navigateToAllTasks: () -> Unit
@@ -50,6 +49,7 @@ fun DashboardScreen(
                 is DashboardEvent.Error -> showToast(event.message)
                 DashboardEvent.TaskCompleted -> showToast("Task completed ✓")
                 DashboardEvent.TaskDeleted -> showToast("Task deleted ✓")
+                DashboardEvent.SyncSuccess -> showToast("Sync successful ✓")
             }
         }
     }
@@ -68,6 +68,9 @@ fun DashboardScreen(
                 state = state,
                 markCompleted = { taskId, isCompleted ->
                     dashboardViewModel.dispatch(DashboardAction.MarkComplete(taskId, isCompleted))
+                },
+                onTogglePin = { taskId, isPinned ->
+                    dashboardViewModel.dispatch(DashboardAction.TogglePin(taskId, isPinned))
                 },
                 onDelete = { taskId -> showDeleteDialog = taskId },
                 onEdit = { task ->
@@ -95,6 +98,7 @@ fun DashboardScreen(
 fun DashboardContent(
     state: DashboardState,
     markCompleted: (String, Boolean) -> Unit,
+    onTogglePin: (String, Boolean) -> Unit,
     onDelete: (String) -> Unit,
     onEdit: (TaskModel) -> Unit,
     onAddTaskClick: () -> Unit,
@@ -120,7 +124,7 @@ fun DashboardContent(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        TodayTask(state.todayTasks, markCompleted, onDelete, onEdit, onAddTaskClick, navigateToAllTasks)
+        TodayTask(state.todayTasks, markCompleted, onTogglePin, onDelete, onEdit, onAddTaskClick, navigateToAllTasks)
 
         Spacer(modifier = Modifier.height(100.dp))
     }
@@ -242,6 +246,7 @@ fun SummaryCard(
 fun TodayTask(
     todayTasks: List<TaskUIModel> = emptyList(),
     markCompleted: (String, Boolean) -> Unit,
+    onTogglePin: (String, Boolean) -> Unit,
     onDelete: (String) -> Unit,
     onEdit: (TaskModel) -> Unit,
     onAddTaskClick: () -> Unit,
@@ -283,6 +288,9 @@ fun TodayTask(
                         task = task,
                         onToggleComplete = { isComplete ->
                             markCompleted(task.id, isComplete)
+                        },
+                        onTogglePin = { isPinned ->
+                            onTogglePin(task.id, isPinned)
                         },
                         onDelete = { onDelete(task.id) },
                         onEdit = { 

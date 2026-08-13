@@ -20,6 +20,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
@@ -92,14 +93,16 @@ class GoogleCalendarRepositoryImpl(
     @OptIn(ExperimentalTime::class)
     private suspend fun fetchCalendarEvents(accessToken: String): List<GoogleItem> {
         return try {
-            val nowInstant = Clock.System.now()
-            val weekLater = nowInstant.plus(7, DateTimeUnit.DAY, TimeZone.currentSystemDefault())
+            val now = Clock.System.now()
+            val timeZone = TimeZone.currentSystemDefault()
+            val todayStart = now.toLocalDateTime(timeZone).date.atStartOfDayIn(timeZone)
+            val monthLater = todayStart.plus(30, DateTimeUnit.DAY, timeZone)
 
             val response: HttpResponse =
                 client.get("https://www.googleapis.com/calendar/v3/calendars/primary/events") {
                     header("Authorization", "Bearer $accessToken")
-                    parameter("timeMin", nowInstant.toString())
-                    parameter("timeMax", weekLater.toString())
+                    parameter("timeMin", todayStart.toString())
+                    parameter("timeMax", monthLater.toString())
                     parameter("singleEvents", true)
                     parameter("orderBy", "startTime")
                 }
